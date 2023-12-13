@@ -9,7 +9,7 @@
 
 #include "../tree/tree.h"
 
-const int MAX_TOKEN = 30;
+const int MAX_STRING_TOKEN = 30;
 
 struct ProgText
 {
@@ -49,11 +49,11 @@ TreeNode* GetMathExpr    (ProgCode* code, Tree* tree);
 LexAnalysRes LexicAnalysis           (ProgText* text);
 ProgCode*    LexicalAnalysisTokenize (ProgText* text);
 
-int IsIdentifier (const char* word);
-int IsKeyword    (const char* word);
-int IsSeparator  (const char* word);
-int IsOperator   (const char* word);
-int IsIntLiteral (const char* word);
+int IsIdentifier (const char* lexem);
+int IsKeyword    (const char* lexem);
+int IsSeparator  (const char* lexem);
+int IsOperator   (const char* lexem);
+int IsIntLiteral (const char* lexem);
 
 int GetIdentifierIndex (const char* identifier, NameTable* nametable);
 int GetKeywordIndex    (const char* keyword);
@@ -63,6 +63,11 @@ int GetOperatorIndex   (const char* operator_); // !!! operator__________ <- why
 // anscillary
 ProgCode* ProgCodeCtor ();
 int       ProgCodeDtor (ProgCode* prog_code);
+
+ProgText* ProgTextCtor (const char* text, int text_len);
+int       ProgTextDtor (ProgText* prog_text);
+
+int StripLexem (char* lexem);
 
 #endif // TINKOV_FRONTEND_H
 

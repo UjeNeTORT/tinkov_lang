@@ -3,28 +3,39 @@
 
 int main()
 {
-    char* txt = (char*) calloc(56, sizeof(char));
-    strcpy (txt, "$ x + y $ / 60 + 2 сомнительно_но_окей");
+    ProgText* text = ProgTextCtor ("$ x + y $ / 60 + 2 сомнительно_но_окей", strlen("$ x + y $ / 60 + 2 сомнительно_но_окей"));
 
-    ProgText text = {txt, 0, 3};
+    ProgCode* prog_code = LexicalAnalysisTokenize (text);
 
-    ProgCode* prog_code = LexicalAnalysisTokenize (&text);
+    for (int i = 0; i < prog_code->size; i++)
+    {
+        PRINTF_DEBUG("[%d] type = %d val = %d\n", i, TYPE(prog_code->tokens[i]), VAL(prog_code->tokens[i]));
+    }
 
-    PRINTF_DEBUG("done");
+    ProgTextDtor (text);
+
+    PRINTF_DEBUG ("done");
 
     return 0;
 }
+
+// ============================================================================================
 
 TreeNode* GetNumber (ProgCode* code, Tree* tree)
 {
     return NULL;
 }
 
+// ============================================================================================
+
 TreeNode* GetVar (ProgCode* code, Tree* tree)
 {
     return NULL;
 }
 
+// ============================================================================================
+
+// func too big
 ProgCode* LexicalAnalysisTokenize (ProgText* text)
 {
     assert(text);
@@ -33,47 +44,72 @@ ProgCode* LexicalAnalysisTokenize (ProgText* text)
 
     int n_readen = 0;
 
-    char word[MAX_TOKEN] = "";
+    char lexem[MAX_STRING_TOKEN] = "";
 
-    while (sscanf(text->text + text->offset, "%s%n", word, &n_readen))
+    while (sscanf (text->text + text->offset, "%s%n", lexem, &n_readen) != EOF)
     {
-        PRINTF_DEBUG("%s", text->text + text->offset);
+        StripLexem (lexem);
+
         text->offset += n_readen;
 
         TreeNode* new_node = NULL;
 
         // the whole statement is quite unoptimal because many functions duplicate each other
-        if (IsIdentifier (word))
+        if (IsIdentifier (lexem))
         {
-            PRINTF_DEBUG ("prog_code->nametable[%p]\n", prog_code->nametable);
-            new_node = TreeNodeCtor (GetIdentifierIndex (word, prog_code->nametable), IDENTIFIER, NULL, NULL, NULL);
+            int id_index = GetIdentifierIndex (lexem, prog_code->nametable);
+
+            new_node = TreeNodeCtor (id_index, IDENTIFIER, NULL, NULL, NULL);
         }
 
-        else if (IsKeyword (word)) // unoptimal, requires 2 cycles
+        else if (IsKeyword (lexem)) // unoptimal, requires 2 cycles
         {
-            new_node = TreeNodeCtor (GetKeywordIndex (word), KEYWORD, NULL, NULL, NULL);
+            int kw_index = GetKeywordIndex (lexem);
+            if (kw_index == -1)
+            {
+                ProgCodeDtor (prog_code);
+                RET_ERROR (NULL, "Unexpected error: keyword \"%s\" "
+                                 "index not found in keywords table", lexem);
+            }
+
+            new_node = TreeNodeCtor (kw_index, KEYWORD, NULL, NULL, NULL);
         }
 
-        else if (IsSeparator (word))
+        else if (IsSeparator (lexem))
         {
-            new_node = TreeNodeCtor (GetSeparatorIndex (word), SEPARATOR, NULL, NULL, NULL);
+            int sep_index = GetSeparatorIndex (lexem);
+            if (sep_index == -1)
+            {
+                ProgCodeDtor (prog_code);
+                RET_ERROR (NULL, "Unexpected error: separator \"%s\" "
+                                 "index not found in separators table", lexem);
+            }
+
+            new_node = TreeNodeCtor (sep_index, SEPARATOR, NULL, NULL, NULL);
         }
 
-        else if (IsOperator (word))
+        else if (IsOperator (lexem))
         {
-            new_node = TreeNodeCtor (GetOperatorIndex (word), SEPARATOR, NULL, NULL, NULL);
+            int op_index = GetOperatorIndex (lexem);
+            if (op_index == -1)
+            {
+                ProgCodeDtor (prog_code);
+                RET_ERROR (NULL, "Unexpected error: operator \"%s\" "
+                                 "index not found in operators table", lexem);
+            }
+
+            new_node = TreeNodeCtor (op_index, OPERATOR, NULL, NULL, NULL);
         }
 
-        else if (IsIntLiteral (word))
+        else if (IsIntLiteral (lexem))
         {
-            new_node = TreeNodeCtor (atoi (word), INT_LITERAL, NULL, NULL, NULL);
+            new_node = TreeNodeCtor (atoi (lexem), INT_LITERAL, NULL, NULL, NULL);
         }
 
         else
         {
-            ProgCodeDtor(prog_code);
-
-            RET_ERROR(NULL, "Unknown lexem \"%s\"", word);
+            ProgCodeDtor (prog_code);
+            RET_ERROR (NULL, "Unknown lexem \"%s\"", lexem);
         }
 
         prog_code->tokens[prog_code->size++] = new_node;
@@ -82,67 +118,79 @@ ProgCode* LexicalAnalysisTokenize (ProgText* text)
     return prog_code;
 }
 
-int IsIdentifier (const char* word)
+// ============================================================================================
+
+int IsIdentifier (const char* lexem)
 {
-    assert (word);
+    assert (lexem);
 
-    if (!isalpha(*word)) return 0;
+    if (!isalpha(*lexem)) return 0;
 
-    while (*++word)
-        if (!isalnum(*word) && *word != '_') return 0;
+    while (*++lexem)
+        if (!isalnum(*lexem) && *lexem != '_') return 0;
 
     return 1;
 }
 
-int IsKeyword (const char* word)
+// ============================================================================================
+
+int IsKeyword (const char* lexem)
 {
-    assert (word);
+    assert (lexem);
 
     for (int i = 0; i < N_KEYWORDS; i++)
     {
-        if (streq (word, KEYWORDS[i]))
+        if (streq (lexem, KEYWORDS[i]))
             return 1;
     }
 
     return 0;
 }
 
-int IsSeparator  (const char* word)
+// ============================================================================================
+
+int IsSeparator  (const char* lexem)
 {
-    assert (word);
+    assert (lexem);
 
     for (int i = 0; i < N_SEPARATORS; i++)
     {
-        if (streq (word, SEPARATORS[i]))
+        if (streq (lexem, SEPARATORS[i]))
             return 1;
     }
 
     return 0;
 }
 
-int IsOperator (const char* word)
+// ============================================================================================
+
+int IsOperator (const char* lexem)
 {
     for (int i = 0; i < N_OPERATORS; i++)
     {
-        if (streq (word, OPERATORS[i]))
+        if (streq (lexem, OPERATORS[i]))
             return 1;
     }
 
     return 0;
 }
 
-int IsIntLiteral (const char* word)
-{
-    assert (word);
+// ============================================================================================
 
-    if (atoi (word) != 0)
+int IsIntLiteral (const char* lexem)
+{
+    assert (lexem);
+
+    if (atoi (lexem) != 0)
         return 1;
 
-    if (atoi (word) == 0 && word[0] == '0') // temporary, does not cover many cases
+    if (atoi (lexem) == 0 && lexem[0] == '0') // temporary, does not cover many cases
         return 1;
 
     return 0;
 }
+
+// ============================================================================================
 
 int GetIdentifierIndex (const char* identifier, NameTable* nametable)
 {
@@ -152,6 +200,8 @@ int GetIdentifierIndex (const char* identifier, NameTable* nametable)
 
     return UpdNameTable (identifier, nametable);
 }
+
+// ============================================================================================
 
 int GetKeywordIndex (const char* keyword)
 {
@@ -166,6 +216,8 @@ int GetKeywordIndex (const char* keyword)
     return -1; // this is unlikely to happen, but if this happens it is not handled
 }
 
+// ============================================================================================
+
 int GetSeparatorIndex  (const char* separator)
 {
     assert (separator);
@@ -178,6 +230,8 @@ int GetSeparatorIndex  (const char* separator)
 
     return -1; // this is unlikely to happen, but if this happens it is not handled
 }
+
+// ============================================================================================
 
 int GetOperatorIndex (const char* operator_)
 {
@@ -192,6 +246,8 @@ int GetOperatorIndex (const char* operator_)
     return -1; // this is unlikely to happen, but if this happens it is not handled
 }
 
+// ============================================================================================
+
 ProgCode* ProgCodeCtor ()
 {
     ProgCode* prog_code = (ProgCode*) calloc (1, sizeof(ProgCode));
@@ -201,9 +257,10 @@ ProgCode* ProgCodeCtor ()
     prog_code->tokens = (TreeNode**) calloc (MAX_N_NODES, sizeof(TreeNode*));
     prog_code->size = 0;
 
-
     return prog_code;
 }
+
+// ============================================================================================
 
 int ProgCodeDtor (ProgCode* prog_code)
 {
@@ -214,6 +271,54 @@ int ProgCodeDtor (ProgCode* prog_code)
     for (int i = 0; prog_code->tokens[i] && i < prog_code->size; i++)
         free (prog_code->tokens[i]);
 
-
     free (prog_code);
+
+    return 0;
+}
+
+// ============================================================================================
+
+
+ProgText* ProgTextCtor (const char* text, int text_len)
+{
+    assert (text);
+
+    char* text_copy = (char*) calloc (text_len, sizeof (char));
+
+    strcpy (text_copy, text);
+
+    ProgText* prog_text = (ProgText*) calloc (1, sizeof(ProgText));
+
+    prog_text->text   = text_copy;
+    prog_text->offset = 0;
+    prog_text->len    = text_len;
+
+    return prog_text;
+}
+
+// ============================================================================================
+
+int ProgTextDtor (ProgText* prog_text)
+{
+    assert (prog_text);
+
+    prog_text->offset = -1;
+    prog_text->len    = -1;
+
+    free (prog_text->text);
+
+    free (prog_text);
+
+    return 0;
+}
+
+// ============================================================================================
+
+int StripLexem (char* lexem)
+{
+    assert (lexem);
+
+    lexem[strcspn (lexem, "\t\r\n ")] = 0;
+
+    return 0;
 }
