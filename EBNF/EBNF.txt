@@ -7,7 +7,7 @@
 <MathExpr>  ::= <MulDivRes> (("+" | "-") <MulDivRes>)*
 <MulDivRes> ::= <PowRes> (("*" | "/") <PowRes>)*
 <PowRes>    ::= <Operand> ("^" <Operand>)?
-<Operand>   ::= "(" <MathExpr> ")" | <SimpleOperand>
+<Operand>   ::= "$" <MathExpr> "$" | <SimpleOperand>
 
 <Identifier>    ::= ([A-Z] | [a-z] | "_") ([A-Z] | [a-z] | "_" | [0-9])* " "
 <Number>        ::= ([0-9])+ " "
