@@ -16,11 +16,11 @@
 
 #define WARNINGS 1
 
-const char DOT_FILE_PATH[]   = "tree/tree_dump/dumps/dot/";
-const char GRAPH_SVGS_PATH[] = "tree/tree_dump/dumps/png/";
-const char HTML_DUMPS_PATH[] = "tree/tree_dump/dumps/dumps/";
-const char TEX_FILE_PATH[]   = "tree/tree_dump/dumps/tex/";
-const char PDF_DUMPS_PATH[]  = "tree/tree_dump/dumps/pdf";
+const char DOT_FILE_PATH[]   = "src/tree/tree_dump/dumps/dot/";
+const char GRAPH_SVGS_PATH[] = "src/tree/tree_dump/dumps/png/";
+const char HTML_DUMPS_PATH[] = "src/tree/tree_dump/dumps/dumps/";
+const char TEX_FILE_PATH[]   = "src/tree/tree_dump/dumps/tex/";
+const char PDF_DUMPS_PATH[]  = "src/tree/tree_dump/dumps/pdf";
 
 const int DOT_CODE_BUF_SIZE = 15000;
 
@@ -30,10 +30,12 @@ const int MAX_TREE_FNAME = 100;
 
 const char GRAPH_BGCLR[]   = "#EDDDD4";
 const char GRAPH_TEXTCLR[] = "#EDDDD4";
-const char GRAPH_NUMCLR[]  = "#197278";
+const char GRAPH_INTCLR[]  = "#197278";
 const char GRAPH_OPCLR[]   = "#C44536";
-const char GRAPH_VARCLR[]  = "#283D3B";
+const char GRAPH_IDCLR[]   = "#283D3B";
 const char GRAPH_ERRCLR[]  = "#000000";
+const char GRAPH_KWCLR[]   = "#000000";
+const char GRAPH_SEPCLR[]  = "#000000";
 
 typedef enum
 {
@@ -59,15 +61,6 @@ typedef enum
     DOT_PRINT_ERR        = 1,
     DOT_PRINT_ERR_PARAMS = 2,
 } DotTreePrintRes;
-
-
-int   TreeTexDump     (const Tree* tree);
-FILE* InitTexDump     (const Tree* tree, char* tex_path);
-int   CompileLatex    (const char* tex_path);
-int   ConcludeTexDump (FILE* tex_file);
-
-TexTreePrintRes    TexTreePrint    (FILE* tex_file, const Tree* tree);
-TexSubtreePrintRes TexSubtreePrint (FILE* tex_file, const TreeNode* prev, const TreeNode* node, const Tree* tree);
 
 int   TreeDotDump     (const char* fname, const Tree* tree);
 FILE* InitDotDump     (const Tree* tree, char* dot_path, DotDumpType dump_type);
