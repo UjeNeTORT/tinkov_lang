@@ -19,7 +19,7 @@ int PrintfDebug (const char * funcname, int line, const char * filename, const c
     assert (filename);
     assert (format);
 
-    fprintf (stderr, BLACK_CLR "[DEBUG | %s (%d) %s]\n<< ", funcname, line, filename);
+    fprintf (stderr, GREEN_CLR "[DEBUG | %s (%d) %s]\n<< ", funcname, line, filename);
 
     va_list ptr;
 
@@ -29,7 +29,7 @@ int PrintfDebug (const char * funcname, int line, const char * filename, const c
 
     va_end (ptr);
 
-    fprintf (stdout, RST_CLR "\n" );
+    fprintf (stdout, RST_CLR "\n" RST_CLR);
 
     return res;
 }

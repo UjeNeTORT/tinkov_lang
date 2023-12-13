@@ -26,9 +26,10 @@ const int USER_ANSW_SIZE = 10;
 // todo ask ded how to not destroy PC
 #define ABORT()                                              \
 {                                                            \
-    for (int i = 0; i < 100; i++)                            \
+    for (int i = 0; i < 100000; i++)                         \
     {                                                        \
         printf("hehe aborting your computer and your nerves right now for free!))))))\n"); \
+        abort ();                                            \
     }                                                        \
 }                                                            \
     // system("shutdown -P now");
