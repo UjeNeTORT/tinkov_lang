@@ -3,16 +3,6 @@
 
 int main()
 {
-    ProgText* text = ProgTextCtor ("$ x + y $ / 60 + 2 сомнительно_но_окей", strlen("$ x + y $ / 60 + 2 сомнительно_но_окей"));
-
-    ProgCode* prog_code = LexicalAnalysisTokenize (text);
-
-    for (int i = 0; i < prog_code->size; i++)
-    {
-        PRINTF_DEBUG("[%d] type = %d val = %d\n", i, TYPE(prog_code->tokens[i]), VAL(prog_code->tokens[i]));
-    }
-
-    ProgTextDtor (text);
 
     PRINTF_DEBUG ("done");
 
@@ -21,16 +11,175 @@ int main()
 
 // ============================================================================================
 
-TreeNode* GetNumber (ProgCode* code, Tree* tree)
+TreeNode* GetNumber (ProgCode* prog_code, Tree* tree)
 {
-    return NULL;
+    assert (prog_code);
+    assert (tree);
+
+    if (TYPE(CURR_TOKEN) != INT_LITERAL)
+        return NULL;
+
+    return prog_code->tokens[OFFSET++];
 }
 
 // ============================================================================================
 
-TreeNode* GetVar (ProgCode* code, Tree* tree)
+TreeNode* GetIdentifier (ProgCode* prog_code, Tree* tree)
 {
-    return NULL;
+    assert (prog_code);
+    assert (tree);
+
+    if (TYPE (CURR_TOKEN) != IDENTIFIER)
+        return NULL;
+
+    return prog_code->tokens[OFFSET++];
+}
+
+// ============================================================================================
+
+TreeNode* GetSimpleOperand (ProgCode* prog_code, Tree* tree)
+{
+    assert (prog_code);
+    assert (tree);
+
+    TreeNode* IdNode = GetIdentifier (prog_code, tree);
+    if (IdNode == NULL)
+        return GetNumber (prog_code, tree);
+
+    return IdNode;
+}
+
+// ============================================================================================
+
+TreeNode* GetOperand (ProgCode* prog_code, Tree* tree)
+{
+    assert (prog_code);
+    assert (tree);
+
+    int init_offset = OFFSET;
+
+    if (TYPE (CURR_TOKEN) != SEPARATOR ||
+        VAL  (CURR_TOKEN) != ENCLOSE_MATH_EXPR)
+        return GetSimpleOperand(prog_code, tree);
+
+    OFFSET++; // skip $
+
+    TreeNode* math_expr = GetMathExpr(prog_code, tree);
+
+    if (TYPE (CURR_TOKEN) != SEPARATOR ||
+        VAL  (CURR_TOKEN) != ENCLOSE_MATH_EXPR)
+    {
+        OFFSET = init_offset;
+        return GetSimpleOperand (prog_code, tree);
+    }
+
+    OFFSET++; // skip $
+
+    return math_expr;
+}
+
+// ============================================================================================
+
+TreeNode* GetPowRes (ProgCode* prog_code, Tree* tree)
+{
+    assert (prog_code);
+    assert (tree);
+
+    TreeNode* operand_1 = GetOperand (prog_code, tree);
+    if (!operand_1) return NULL;
+
+    TreeNode* operand_2 = NULL; // optional
+
+    if (TYPE (CURR_TOKEN) == OPERATOR &&
+        VAL  (CURR_TOKEN) == POW)
+    {
+        OFFSET++; // skip ^
+
+        operand_2 = GetOperand (prog_code, tree);
+
+        if (!operand_2) return NULL; // error: op1 ^ <error> => error
+    }
+
+    if (operand_2)
+        return TreeNodeCtor (POW, OPERATOR, NULL, operand_1, operand_2);
+
+    return operand_1;
+}
+
+// ============================================================================================
+
+TreeNode* GetMulDivRes (ProgCode* prog_code, Tree* tree)
+{
+    assert (prog_code);
+    assert (tree);
+
+    TreeNode* pow_res_1 = GetPowRes (prog_code, tree);
+    if (!pow_res_1) return NULL;
+
+    if (TYPE (CURR_TOKEN) != OPERATOR ||
+      !(VAL  (CURR_TOKEN) == MUL ||
+        VAL  (CURR_TOKEN) == DIV))
+        return pow_res_1;
+
+    TreeNode* pow_res_opt = NULL; // optional
+
+    while (TYPE (CURR_TOKEN) == OPERATOR &&
+          (VAL  (CURR_TOKEN) == MUL ||
+           VAL  (CURR_TOKEN) == DIV))
+    {
+        int op_mul_div = VAL (CURR_TOKEN);
+
+        OFFSET++; // skip operator
+
+        TreeNode* curr_pow_res = GetPowRes (prog_code, tree);
+        !!! если pow res opt нулевой, то создаем узел с pow_res_1 слева и null справа и
+            подпихиваем дальше, только непонятно как !!!
+        switch (op_mul_div)
+        {
+        case MUL:
+            break;
+
+        case DIV:
+            break;
+
+        default:
+            RET_ERROR (NULL, "Syntax error, mul or div operator expected"); // todo
+            break;
+        }
+    }
+
+    if (pow_res_2)
+}
+
+// ============================================================================================
+
+TreeNode* GetLvalue (ProgCode* prog_code, Tree* tree)
+{
+    assert (prog_code);
+    assert (tree);
+
+    if (TYPE (CURR_TOKEN) != IDENTIFIER)
+        return NULL;
+
+    return prog_code->tokens[OFFSET++];
+}
+
+// ============================================================================================
+
+TreeNode* GetRvalue (ProgCode* prog_code, Tree* tree)
+{
+    assert (prog_code);
+    assert (tree);
+
+    if (TYPE (CURR_TOKEN) != IDENTIFIER ||
+        TYPE (CURR_TOKEN) != INT_LITERAL)
+        return NULL;
+
+    OFFSET++; // did not think enough about it
+
+    while (TYPE (CURR_TOKEN) == )
+
+    return prog_code->tokens[OFFSET++];
 }
 
 // ============================================================================================
@@ -255,7 +404,8 @@ ProgCode* ProgCodeCtor ()
     prog_code->nametable = NameTableCtor ();
 
     prog_code->tokens = (TreeNode**) calloc (MAX_N_NODES, sizeof(TreeNode*));
-    prog_code->size = 0;
+    prog_code->size   = 0;
+    OFFSET = 0;
 
     return prog_code;
 }

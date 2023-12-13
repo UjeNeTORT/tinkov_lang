@@ -9,6 +9,14 @@
 
 #include "../tree/tree.h"
 
+// ===================== DSL =====================
+
+#define OFFSET     (prog_code->offset)
+#define TOKEN(i)   (prog_code->tokens[(i)])
+#define CURR_TOKEN (prog_code->tokens[OFFSET])
+
+// ===============================================
+
 const int MAX_STRING_TOKEN = 30;
 
 struct ProgText
@@ -22,6 +30,7 @@ struct ProgCode
 {
     TreeNode** tokens;
     NameTable* nametable;
+    int        offset;
     int        size;
 };
 
