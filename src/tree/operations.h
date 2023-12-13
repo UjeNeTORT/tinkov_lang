@@ -1,42 +1,91 @@
+/*************************************************************************
+ * (c) 2023 Tikhonov Yaroslav (aka UjeNeTORT)
+ *
+ * email:    tikhonovty@gmail.com
+ * telegram: https://t.me/netortofficial
+ * GitHub:   https://github.com/UjeNeTORT
+ * repo:     https://github.com/UjeNeTORT/Differentiator
+ *************************************************************************/
+
 #ifndef OPERATIONS_H
 #define OPERATIONS_H
 
 const int ILL_OPNUM = __INT_MAX__;
 
-const char * const KEYWORDS[] =
+typedef enum
 {
-    "я_ссыкло_или_я_не_ссыкло",
-    "я_могу_ошибаться",
-    "какая_разница",
-    "ну_сколько_можно"
+    DO    = 1,
+    IF    = 2,
+    ELSE  = 3,
+    WHILE = 4,
+} KeywordCode;
+
+struct Keyword
+{
+    const char* const name;
+    KeywordCode    kw_code;
+};
+
+const Keyword KEYWORDS[] =
+{
+    {"я_ссыкло_или_я_не_ссыкло", DO},
+    {"какая_разница", IF},
+    {"я_могу_ошибаться", ELSE},
+    {"ну_сколько_можно", WHILE}
 };
 const int N_KEYWORDS = sizeof(KEYWORDS) / sizeof(KEYWORDS[0]);
 
-const char * const SEPARATORS[] =
+typedef enum
 {
-    "сомнительно_но_окей",
-    "олег_не_торопись", "я_олигарх_мне_заебись",
-    "$",
-    "?"
+    END_STATEMENT           = 0,
+    ENCLOSE_STATEMENT_BEGIN = 1,
+    ENCLOSE_STATEMENT_END   = 2,
+    ENCLOSE_MATH_EXPR       = 3,
+    END_CONDITION           = 4,
+} SeparatorCode;
+
+struct Separator
+{
+    const char* const name;
+    SeparatorCode sep_code;
+};
+
+const Separator SEPARATORS[] =
+{
+    {"сомнительно_но_окей",   END_STATEMENT},
+    {"олег_не_торопись",      ENCLOSE_STATEMENT_BEGIN},
+    {"я_олигарх_мне_заебись", ENCLOSE_STATEMENT_END},
+    {"$",                     ENCLOSE_MATH_EXPR},
+    {"?",                     END_CONDITION}
 };
 const int N_SEPARATORS = sizeof(SEPARATORS) / sizeof(SEPARATORS[0]);
-
-const char * const OPERATORS[] =
-{
-    "я_так_чувствую",
-    "+", "-", "*", "/", "^"
-};
-const int N_OPERATORS = sizeof(OPERATORS) / sizeof(OPERATORS[0]);
 
 typedef enum
 {
     EQUAL = 0,
-    ADD  = 1,
-    SUB  = 2,
-    MUL  = 3,
-    DIV  = 4,
-    POW  = 5,
-} Opcodes;
+    ADD   = 1,
+    SUB   = 2,
+    MUL   = 3,
+    DIV   = 4,
+    POW   = 5,
+} OperatorCode;
+
+struct Operator
+{
+    OperatorCode       op_code;
+    const char* const  name;
+};
+
+const Operator OPERATORS[] =
+{
+    {EQUAL, "я_так_чувствую"},
+    {ADD,   "+"},
+    {SUB,   "-"},
+    {MUL,   "*"},
+    {DIV,   "/"},
+    {POW,   "^"},
+};
+const int N_OPERATORS = sizeof(OPERATORS) / sizeof(OPERATORS[0]);
 
 typedef enum
 {
@@ -48,25 +97,5 @@ typedef enum
     INT_LITERAL = 5, // integer decimal number
 } NodeType;
 typedef NodeType TokenType;
-
-struct Operation
-{
-    Opcodes      opcode;
-    const char*  name;
-    NodeType     type; // binary or unary
-    int          priority;
-};
-
-const Operation OPERATIONS[] =
-{
-    {EQUAL, "=", OPERATOR, 0},
-    {ADD,   "+", OPERATOR, 1},
-    {SUB,   "-", OPERATOR, 1},
-    {MUL,   "*", OPERATOR, 2},
-    {DIV,   "/", OPERATOR, 2},
-    {POW,   "^", OPERATOR, 3},
-};
-
-const int OPERATIONS_NUM = sizeof(OPERATIONS) / sizeof(Operation);
 
 #endif // OPERATIONS_H
