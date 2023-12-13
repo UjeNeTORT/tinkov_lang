@@ -1,3 +1,12 @@
+/*************************************************************************
+ * (c) 2023 Tikhonov Yaroslav (aka UjeNeTORT)
+ *
+ * email:    tikhonovty@gmail.com
+ * telegram: https://t.me/netortofficial
+ * GitHub:   https://github.com/UjeNeTORT
+ * repo:     https://github.com/UjeNeTORT/Differentiator
+ *************************************************************************/
+
 #ifndef TINKOV_FRONTEND_H
 #define TINKOV_FRONTEND_H
 
@@ -8,6 +17,7 @@
 #include <string.h>
 
 #include "../tree/tree.h"
+#include "../tree/tree_dump/tree_dump.h"
 
 // ===================== DSL =====================
 
@@ -46,13 +56,18 @@ Tree* ParseAST (ProgCode code);
 // syntax analysis
 int SyntaxAssert (int condition);
 
-TreeNode* GetNumber      (ProgCode* code, Tree* tree);
-TreeNode* GetVar         (ProgCode* code, Tree* tree);
-TreeNode* GetOperand     (ProgCode* code, Tree* tree);
-TreeNode* GetParenthesis (ProgCode* code, Tree* tree);
-TreeNode* GetMulDiv      (ProgCode* code, Tree* tree);
-TreeNode* GetAddSub      (ProgCode* code, Tree* tree);
-TreeNode* GetMathExpr    (ProgCode* code, Tree* tree);
+Tree*     BuildAST         (ProgCode* prog_code);
+TreeNode* GetG             (ProgCode* prog_code, Tree* tree);
+TreeNode* GetAssign        (ProgCode* prog_code, Tree* tree);
+TreeNode* GetRvalue        (ProgCode* prog_code, Tree* tree);
+TreeNode* GetLvalue        (ProgCode* prog_code, Tree* tree);
+TreeNode* GetMathExpr      (ProgCode* prog_code, Tree* tree);
+TreeNode* GetMulDivRes     (ProgCode* prog_code, Tree* tree);
+TreeNode* GetPowRes        (ProgCode* prog_code, Tree* tree);
+TreeNode* GetOperand       (ProgCode* prog_code, Tree* tree);
+TreeNode* GetSimpleOperand (ProgCode* prog_code, Tree* tree);
+TreeNode* GetIdentifier    (ProgCode* prog_code, Tree* tree);
+TreeNode* GetNumber        (ProgCode* prog_code, Tree* tree);
 
 // lexic analysis
 LexAnalysRes LexicAnalysis           (ProgText* text);

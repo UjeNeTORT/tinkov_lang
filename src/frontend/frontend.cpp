@@ -1,8 +1,36 @@
-#include "frontend.h"
+/*************************************************************************
+ * (c) 2023 Tikhonov Yaroslav (aka UjeNeTORT)
+ *
+ * email:    tikhonovty@gmail.com
+ * telegram: https://t.me/netortofficial
+ * GitHub:   https://github.com/UjeNeTORT
+ * repo:     https://github.com/UjeNeTORT/Differentiator
+ *************************************************************************/
 
+/**
+ * BUGS: lexer thinks that "131aboba" is a number 131
+ *
+ * TODO: fix bugs
+ *       syntax_assert instead of return NULL
+*/
+
+#include "frontend.h"
 
 int main()
 {
+    ProgText* prog_text = ProgTextCtor ("x я_так_чувствую $ x + y $ / 60 + 2 сомнительно_но_окей", 100);
+    ProgCode* prog_code = LexicalAnalysisTokenize (prog_text);
+    ProgTextDtor (prog_text);
+
+    Tree* ast = BuildAST (prog_code);
+    PRINTF_DEBUG ("root[%p]  type = %d val = %d", ast->root, TYPE (ast->root), VAL (ast->root));
+    PRINTF_DEBUG ("left[%p]  type = %d val = %d", ast->root->left, TYPE (ast->root->left), VAL (ast->root->left));
+    PRINTF_DEBUG ("right[%p] type = %d val = %d", ast->root->right, TYPE (ast->root->right), VAL (ast->root->right));
+
+    TreeDotDump ("dump.html", ast);
+
+    ProgCodeDtor (prog_code);
+    TreeDtor (ast);
 
     PRINTF_DEBUG ("done");
 
@@ -16,10 +44,13 @@ TreeNode* GetNumber (ProgCode* prog_code, Tree* tree)
     assert (prog_code);
     assert (tree);
 
-    if (TYPE(CURR_TOKEN) != INT_LITERAL)
+    if (TYPE (CURR_TOKEN) != INT_LITERAL)
         return NULL;
 
-    return prog_code->tokens[OFFSET++];
+    TreeNode* ret_val = TreeNodeCtor (VAL (CURR_TOKEN), TYPE (CURR_TOKEN), NULL, NULL, NULL);
+    OFFSET++;
+
+    return ret_val;
 }
 
 // ============================================================================================
@@ -32,7 +63,10 @@ TreeNode* GetIdentifier (ProgCode* prog_code, Tree* tree)
     if (TYPE (CURR_TOKEN) != IDENTIFIER)
         return NULL;
 
-    return prog_code->tokens[OFFSET++];
+    TreeNode* ret_val = TreeNodeCtor (VAL (CURR_TOKEN), TYPE (CURR_TOKEN), NULL, NULL, NULL);
+    OFFSET++;
+
+    return ret_val;
 }
 
 // ============================================================================================
@@ -42,11 +76,11 @@ TreeNode* GetSimpleOperand (ProgCode* prog_code, Tree* tree)
     assert (prog_code);
     assert (tree);
 
-    TreeNode* IdNode = GetIdentifier (prog_code, tree);
-    if (IdNode == NULL)
+    TreeNode* ret_val = GetIdentifier (prog_code, tree);
+    if (!ret_val)
         return GetNumber (prog_code, tree);
 
-    return IdNode;
+    return ret_val;
 }
 
 // ============================================================================================
@@ -60,16 +94,19 @@ TreeNode* GetOperand (ProgCode* prog_code, Tree* tree)
 
     if (TYPE (CURR_TOKEN) != SEPARATOR ||
         VAL  (CURR_TOKEN) != ENCLOSE_MATH_EXPR)
-        return GetSimpleOperand(prog_code, tree);
+    {
+        return GetSimpleOperand (prog_code, tree);
+    }
 
     OFFSET++; // skip $
 
-    TreeNode* math_expr = GetMathExpr(prog_code, tree);
+    TreeNode* math_expr = GetMathExpr (prog_code, tree);
 
     if (TYPE (CURR_TOKEN) != SEPARATOR ||
         VAL  (CURR_TOKEN) != ENCLOSE_MATH_EXPR)
     {
         OFFSET = init_offset;
+
         return GetSimpleOperand (prog_code, tree);
     }
 
@@ -86,24 +123,32 @@ TreeNode* GetPowRes (ProgCode* prog_code, Tree* tree)
     assert (tree);
 
     TreeNode* operand_1 = GetOperand (prog_code, tree);
-    if (!operand_1) return NULL;
+    if (!operand_1)
+    {
+        WARN ("operand 1 nil");
 
-    TreeNode* operand_2 = NULL; // optional
+        return NULL;
+    }
+
+    TreeNode* pow_res = operand_1;
 
     if (TYPE (CURR_TOKEN) == OPERATOR &&
         VAL  (CURR_TOKEN) == POW)
     {
         OFFSET++; // skip ^
 
-        operand_2 = GetOperand (prog_code, tree);
+        TreeNode* operand_2 = GetOperand (prog_code, tree);
 
-        if (!operand_2) return NULL; // error: op1 ^ <error> => error
+        if (!operand_2)
+        {
+
+            return NULL; // error: op1 ^ <error> => error SYNTAX ERROR - todo
+        }
+
+        pow_res = TreeNodeCtor (POW, OPERATOR, NULL, pow_res, operand_2);
     }
 
-    if (operand_2)
-        return TreeNodeCtor (POW, OPERATOR, NULL, operand_1, operand_2);
-
-    return operand_1;
+    return pow_res;
 }
 
 // ============================================================================================
@@ -114,14 +159,19 @@ TreeNode* GetMulDivRes (ProgCode* prog_code, Tree* tree)
     assert (tree);
 
     TreeNode* pow_res_1 = GetPowRes (prog_code, tree);
-    if (!pow_res_1) return NULL;
+    if (!pow_res_1)
+    {
+        WARN ("pow_res_1 nil");
+
+        return NULL;
+    }
 
     if (TYPE (CURR_TOKEN) != OPERATOR ||
       !(VAL  (CURR_TOKEN) == MUL ||
         VAL  (CURR_TOKEN) == DIV))
         return pow_res_1;
 
-    TreeNode* pow_res_opt = NULL; // optional
+    TreeNode* mul_div_res = pow_res_1;
 
     while (TYPE (CURR_TOKEN) == OPERATOR &&
           (VAL  (CURR_TOKEN) == MUL ||
@@ -132,23 +182,83 @@ TreeNode* GetMulDivRes (ProgCode* prog_code, Tree* tree)
         OFFSET++; // skip operator
 
         TreeNode* curr_pow_res = GetPowRes (prog_code, tree);
-        !!! если pow res opt нулевой, то создаем узел с pow_res_1 слева и null справа и
-            подпихиваем дальше, только непонятно как !!!
+        if (!curr_pow_res) return NULL; // todo syntax error
+
         switch (op_mul_div)
         {
         case MUL:
+            mul_div_res = TreeNodeCtor (MUL, OPERATOR, NULL, mul_div_res, curr_pow_res);
             break;
 
         case DIV:
+            mul_div_res = TreeNodeCtor (DIV, OPERATOR, NULL, mul_div_res, curr_pow_res);
             break;
 
         default:
+
             RET_ERROR (NULL, "Syntax error, mul or div operator expected"); // todo
             break;
         }
     }
+    return mul_div_res;
+}
 
-    if (pow_res_2)
+// ============================================================================================
+
+TreeNode* GetMathExpr (ProgCode* prog_code, Tree* tree)
+{
+    assert (prog_code);
+    assert (tree);
+
+    TreeNode* mul_div_res_1 = GetMulDivRes (prog_code, tree);
+    if (!mul_div_res_1)
+    {
+        WARN ("mul_div_res_1 nil");
+
+        return NULL;
+    }
+
+    if (TYPE (CURR_TOKEN) != OPERATOR ||
+      !(VAL  (CURR_TOKEN) == ADD ||
+        VAL  (CURR_TOKEN) == SUB))
+        return mul_div_res_1;
+
+    TreeNode* add_sub_res = mul_div_res_1;
+
+    while (TYPE (CURR_TOKEN) == OPERATOR &&
+          (VAL  (CURR_TOKEN) == ADD ||
+           VAL  (CURR_TOKEN) == SUB))
+    {
+        int op_add_sub = VAL (CURR_TOKEN);
+
+        OFFSET++; // skip operator
+
+        TreeNode* curr_mul_div_res = GetMulDivRes (prog_code, tree);
+        if (!curr_mul_div_res)
+    {
+        WARN ("curr_mul_div_res nil");
+
+        return NULL;
+    }
+
+        switch (op_add_sub)
+        {
+        case ADD:
+            add_sub_res = TreeNodeCtor (ADD, OPERATOR, NULL, add_sub_res, curr_mul_div_res);
+            break;
+
+        case SUB:
+            add_sub_res = TreeNodeCtor (SUB, OPERATOR, NULL, add_sub_res, curr_mul_div_res);
+            break;
+
+        default:
+
+
+            RET_ERROR (NULL, "Syntax error, add or sub operator expected"); // todo
+            break;
+        }
+    }
+    return add_sub_res;
 }
 
 // ============================================================================================
@@ -158,10 +268,7 @@ TreeNode* GetLvalue (ProgCode* prog_code, Tree* tree)
     assert (prog_code);
     assert (tree);
 
-    if (TYPE (CURR_TOKEN) != IDENTIFIER)
-        return NULL;
-
-    return prog_code->tokens[OFFSET++];
+    return GetIdentifier (prog_code, tree);
 }
 
 // ============================================================================================
@@ -171,15 +278,88 @@ TreeNode* GetRvalue (ProgCode* prog_code, Tree* tree)
     assert (prog_code);
     assert (tree);
 
-    if (TYPE (CURR_TOKEN) != IDENTIFIER ||
-        TYPE (CURR_TOKEN) != INT_LITERAL)
+    return GetMathExpr (prog_code, tree);
+}
+
+// ============================================================================================
+
+TreeNode* GetAssign (ProgCode* prog_code, Tree* tree)
+{
+    assert (prog_code);
+    assert (tree);
+
+    int init_offset = OFFSET;
+    TreeNode* lvalue = GetLvalue (prog_code, tree);
+    if (!lvalue)
+    {
+        OFFSET = init_offset;
+        WARN ("lvalue nil");
+
         return NULL;
+    }
 
-    OFFSET++; // did not think enough about it
+    if (TYPE (CURR_TOKEN) != OPERATOR ||
+        VAL  (CURR_TOKEN) != EQUAL)
+    {
+        OFFSET = init_offset;
 
-    while (TYPE (CURR_TOKEN) == )
+        return NULL;
+    }
 
-    return prog_code->tokens[OFFSET++];
+    OFFSET++; // skip assign (equal) operator
+
+    TreeNode* rvalue = GetRvalue (prog_code, tree);
+    if (!rvalue)
+    {
+        OFFSET = init_offset;
+        TreeNodeDtor (lvalue);
+        WARN ("rvalue nil");
+
+        return NULL;
+    }
+    return TreeNodeCtor (EQUAL, OPERATOR, NULL, lvalue, rvalue);
+}
+
+// ============================================================================================
+
+Tree* BuildAST (ProgCode* prog_code)
+{
+    assert (prog_code);
+
+    Tree* ast = TreeCtor();
+    NameTableCopy (ast->nametable, prog_code->nametable);
+    ast->root = GetG (prog_code, ast);
+
+    return ast;
+}
+// ============================================================================================
+
+TreeNode* GetG (ProgCode* prog_code, Tree* tree)
+{
+    assert (prog_code);
+    assert (tree);
+
+    int init_offset = OFFSET;
+
+    TreeNode* assign_res = GetAssign (prog_code, tree);
+    if (!assign_res)
+    {
+        WARN ("assign res nil");
+
+        return NULL; // error or not?
+    }
+
+    if (TYPE (CURR_TOKEN) != SEPARATOR ||
+        VAL  (CURR_TOKEN) != END_STATEMENT)
+    {
+        OFFSET = init_offset;
+
+
+        return NULL;
+    }
+
+    return assign_res;
+
 }
 
 // ============================================================================================
@@ -187,7 +367,7 @@ TreeNode* GetRvalue (ProgCode* prog_code, Tree* tree)
 // func too big
 ProgCode* LexicalAnalysisTokenize (ProgText* text)
 {
-    assert(text);
+    assert (text);
 
     ProgCode* prog_code = ProgCodeCtor ();
 
@@ -207,6 +387,12 @@ ProgCode* LexicalAnalysisTokenize (ProgText* text)
         if (IsIdentifier (lexem))
         {
             int id_index = GetIdentifierIndex (lexem, prog_code->nametable);
+            if (id_index == -1)
+            {
+                ProgCodeDtor (prog_code);
+
+                RET_ERROR (NULL, "Unexpected error: \"%s\" identifier index = -1", lexem);
+            }
 
             new_node = TreeNodeCtor (id_index, IDENTIFIER, NULL, NULL, NULL);
         }
@@ -217,6 +403,7 @@ ProgCode* LexicalAnalysisTokenize (ProgText* text)
             if (kw_index == -1)
             {
                 ProgCodeDtor (prog_code);
+
                 RET_ERROR (NULL, "Unexpected error: keyword \"%s\" "
                                  "index not found in keywords table", lexem);
             }
@@ -230,6 +417,7 @@ ProgCode* LexicalAnalysisTokenize (ProgText* text)
             if (sep_index == -1)
             {
                 ProgCodeDtor (prog_code);
+
                 RET_ERROR (NULL, "Unexpected error: separator \"%s\" "
                                  "index not found in separators table", lexem);
             }
@@ -243,6 +431,7 @@ ProgCode* LexicalAnalysisTokenize (ProgText* text)
             if (op_index == -1)
             {
                 ProgCodeDtor (prog_code);
+
                 RET_ERROR (NULL, "Unexpected error: operator \"%s\" "
                                  "index not found in operators table", lexem);
             }
@@ -289,7 +478,7 @@ int IsKeyword (const char* lexem)
 
     for (int i = 0; i < N_KEYWORDS; i++)
     {
-        if (streq (lexem, KEYWORDS[i]))
+        if (streq (lexem, KEYWORDS[i].name))
             return 1;
     }
 
@@ -304,7 +493,7 @@ int IsSeparator  (const char* lexem)
 
     for (int i = 0; i < N_SEPARATORS; i++)
     {
-        if (streq (lexem, SEPARATORS[i]))
+        if (streq (lexem, SEPARATORS[i].name))
             return 1;
     }
 
@@ -317,7 +506,7 @@ int IsOperator (const char* lexem)
 {
     for (int i = 0; i < N_OPERATORS; i++)
     {
-        if (streq (lexem, OPERATORS[i]))
+        if (streq (lexem, OPERATORS[i].name))
             return 1;
     }
 
@@ -343,6 +532,9 @@ int IsIntLiteral (const char* lexem)
 
 int GetIdentifierIndex (const char* identifier, NameTable* nametable)
 {
+    assert (identifier);
+    assert (nametable);
+
     int id_index = FindVarInNametable (identifier, nametable);
     if (id_index  != -1)
         return id_index;
@@ -358,7 +550,7 @@ int GetKeywordIndex (const char* keyword)
 
     for (int i = 0; i < N_KEYWORDS; i++)
     {
-        if (streq (keyword, KEYWORDS[i]))
+        if (streq (keyword, KEYWORDS[i].name))
             return i;
     }
 
@@ -373,7 +565,7 @@ int GetSeparatorIndex  (const char* separator)
 
     for (int i = 0; i < N_SEPARATORS; i++)
     {
-        if (streq (separator, SEPARATORS[i]))
+        if (streq (separator, SEPARATORS[i].name))
             return i;
     }
 
@@ -388,7 +580,7 @@ int GetOperatorIndex (const char* operator_)
 
     for (int i = 0; i < N_OPERATORS; i++)
     {
-        if (streq (operator_, OPERATORS[i]))
+        if (streq (operator_, OPERATORS[i].name))
             return i;
     }
 
@@ -416,11 +608,12 @@ int ProgCodeDtor (ProgCode* prog_code)
 {
     assert (prog_code);
 
-    NameTableDtor(prog_code->nametable);
+    NameTableDtor (prog_code->nametable);
 
     for (int i = 0; prog_code->tokens[i] && i < prog_code->size; i++)
         free (prog_code->tokens[i]);
 
+    free (prog_code->tokens);
     free (prog_code);
 
     return 0;
