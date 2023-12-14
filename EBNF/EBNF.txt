@@ -4,7 +4,8 @@
 <Lvalue> ::= <Identifier>
 <Rvalue> ::= <MathExpr>
 
-<MathExpr>  ::= <MulDivRes> (("+" | "-") <MulDivRes>)*
+<MathExpr>  ::= <AddSubRes> (("<" | "<=" | "==" | ">=" | ">" | "!=") <AddSubRes>)*
+<AddSubRes> ::= <MulDivRes> (("+" | "-") <MulDivRes>)*
 <MulDivRes> ::= <PowRes> (("*" | "/") <PowRes>)*
 <PowRes>    ::= <Operand> ("^" <Operand>)?
 <Operand>   ::= "$" <MathExpr> "$" | <SimpleOperand>
