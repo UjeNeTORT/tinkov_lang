@@ -4,7 +4,7 @@
  * email:    tikhonovty@gmail.com
  * telegram: https://t.me/netortofficial
  * GitHub:   https://github.com/UjeNeTORT
- * repo:     https://github.com/UjeNeTORT/Differentiator
+ * repo:     https://github.com/UjeNeTORT/language
  *************************************************************************/
 
 #ifndef OPERATIONS_H
@@ -62,12 +62,19 @@ const int N_SEPARATORS = sizeof(SEPARATORS) / sizeof(SEPARATORS[0]);
 
 typedef enum
 {
-    EQUAL = 0,
-    ADD   = 1,
-    SUB   = 2,
-    MUL   = 3,
-    DIV   = 4,
-    POW   = 5,
+    ASSIGN = 0,
+    ADD    = 1,
+    SUB    = 2,
+    MUL    = 3,
+    DIV    = 4,
+    POW    = 5,
+
+    LESS    = 10,
+    LESS_EQ = 11,
+    EQUAL   = 12,
+    MORE_EQ = 13,
+    MORE    = 14,
+    UNEQUAL = 15,
 } OperatorCode;
 
 struct Operator
@@ -78,12 +85,19 @@ struct Operator
 
 const Operator OPERATORS[] =
 {
-    {EQUAL, "я_так_чувствую"},
-    {ADD,   "+"},
-    {SUB,   "-"},
-    {MUL,   "*"},
-    {DIV,   "/"},
-    {POW,   "^"},
+    {ASSIGN, "я_так_чувствую"},
+    {ADD,    "+"},
+    {SUB,    "-"},
+    {MUL,    "*"},
+    {DIV,    "/"},
+    {POW,    "^"},
+
+    {LESS,    "<"},
+    {LESS_EQ, "<="},
+    {EQUAL,   "=="},
+    {MORE_EQ, ">="},
+    {MORE,    ">"},
+    {UNEQUAL, "!="},
 };
 const int N_OPERATORS = sizeof(OPERATORS) / sizeof(OPERATORS[0]);
 

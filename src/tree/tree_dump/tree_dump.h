@@ -4,7 +4,7 @@
  * email:    tikhonovty@gmail.com
  * telegram: https://t.me/netortofficial
  * GitHub:   https://github.com/UjeNeTORT
- * repo:     https://github.com/UjeNeTORT/Differentiator
+ * repo:     https://github.com/UjeNeTORT/language
  *************************************************************************/
 
 #ifndef TREE_DUMP_H

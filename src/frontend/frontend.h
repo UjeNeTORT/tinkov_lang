@@ -4,7 +4,7 @@
  * email:    tikhonovty@gmail.com
  * telegram: https://t.me/netortofficial
  * GitHub:   https://github.com/UjeNeTORT
- * repo:     https://github.com/UjeNeTORT/Differentiator
+ * repo:     https://github.com/UjeNeTORT/language
  *************************************************************************/
 
 #ifndef TINKOV_FRONTEND_H
@@ -61,7 +61,8 @@ TreeNode* GetG             (ProgCode* prog_code, Tree* tree);
 TreeNode* GetAssign        (ProgCode* prog_code, Tree* tree);
 TreeNode* GetRvalue        (ProgCode* prog_code, Tree* tree);
 TreeNode* GetLvalue        (ProgCode* prog_code, Tree* tree);
-TreeNode* GetMathExpr      (ProgCode* prog_code, Tree* tree);
+TreeNode* GetMathExprRes   (ProgCode* prog_code, Tree* tree);
+TreeNode* GetAddSubRes     (ProgCode* prog_code, Tree* tree);
 TreeNode* GetMulDivRes     (ProgCode* prog_code, Tree* tree);
 TreeNode* GetPowRes        (ProgCode* prog_code, Tree* tree);
 TreeNode* GetOperand       (ProgCode* prog_code, Tree* tree);

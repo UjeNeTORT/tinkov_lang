@@ -4,7 +4,7 @@
  * email:    tikhonovty@gmail.com
  * telegram: https://t.me/netortofficial
  * GitHub:   https://github.com/UjeNeTORT
- * repo:     https://github.com/UjeNeTORT/Differentiator
+ * repo:     https://github.com/UjeNeTORT/language
  *************************************************************************/
 
 #ifndef TREE_H
@@ -20,7 +20,7 @@ const int MAX_N_NODES = 5000; // max number of nodes in AST
 const int MAX_TREE    = 5000; // max len of a string-written tree in a file
 const int MAX_OP      = 50;   // max len of an operator
 
-const int NAMETABLE_CAPACITY = 10;
+const int NAMETABLE_CAPACITY = 100;
 
 const double EXPONENT = 2.718281828;
 const double PI       = 3.141592654;

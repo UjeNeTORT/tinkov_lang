@@ -4,7 +4,7 @@
  * email:    tikhonovty@gmail.com
  * telegram: https://t.me/netortofficial
  * GitHub:   https://github.com/UjeNeTORT
- * repo:     https://github.com/UjeNeTORT/Tree
+ * repo:     https://github.com/UjeNeTORT/language
  *************************************************************************/
 
 #ifndef TOOLS_H
@@ -22,6 +22,7 @@ const int USER_ANSW_SIZE = 10;
 
 #define streq(s1, s2) (!strcmp ((s1), (s2)))
 #define dbleq(d1, d2) (fabs((d1) - (d2)) < EPS)
+#define sizearr(arr) sizeof(arr) / sizeof((arr)[0])
 
 // todo ask ded how to not destroy PC
 #define ABORT()                                              \
