@@ -7,11 +7,17 @@
                      "я_олигарх_мне_заебись"
 
 <SingleStatement> ::= <While>
+                    | <IfElse>
                     | <DoIf>
                     | <Assign> "сомнительно_но_окей"
 
 <While> ::= "ну_сколько можно" <MathExpr> "?"
                 <WrappedStatement>
+
+<IfElse> ::= "какая_разница" <MathExpr> "?"
+                <WrappedStatement>
+             ("я_могу_ошибаться"
+                <WrappedStatement>)?
 
 <DoIf> ::=  "я_ссыкло_или_я_не_ссыкло"
                 <WrappedStatement>
