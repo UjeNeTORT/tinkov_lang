@@ -19,58 +19,6 @@
 
 // ============================================================================================
 
-TreeErrorVector TreeVerify (const Tree* tree)
-{
-    TreeErrorVector err_vec = 0;
-
-    if (!tree)       return 1; // tree null ptr
-    if (!tree->root) return 2; // tree root null ptr
-
-
-
-    return err_vec;
-}
-
-TreeErrorVector SubtreeVerify (const TreeNode* node)
-{
-    TreeErrorVector err_vec = 0;
-
-    if (!node) return 0;
-
-    err_vec |= SubtreeVerify(node->left);
-    err_vec |= SubtreeVerify(node->right);
-
-    switch (TYPE(node))
-    {
-        case ERROR:
-            err_vec |= 4; // error node
-            break;
-
-        case INT_LITERAL:
-            if (node->left || node->right)
-                err_vec |= 8; // num node has children
-
-            break;
-
-        case IDENTIFIER:
-            if (VAL(node) < 0)
-                err_vec |= 16; // wrong variable index
-
-            break;
-
-        // BIN_OP
-        case OPERATOR:
-            break;
-
-        default:
-            err_vec |= 64; // unknown node type
-    }
-
-    return err_vec;
-}
-
-// ============================================================================================
-
 TreeEvalRes TreeEval (const Tree* tree, int* result)
 {
     assert (tree);
@@ -371,13 +319,14 @@ TreeSimplifyRes SubtreeSimplifyNeutrals  (TreeNode* node, int* tree_changed_flag
 
 // ============================================================================================
 
-TreeNode* TreeNodeCtor (int val, NodeType type, TreeNode* prev, TreeNode* left, TreeNode* right)
+TreeNode* TreeNodeCtor (int val, NodeType type, TreeNode* prev, TreeNode* left, TreeNode* mid, TreeNode* right)
 {
-    TreeNode* new_node = (TreeNode *) calloc (1, sizeof(TreeNode));
+    TreeNode* new_node = (TreeNode *) calloc (1, sizeof (TreeNode));
 
     new_node->data  = {type, val};
     new_node->prev  = prev;
     new_node->left  = left;
+    new_node->mid   = mid;
     new_node->right = right;
 
     return new_node;
@@ -396,9 +345,13 @@ int TreeNodeDtor (TreeNode* node)
 
 int SubtreeDtor (TreeNode* node)
 {
-    assert (node);
+    if (!node) return 0;
 
-    TraverseSubtree(node, TreeNodeDtor, POSTORDER);
+    SubtreeDtor (node->left);
+    SubtreeDtor (node->mid);
+    SubtreeDtor (node->right);
+
+    TreeNodeDtor (node);
 
     return 0; // return value in most cases is ignored
 }
@@ -427,10 +380,9 @@ TreeDtorRes TreeDtor (Tree* tree)
     assert (tree);
     if (!tree) RET_ERROR (TREE_DTOR_ERR_PARAMS, "Tree null pointer");
 
-    // traverse the tree and free each node
-    TraverseTree(tree, TreeNodeDtor, POSTORDER);
+    SubtreeDtor (tree->root);
 
-    NameTableDtor(tree->nametable);
+    NameTableDtor (tree->nametable);
 
     free (tree);
 
@@ -441,7 +393,7 @@ TreeDtorRes TreeDtor (Tree* tree)
 
 NameTable* NameTableCtor ()
 {
-    NameTable* nametable = (NameTable*) calloc (1, sizeof(NameTable));
+    NameTable* nametable = (NameTable*) calloc (1, sizeof (NameTable));
 
     if (!nametable) RET_ERROR (NULL, "nametable allocation error");
 
@@ -499,7 +451,7 @@ TreeNode* SubtreeCopyOf (const TreeNode* node)
     if (!node) return NULL;
 
     TreeNode* copied = TreeNodeCtor(VAL(node), TYPE(node), node->prev,
-                                        SubtreeCopyOf(node->left), SubtreeCopyOf(node->right));
+                                        SubtreeCopyOf(node->left), SubtreeCopyOf(node->mid), SubtreeCopyOf(node->right));
 
     return copied;
 }
@@ -575,47 +527,6 @@ SubtreeToNumRes SubtreeToNum (TreeNode* node, int val)
 
 // ============================================================================================
 
-TraverseTreeRes TraverseTree (const Tree* tree, NodeAction_t NodeAction, TraverseOrder traverse_order)
-{
-    assert (tree);
-
-    return TraverseSubtree(tree->root, NodeAction, traverse_order);
-}
-
-// ============================================================================================
-
-TraverseTreeRes TraverseSubtree (TreeNode* node, NodeAction_t NodeAction, TraverseOrder traverse_order)
-{
-    if (!node) return TRVRS_TREE_SUCCESS;
-
-    if (traverse_order == PREORDER)
-    {
-        NodeAction (node);
-        TraverseSubtree (node->left, NodeAction, traverse_order);
-        TraverseSubtree (node->right, NodeAction, traverse_order);
-    }
-    else if (traverse_order == INORDER)
-    {
-        TraverseSubtree (node->left, NodeAction, traverse_order);
-        NodeAction (node);
-        TraverseSubtree (node->right, NodeAction, traverse_order);
-    }
-    else if (traverse_order == POSTORDER)
-    {
-        TraverseSubtree (node->left, NodeAction, traverse_order);
-        TraverseSubtree (node->right, NodeAction, traverse_order);
-        NodeAction (node);
-    }
-    else
-    {
-        RET_ERROR (TRVRS_TREE_ERR, "Wrong traversal order: %d\n", traverse_order);
-    }
-
-    return TRVRS_TREE_SUCCESS;
-}
-
-// ============================================================================================
-
 Tree* ReadTree (FILE* stream)
 {
     assert (stream);
@@ -670,7 +581,7 @@ TreeNode* ReadSubtree (const char* infix_tree, const Tree* tree, int* offset)
         ABORT(); // !
     }
 
-    TreeNode* node = TreeNodeCtor(0, INT_LITERAL, NULL, NULL, NULL);
+    TreeNode* node = TreeNodeCtor(0, INT_LITERAL, NULL, NULL, NULL, NULL);
 
     *offset += 1; // skip (
 
@@ -956,7 +867,7 @@ int IsDouble (char* word)
     assert (word);
     if (!word) RET_ERROR (0, "Word null pointer");
 
-    if (dbleq(atof(word), 0) && *word != '0' && *word != '.')
+    if (dbleq( atof(word), 0) && *word != '0' && *word != '.')
         return 0;
 
     return 1;

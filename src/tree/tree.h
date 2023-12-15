@@ -91,22 +91,8 @@ typedef enum
 
 typedef enum
 {
-    TRVRS_TREE_SUCCESS    = 0,
-    TRVRS_TREE_ERR        = 1,
-    TRVRS_TREE_ERR_PARAMS = 2,
-} TraverseTreeRes;
-
-typedef enum
-{
     TREE_NODE_DTOR_SUCCESS = 0,
 } TreeNodeDtorRes;
-
-typedef enum
-{
-    PREORDER  = -1,
-    INORDER   = 0,
-    POSTORDER = 1,
-} TraverseOrder;
 
 typedef enum
 {
@@ -175,6 +161,7 @@ struct TreeNode
     TreeNode* prev;
 
     TreeNode* left;
+    TreeNode* mid;  // mostly used for conditions
     TreeNode* right;
 };
 
@@ -187,9 +174,6 @@ struct Tree
 typedef long long TreeErrorVector;
 typedef int (* NodeAction_t) (TreeNode* node);
 
-TreeErrorVector TreeVerify    (const Tree* tree);
-TreeErrorVector SubtreeVerify (const TreeNode* node);
-
 TreeEvalRes TreeEval        (const Tree* tree, int* result);
 TreeEvalRes SubtreeEval     (const TreeNode* node, const Tree* tree, int* result);
 TreeEvalRes SubtreeEvalUnOp (const TreeNode* node, int right, int* result);
@@ -200,7 +184,7 @@ TreeSimplifyRes SubtreeSimplify (TreeNode* node);
 TreeSimplifyRes SubtreeSimplifyConstants (TreeNode* node, int* tree_changed_flag);
 TreeSimplifyRes SubtreeSimplifyNeutrals  (TreeNode* node, int* tree_changed_flag);
 
-TreeNode* TreeNodeCtor (int val, NodeType type, TreeNode* prev, TreeNode* left, TreeNode* right);
+TreeNode* TreeNodeCtor (int val, NodeType type, TreeNode* prev, TreeNode* left, TreeNode* mid, TreeNode* right);
 int       TreeNodeDtor (TreeNode* node);
 int       SubtreeDtor  (TreeNode* node);
 
@@ -216,9 +200,6 @@ NameTableCopyRes NameTableCopy (NameTable* dst, const NameTable* src);
 
 LiftChildToParentRes LiftChildToParent (TreeNode* node, NodeLocation child_location);
 SubtreeToNumRes      SubtreeToNum      (TreeNode* node, int val);
-
-TraverseTreeRes  TraverseTree    (const Tree* tree, NodeAction_t NodeAction, TraverseOrder traverse_order);
-TraverseTreeRes  TraverseSubtree (TreeNode* node, NodeAction_t NodeAction, TraverseOrder traverse_order);
 
 Tree*      ReadTree     (FILE* stream);
 Tree*      ReadTree     (const char* infix_tree);
