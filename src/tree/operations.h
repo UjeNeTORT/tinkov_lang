@@ -14,10 +14,10 @@ const int ILL_OPNUM = __INT_MAX__;
 
 typedef enum
 {
-    DO    = 1,
-    IF    = 2,
-    ELSE  = 3,
-    WHILE = 4,
+    KW_DO    = 0,
+    KW_IF    = 1,
+    KW_ELSE  = 2,
+    KW_WHILE = 3,
 } KeywordCode;
 
 struct Keyword
@@ -28,10 +28,10 @@ struct Keyword
 
 const Keyword KEYWORDS[] =
 {
-    {"я_ссыкло_или_я_не_ссыкло", DO},
-    {"какая_разница", IF},
-    {"я_могу_ошибаться", ELSE},
-    {"ну_сколько_можно", WHILE}
+    {"я_ссыкло_или_я_не_ссыкло", KW_DO},
+    {"какая_разница",            KW_IF},
+    {"я_могу_ошибаться",         KW_ELSE},
+    {"ну_сколько_можно",         KW_WHILE}
 };
 const int N_KEYWORDS = sizeof(KEYWORDS) / sizeof(KEYWORDS[0]);
 
