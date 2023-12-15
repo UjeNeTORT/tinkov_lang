@@ -36,12 +36,15 @@ int main()
 
     const char* while_code =
                         "ну_сколько_можно x > 11 ^ aboba228 ? "
-                        "олег_не_торопись "
-                        "x я_так_чувствую x + 1 сомнительно_но_окей "
-                        "z я_так_чувствую s + 1 сомнительно_но_окей "
-                        "я_олигарх_мне_заебись ";
+                        "x я_так_чувствую x + 1 сомнительно_но_окей ";
 
-    ProgText* prog_text = ProgTextCtor (while_code, strlen(while_code) + 1);
+    const char* if_else_code =
+                        "какая_разница aboba_18 > 666 / 2 ? "
+                            "x я_так_чувствую 333 + 0 сомнительно_но_окей "
+                        "я_могу_ошибаться "
+                            "x я_так_чувствую 11 сомнительно_но_окей ";
+
+    ProgText* prog_text = ProgTextCtor (if_else_code, strlen(if_else_code) + 1);
     ProgCode* prog_code = LexicalAnalysisTokenize (prog_text);
     ProgTextDtor (prog_text);
 
@@ -146,7 +149,15 @@ TreeNode* GetSingleStatement (ProgCode* prog_code)
 
     int init_offset = OFFSET;
 
-    TreeNode* single_statement = GetWhile (prog_code);
+    TreeNode* single_statement = NULL;
+
+    single_statement = GetIfElse (prog_code);
+    if (single_statement)
+        return single_statement;
+
+    OFFSET = init_offset;
+
+    single_statement = GetWhile (prog_code);
     if (single_statement)
         return single_statement;
 
@@ -165,7 +176,7 @@ TreeNode* GetSingleStatement (ProgCode* prog_code)
     SYNTAX_ASSERT (TOKEN_IS (SEPARATOR, END_STATEMENT),
                    "\"сомнительно_но_окей\" expected in the end of statement");
 
-    OFFSET++; // skip ;
+    OFFSET++; // skip ";"
 
     return single_statement;
 }
@@ -179,7 +190,8 @@ TreeNode* GetWhile (ProgCode* prog_code)
     if (TOKEN_IS_NOT (KEYWORD, KW_WHILE))
         return NULL;
 
-    OFFSET++; // skip while
+    OFFSET++; // skip "while"
+
     TreeNode* condition = GetMathExprRes (prog_code);
     SYNTAX_ASSERT(condition != NULL, "condition error");
 
@@ -190,6 +202,37 @@ TreeNode* GetWhile (ProgCode* prog_code)
     SYNTAX_ASSERT (wrapped_statement != NULL, "No wrapped statement given in while");
 
     return TreeNodeCtor (KW_WHILE, KEYWORD, NULL, wrapped_statement, condition, NULL);
+}
+
+// ============================================================================================
+
+TreeNode* GetIfElse (ProgCode* prog_code)
+{
+    assert (prog_code);
+
+    if (TOKEN_IS_NOT (KEYWORD, KW_IF))
+        return NULL;
+
+    OFFSET++; // skip "if"
+
+    TreeNode* condition = GetMathExprRes (prog_code);
+    SYNTAX_ASSERT (condition != NULL, "condition error");
+
+    SYNTAX_ASSERT (TOKEN_IS (SEPARATOR, END_CONDITION), "\"?\" expected in the end of condition");
+    OFFSET++; // skip "?"
+
+    TreeNode* if_statement = GetWrappedStatement (prog_code);
+    SYNTAX_ASSERT (if_statement != NULL, "No wrapped statement given in while");
+
+    if (TOKEN_IS_NOT (KEYWORD, KW_ELSE))
+        return TreeNodeCtor (KW_IF, KEYWORD, NULL, if_statement, condition, NULL);
+
+    OFFSET++; // skip "else"
+
+    TreeNode* else_statement = GetWrappedStatement (prog_code);
+    SYNTAX_ASSERT (else_statement != NULL, "\"else\" statement expected");
+
+    return TreeNodeCtor (KW_IF, KEYWORD, NULL, if_statement, condition, else_statement);
 }
 
 // ============================================================================================
@@ -283,7 +326,7 @@ TreeNode* GetMathExprRes (ProgCode* prog_code)
     if (!math_expr_res)
     {
         WARN ("add_sub_res nil");
-        // OFFSET = init_offset;
+        OFFSET = init_offset;
 
         return NULL;
     }
@@ -349,7 +392,7 @@ TreeNode* GetAddSubRes (ProgCode* prog_code)
     if (!add_sub_res)
     {
         WARN ("mul_div_res_1 nil");
-        // OFFSET = init_offset;
+        OFFSET = init_offset;
 
         return NULL;
     }
@@ -403,7 +446,7 @@ TreeNode* GetMulDivRes (ProgCode* prog_code)
     if (!mul_div_res)
     {
         WARN ("mul_div_res nil");
-        // OFFSET = init_offset;
+        OFFSET = init_offset;
 
         return NULL;
     }
@@ -458,7 +501,7 @@ TreeNode* GetPowRes (ProgCode* prog_code)
     if (!pow_res)
     {
         WARN ("pow_res nil");
-        // OFFSET = init_offset;
+        OFFSET = init_offset;
 
         return NULL;
     }

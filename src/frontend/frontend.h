@@ -20,7 +20,7 @@
 #include "../tree/tree.h"
 #include "../tree/tree_dump/tree_dump.h"
 
-// ===================== DSL =====================
+// =========================== DSL ===========================
 
 #define OFFSET     (prog_code->offset)
 #define TOKEN(i)   (prog_code->tokens[(i)])
@@ -30,7 +30,9 @@
 
 #define TOKEN_IS_NOT(type, val) \
     (TYPE (CURR_TOKEN) != (type) || VAL (CURR_TOKEN) != (val))
-// ===============================================
+
+#define NO_MORE_TOKENS prog_code->size >= OFFSET
+// ===========================================================
 
 const int MAX_STRING_TOKEN = 300;
 
@@ -68,6 +70,7 @@ TreeNode* GetWrappedStatement (ProgCode* prog_code);
 TreeNode* GetStatementBlock   (ProgCode* prog_code);
 TreeNode* GetSingleStatement  (ProgCode* prog_code);
 TreeNode* GetWhile            (ProgCode* prog_code);
+TreeNode* GetIfElse           (ProgCode* prog_code);
 TreeNode* GetDoIf             (ProgCode* prog_code);
 TreeNode* GetAssign           (ProgCode* prog_code);
 TreeNode* GetRvalue           (ProgCode* prog_code);
