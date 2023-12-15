@@ -12,6 +12,7 @@
 
 #include <assert.h>
 #include <ctype.h>
+#include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -24,10 +25,14 @@
 #define OFFSET     (prog_code->offset)
 #define TOKEN(i)   (prog_code->tokens[(i)])
 #define CURR_TOKEN (prog_code->tokens[OFFSET])
+#define TOKEN_IS(type, val) \
+    (TYPE (CURR_TOKEN) == (type) && VAL (CURR_TOKEN) == (val))
 
+#define TOKEN_IS_NOT(type, val) \
+    (TYPE (CURR_TOKEN) != (type) || VAL (CURR_TOKEN) != (val))
 // ===============================================
 
-const int MAX_STRING_TOKEN = 30;
+const int MAX_STRING_TOKEN = 300;
 
 struct ProgText
 {
@@ -51,24 +56,28 @@ typedef enum
     LEX_ERROR   = 1,
 } LexAnalysRes;
 
-Tree* ParseAST (ProgCode code);
-
 // syntax analysis
-int SyntaxAssert (int condition);
+int     SyntaxAssert (int condition, ProgCode* prog_code, const char* format, ...);
+#define SYNTAX_ASSERT(condition, format, ...) \
+    SyntaxAssert((condition), prog_code, (format) __VA_OPT__(,) __VA_ARGS__)
 
-Tree*     BuildAST         (ProgCode* prog_code);
-TreeNode* GetG             (ProgCode* prog_code, Tree* tree);
-TreeNode* GetAssign        (ProgCode* prog_code, Tree* tree);
-TreeNode* GetRvalue        (ProgCode* prog_code, Tree* tree);
-TreeNode* GetLvalue        (ProgCode* prog_code, Tree* tree);
-TreeNode* GetMathExprRes   (ProgCode* prog_code, Tree* tree);
-TreeNode* GetAddSubRes     (ProgCode* prog_code, Tree* tree);
-TreeNode* GetMulDivRes     (ProgCode* prog_code, Tree* tree);
-TreeNode* GetPowRes        (ProgCode* prog_code, Tree* tree);
-TreeNode* GetOperand       (ProgCode* prog_code, Tree* tree);
-TreeNode* GetSimpleOperand (ProgCode* prog_code, Tree* tree);
-TreeNode* GetIdentifier    (ProgCode* prog_code, Tree* tree);
-TreeNode* GetNumber        (ProgCode* prog_code, Tree* tree);
+Tree*     BuildAST            (ProgCode* prog_code);
+TreeNode* GetG                (ProgCode* prog_code, Tree* tree);
+TreeNode* GetWrappedStatement (ProgCode* prog_code, Tree* tree);
+TreeNode* GetStatementBlock   (ProgCode* prog_code, Tree* tree);
+TreeNode* GetSingleStatement  (ProgCode* prog_code, Tree* tree);
+TreeNode* GetDoIf             (ProgCode* prog_code, Tree* tree);
+TreeNode* GetAssign           (ProgCode* prog_code, Tree* tree);
+TreeNode* GetRvalue           (ProgCode* prog_code, Tree* tree);
+TreeNode* GetLvalue           (ProgCode* prog_code, Tree* tree);
+TreeNode* GetMathExprRes      (ProgCode* prog_code, Tree* tree);
+TreeNode* GetAddSubRes        (ProgCode* prog_code, Tree* tree);
+TreeNode* GetMulDivRes        (ProgCode* prog_code, Tree* tree);
+TreeNode* GetPowRes           (ProgCode* prog_code, Tree* tree);
+TreeNode* GetOperand          (ProgCode* prog_code, Tree* tree);
+TreeNode* GetSimpleOperand    (ProgCode* prog_code, Tree* tree);
+TreeNode* GetIdentifier       (ProgCode* prog_code, Tree* tree);
+TreeNode* GetNumber           (ProgCode* prog_code, Tree* tree);
 
 // lexic analysis
 LexAnalysRes LexicAnalysis           (ProgText* text);

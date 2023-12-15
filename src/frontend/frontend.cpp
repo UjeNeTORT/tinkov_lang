@@ -10,6 +10,9 @@
 /**
  * BUGS: lexer thinks that "131aboba" is a number 131
  *       lexer thinks that "_aboba228_ is unknown lexem"
+ *       lexer does not take \n as a space between tokens
+ *       syntaxer does not give an error if there is no ; in the end
+ *       difference between index of keyword and its opcode is not always trivial
  *
  * TODO: fix bugs
  *       syntax_assert instead of return NULL
@@ -19,9 +22,16 @@
 
 int main()
 {
-    const char* code = "x я_так_чувствую  $ x + aboba_228 $ > 11 сомнительно_но_окей";
+    const char* code_double_assign =
+                       "олег_не_торопись x я_так_чувствую 11 сомнительно_но_окей "
+                       "y я_так_чувствую 12 сомнительно_но_окей я_олигарх_мне_заебись";
 
-    ProgText* prog_text = ProgTextCtor (code, strlen(code) + 1);
+    const char* doif_code =
+                        "я_ссыкло_или_я_не_ссыкло "
+                        "x я_так_чувствую 11 сомнительно_но_окей "
+                        "какая_разница aboba228 > 11 ?";
+
+    ProgText* prog_text = ProgTextCtor (doif_code, strlen(doif_code) + 1);
     ProgCode* prog_code = LexicalAnalysisTokenize (prog_text);
     ProgTextDtor (prog_text);
 
@@ -57,25 +67,126 @@ TreeNode* GetG (ProgCode* prog_code, Tree* tree)
     assert (prog_code);
     assert (tree);
 
-    int init_offset = OFFSET;
-
-    TreeNode* assign_res = GetAssign (prog_code, tree);
-    if (!assign_res)
+    TreeNode* wrapped_statement_res = GetWrappedStatement (prog_code, tree);
+    if (!wrapped_statement_res)
     {
         WARN ("assign res nil");
 
         return NULL; // error or not?
     }
 
-    if (TYPE (CURR_TOKEN) != SEPARATOR ||
-        VAL  (CURR_TOKEN) != END_STATEMENT)
-    {
-        OFFSET = init_offset;
-        PRINTF_DEBUG ("curr_type = %d, curr_val = %d", TYPE (CURR_TOKEN), VAL (CURR_TOKEN));
-        RET_ERROR (NULL, "сомнительно_но_окей expected in the end of statement");
-    }
+    return wrapped_statement_res;
+}
 
-    return assign_res;
+// ============================================================================================
+
+TreeNode* GetWrappedStatement (ProgCode* prog_code, Tree* tree)
+{
+    assert (prog_code);
+    assert (tree);
+
+    int init_offset = OFFSET;
+
+    TreeNode* wrapped_statement = GetStatementBlock (prog_code, tree);
+
+    if (wrapped_statement)
+        return wrapped_statement;
+
+    OFFSET = init_offset;
+
+    wrapped_statement = GetSingleStatement (prog_code, tree);
+
+    return wrapped_statement;
+}
+
+// ============================================================================================
+
+TreeNode* GetStatementBlock (ProgCode* prog_code, Tree* tree)
+{
+    assert (prog_code);
+    assert (tree);
+
+    if (TOKEN_IS_NOT (SEPARATOR, ENCLOSE_STATEMENT_BEGIN))
+        return NULL;
+
+    OFFSET++; // skip {
+
+    TreeNode* new_statement = NULL;
+
+    TreeNode* statement_block = NULL;
+
+    do
+    {
+        new_statement = GetSingleStatement (prog_code, tree);
+
+        if (new_statement)
+            statement_block = TreeNodeCtor (END_STATEMENT, SEPARATOR, NULL, statement_block, new_statement);
+    } while (new_statement);
+
+    SYNTAX_ASSERT (TOKEN_IS (SEPARATOR, ENCLOSE_STATEMENT_END),
+                   "Missing enclose statement bracket \"я_олигарх_мне_заебись\"");
+
+    OFFSET++; // skip }
+
+    return statement_block;
+}
+
+// ============================================================================================
+
+TreeNode* GetSingleStatement (ProgCode* prog_code, Tree* tree)
+{
+    assert (prog_code);
+    assert (tree);
+
+    int init_offset = OFFSET;
+
+    TreeNode* single_statement = GetDoIf (prog_code, tree);
+    if (single_statement)
+        return single_statement;
+
+    OFFSET = init_offset;
+
+    single_statement = GetAssign (prog_code, tree);
+    if (!single_statement)
+        return NULL; // as the last one
+
+    SYNTAX_ASSERT (TOKEN_IS (SEPARATOR, END_STATEMENT),
+                   "\"сомнительно_но_окей\" expected in the end of statement");
+
+    OFFSET++; // skip ;
+
+    return single_statement;
+}
+
+// ============================================================================================
+
+TreeNode* GetDoIf (ProgCode* prog_code, Tree* tree)
+{
+    assert (prog_code);
+    assert (tree);
+
+    int init_offset = OFFSET;
+
+    if (TOKEN_IS_NOT (KEYWORD, KW_DO))
+        return NULL;
+
+    OFFSET++; // skip "do"
+
+    TreeNode* wrapped_statement = GetWrappedStatement (prog_code, tree);
+    SYNTAX_ASSERT (wrapped_statement != NULL, "No statement inside do-if given");
+
+    SYNTAX_ASSERT (TOKEN_IS (KEYWORD, KW_IF), "Keyword \"какая_разница\" expected");
+
+    OFFSET++; // skip "if"
+
+    TreeNode* condition = GetMathExprRes (prog_code, tree);
+    SYNTAX_ASSERT (condition != NULL, "Condition expected");
+
+    SYNTAX_ASSERT (TOKEN_IS (SEPARATOR, END_CONDITION), "Separator \"?\" expected");
+
+    OFFSET++; // skip "?"
+
+    return TreeNodeCtor (KW_DO, KEYWORD, NULL, condition, wrapped_statement);
 }
 
 // ============================================================================================
@@ -89,14 +200,13 @@ TreeNode* GetAssign (ProgCode* prog_code, Tree* tree)
     TreeNode* lvalue = GetLvalue (prog_code, tree);
     if (!lvalue)
     {
-        OFFSET = init_offset;
         WARN ("lvalue nil");
+        OFFSET = init_offset;
 
         return NULL;
     }
 
-    if (TYPE (CURR_TOKEN) != OPERATOR ||
-        VAL  (CURR_TOKEN) != ASSIGN)
+    if (!TOKEN_IS (OPERATOR, ASSIGN))
     {
         OFFSET = init_offset;
 
@@ -105,15 +215,10 @@ TreeNode* GetAssign (ProgCode* prog_code, Tree* tree)
         return NULL;
     }
 
-    OFFSET++; // skip ASSIGN operator
+    OFFSET++; // skip "=" operator
 
     TreeNode* rvalue = GetRvalue (prog_code, tree);
-    if (!rvalue)
-    {
-        OFFSET = init_offset;
-        TreeNodeDtor (lvalue);
-        RET_ERROR (NULL, "Rvalue (nil) error");
-    }
+    SYNTAX_ASSERT (rvalue != NULL, "Rvalue (nil) error");
 
     return TreeNodeCtor (ASSIGN, OPERATOR, NULL, lvalue, rvalue);
 }
@@ -142,84 +247,64 @@ TreeNode* GetLvalue (ProgCode* prog_code, Tree* tree)
 
 TreeNode* GetMathExprRes (ProgCode* prog_code, Tree* tree)
 {
-    PRINTF_DEBUG ("entered");
-
     assert (prog_code);
     assert (tree);
 
     int init_offset = OFFSET;
 
-    TreeNode* add_sub_res_1 = GetAddSubRes (prog_code, tree);
-    if (!add_sub_res_1)
+    TreeNode* math_expr_res = GetAddSubRes (prog_code, tree);
+    if (!math_expr_res)
     {
         WARN ("add_sub_res nil");
         OFFSET = init_offset;
 
         return NULL;
     }
-    PRINTF_DEBUG ("CURRTYPE = %d CURRVAL = %d", TYPE (CURR_TOKEN), VAL (CURR_TOKEN));
-    if (TYPE (CURR_TOKEN) != OPERATOR ||
-        !(
-            VAL (CURR_TOKEN) == LESS    ||
-            VAL (CURR_TOKEN) == LESS_EQ ||
-            VAL (CURR_TOKEN) == EQUAL   ||
-            VAL (CURR_TOKEN) == MORE_EQ ||
-            VAL (CURR_TOKEN) == MORE    ||
-            VAL (CURR_TOKEN) == UNEQUAL //
-        ))
-        return add_sub_res_1;
 
-    TreeNode* math_expr_res = add_sub_res_1;
+    if (TOKEN_IS_NOT (OPERATOR, LESS)     &&
+        TOKEN_IS_NOT (OPERATOR, LESS_EQ)  &&
+        TOKEN_IS_NOT (OPERATOR, EQUAL)    &&
+        TOKEN_IS_NOT (OPERATOR, MORE_EQ)  &&
+        TOKEN_IS_NOT (OPERATOR, MORE)     &&
+        TOKEN_IS_NOT (OPERATOR, UNEQUAL))
+        return math_expr_res;
 
-    while (TYPE (CURR_TOKEN) == OPERATOR &&
-        (
-            VAL (CURR_TOKEN) == LESS    ||
-            VAL (CURR_TOKEN) == LESS_EQ ||
-            VAL (CURR_TOKEN) == EQUAL   ||
-            VAL (CURR_TOKEN) == MORE_EQ ||
-            VAL (CURR_TOKEN) == MORE    ||
-            VAL (CURR_TOKEN) == UNEQUAL //
-        ))
+    int op_cmp = VAL (CURR_TOKEN);
+
+    OFFSET++; // skip operator
+
+    TreeNode* curr_add_sub_res = GetAddSubRes (prog_code, tree);
+    SYNTAX_ASSERT (curr_add_sub_res != NULL, "x >= <error> - nil after comparison operator");
+
+    switch (op_cmp)
     {
-        int op_cmp = VAL (CURR_TOKEN);
+    case LESS:
+        math_expr_res = TreeNodeCtor (LESS, OPERATOR, NULL, math_expr_res, curr_add_sub_res);
+        break;
 
-        OFFSET++; // skip operator
+    case LESS_EQ:
+        math_expr_res = TreeNodeCtor (LESS_EQ, OPERATOR, NULL, math_expr_res, curr_add_sub_res);
+        break;
 
-        TreeNode* curr_add_sub_res = GetAddSubRes (prog_code, tree);
+    case EQUAL:
+        math_expr_res = TreeNodeCtor (EQUAL, OPERATOR, NULL, math_expr_res, curr_add_sub_res);
+        break;
 
-        if (!curr_add_sub_res)
-            RET_ERROR (NULL, "x < <error> - nil after comparison operator");
+    case MORE_EQ:
+        math_expr_res = TreeNodeCtor (MORE_EQ, OPERATOR, NULL, math_expr_res, curr_add_sub_res);
+        break;
 
-        switch (op_cmp)
-        {
-        case LESS:
-            math_expr_res = TreeNodeCtor (LESS, OPERATOR, NULL, math_expr_res, curr_add_sub_res);
-            break;
+    case MORE:
+        math_expr_res = TreeNodeCtor (MORE, OPERATOR, NULL, math_expr_res, curr_add_sub_res);
+        break;
 
-        case LESS_EQ:
-            math_expr_res = TreeNodeCtor (LESS_EQ, OPERATOR, NULL, math_expr_res, curr_add_sub_res);
-            break;
+    case UNEQUAL:
+        math_expr_res = TreeNodeCtor (UNEQUAL, OPERATOR, NULL, math_expr_res, curr_add_sub_res);
+        break;
 
-        case EQUAL:
-            math_expr_res = TreeNodeCtor (EQUAL, OPERATOR, NULL, math_expr_res, curr_add_sub_res);
-            break;
-
-        case MORE_EQ:
-            math_expr_res = TreeNodeCtor (MORE_EQ, OPERATOR, NULL, math_expr_res, curr_add_sub_res);
-            break;
-
-        case MORE:
-            math_expr_res = TreeNodeCtor (MORE, OPERATOR, NULL, math_expr_res, curr_add_sub_res);
-            break;
-
-        case UNEQUAL:
-            math_expr_res = TreeNodeCtor (UNEQUAL, OPERATOR, NULL, math_expr_res, curr_add_sub_res);
-            break;
-
-        default:
-            RET_ERROR (NULL, "Syntax error, comparison operator expected"); // todo
-            break;
-        }
+    default:
+        SYNTAX_ASSERT (0, "comparison operator expected");
+        break;
     }
 
     return math_expr_res;
@@ -234,8 +319,8 @@ TreeNode* GetAddSubRes (ProgCode* prog_code, Tree* tree)
 
     int init_offset = OFFSET;
 
-    TreeNode* mul_div_res_1 = GetMulDivRes (prog_code, tree);
-    if (!mul_div_res_1)
+    TreeNode* add_sub_res = GetMulDivRes (prog_code, tree);
+    if (!add_sub_res)
     {
         WARN ("mul_div_res_1 nil");
         OFFSET = init_offset;
@@ -243,20 +328,12 @@ TreeNode* GetAddSubRes (ProgCode* prog_code, Tree* tree)
         return NULL;
     }
 
-    if (TYPE (CURR_TOKEN) != OPERATOR ||
-        !(
-            VAL (CURR_TOKEN) == ADD ||
-            VAL (CURR_TOKEN) == SUB //
-        ))
-        return mul_div_res_1;
+    if (TOKEN_IS_NOT (OPERATOR, ADD) &&
+        TOKEN_IS_NOT (OPERATOR, SUB))
+        return add_sub_res;
 
-    TreeNode* add_sub_res = mul_div_res_1;
-
-    while (TYPE (CURR_TOKEN) == OPERATOR &&
-        (
-            VAL  (CURR_TOKEN) == ADD ||
-            VAL  (CURR_TOKEN) == SUB //
-        ))
+    while (TOKEN_IS (OPERATOR, ADD) ||
+           TOKEN_IS (OPERATOR, SUB))
     {
         int op_add_sub = VAL (CURR_TOKEN);
 
@@ -264,7 +341,10 @@ TreeNode* GetAddSubRes (ProgCode* prog_code, Tree* tree)
 
         TreeNode* curr_mul_div_res = GetMulDivRes (prog_code, tree);
         if (!curr_mul_div_res)
-            RET_ERROR (NULL, "x + <error> - nil after add/sub operator");
+        {
+            SubtreeDtor (add_sub_res);
+            SYNTAX_ASSERT (0, "x + <error> - nil after add/sub operator");
+        }
 
         switch (op_add_sub)
         {
@@ -294,29 +374,21 @@ TreeNode* GetMulDivRes (ProgCode* prog_code, Tree* tree)
 
     int init_offset = OFFSET;
 
-    TreeNode* pow_res_1 = GetPowRes (prog_code, tree);
-    if (!pow_res_1)
+    TreeNode* mul_div_res = GetPowRes (prog_code, tree);
+    if (!mul_div_res)
     {
-        WARN ("pow_res_1 nil");
+        WARN ("mul_div_res nil");
         OFFSET = init_offset;
 
         return NULL;
     }
 
-    if (TYPE (CURR_TOKEN) != OPERATOR ||
-        !(
-            VAL (CURR_TOKEN) == MUL ||
-            VAL (CURR_TOKEN) == DIV //
-        ))
-        return pow_res_1;
+    if (TOKEN_IS_NOT (OPERATOR, MUL) &&
+        TOKEN_IS_NOT (OPERATOR, DIV))
+        return mul_div_res;
 
-    TreeNode* mul_div_res = pow_res_1;
-
-    while (TYPE (CURR_TOKEN) == OPERATOR &&
-        (
-            VAL  (CURR_TOKEN) == MUL ||
-            VAL  (CURR_TOKEN) == DIV //
-        ))
+    while (TOKEN_IS (OPERATOR, MUL) ||
+           TOKEN_IS (OPERATOR, DIV))
     {
         int op_mul_div = VAL (CURR_TOKEN);
 
@@ -324,7 +396,10 @@ TreeNode* GetMulDivRes (ProgCode* prog_code, Tree* tree)
 
         TreeNode* curr_pow_res = GetPowRes (prog_code, tree);
         if (!curr_pow_res)
-            RET_ERROR (NULL, "x / <error> - nil after mul/div operator");
+        {
+            SubtreeDtor (mul_div_res);
+            SYNTAX_ASSERT (0, "x / <error> - nil after mul/div operator");
+        }
 
         switch (op_mul_div)
         {
@@ -342,6 +417,7 @@ TreeNode* GetMulDivRes (ProgCode* prog_code, Tree* tree)
             break;
         }
     }
+
     return mul_div_res;
 }
 
@@ -354,29 +430,24 @@ TreeNode* GetPowRes (ProgCode* prog_code, Tree* tree)
 
     int init_offset = OFFSET;
 
-    TreeNode* operand_1 = GetOperand (prog_code, tree);
-    if (!operand_1)
+    TreeNode* pow_res = GetOperand (prog_code, tree);
+    if (!pow_res)
     {
-        WARN ("operand 1 nil");
+        WARN ("pow_res nil");
         OFFSET = init_offset;
 
         return NULL;
     }
 
-    TreeNode* pow_res = operand_1;
+    if (TOKEN_IS_NOT (OPERATOR, POW))
+        return pow_res;
 
-    if (TYPE (CURR_TOKEN) == OPERATOR &&
-        VAL  (CURR_TOKEN) == POW)
-    {
-        OFFSET++; // skip ^
+    OFFSET++; // skip ^
 
-        TreeNode* operand_2 = GetOperand (prog_code, tree);
+    TreeNode* operand_2 = GetOperand (prog_code, tree);
+    SYNTAX_ASSERT (operand_2 != NULL, "in power right operand nil");
 
-        if (!operand_2)
-            RET_ERROR (NULL, "x^<error> - right operand nil");
-
-        pow_res = TreeNodeCtor (POW, OPERATOR, NULL, pow_res, operand_2);
-    }
+    pow_res = TreeNodeCtor (POW, OPERATOR, NULL, pow_res, operand_2);
 
     return pow_res;
 }
@@ -388,25 +459,15 @@ TreeNode* GetOperand (ProgCode* prog_code, Tree* tree)
     assert (prog_code);
     assert (tree);
 
-    int init_offset = OFFSET;
-
-    if (TYPE (CURR_TOKEN) != SEPARATOR ||
-        VAL  (CURR_TOKEN) != ENCLOSE_MATH_EXPR)
-    {
+    if (TOKEN_IS_NOT (SEPARATOR, ENCLOSE_MATH_EXPR))
         return GetSimpleOperand (prog_code, tree);
-    }
 
     OFFSET++; // skip $
 
-    TreeNode* math_expr = GetAddSubRes (prog_code, tree);
+    TreeNode* math_expr = GetMathExprRes (prog_code, tree);
+    SYNTAX_ASSERT (math_expr != NULL, "error inside brackets");
 
-    if (TYPE (CURR_TOKEN) != SEPARATOR ||
-        VAL  (CURR_TOKEN) != ENCLOSE_MATH_EXPR)
-    {
-        OFFSET = init_offset;
-
-        return GetSimpleOperand (prog_code, tree);
-    }
+    SYNTAX_ASSERT (TOKEN_IS (SEPARATOR, ENCLOSE_MATH_EXPR), "Missing separator \"$\"");
 
     OFFSET++; // skip $
 
@@ -421,6 +482,7 @@ TreeNode* GetSimpleOperand (ProgCode* prog_code, Tree* tree)
     assert (tree);
 
     TreeNode* ret_val = GetIdentifier (prog_code, tree);
+
     if (!ret_val)
         return GetNumber (prog_code, tree);
 
@@ -438,7 +500,8 @@ TreeNode* GetIdentifier (ProgCode* prog_code, Tree* tree)
         return NULL;
 
     TreeNode* ret_val = TreeNodeCtor (VAL (CURR_TOKEN), TYPE (CURR_TOKEN), NULL, NULL, NULL);
-    OFFSET++;
+
+    OFFSET++; // skip identifier
 
     return ret_val;
 }
@@ -454,7 +517,8 @@ TreeNode* GetNumber (ProgCode* prog_code, Tree* tree)
         return NULL;
 
     TreeNode* ret_val = TreeNodeCtor (VAL (CURR_TOKEN), TYPE (CURR_TOKEN), NULL, NULL, NULL);
-    OFFSET++;
+
+    OFFSET++; // skip number
 
     return ret_val;
 }
@@ -759,6 +823,35 @@ int StripLexem (char* lexem)
     assert (lexem);
 
     lexem[strcspn (lexem, "\t\r\n ")] = 0;
+
+    return 0;
+}
+
+// ============================================================================================
+
+int SyntaxAssert (int condition, ProgCode* prog_code, const char* format, ...)
+{
+    // assert (prog_code);
+
+    if (!condition)
+    {
+        fprintf (stderr, RED ("In token (TYPE = %d, VAL = %d) OFSSET = %d\n"),
+                                         TYPE (CURR_TOKEN), VAL (CURR_TOKEN), OFFSET);
+        fprintf (stderr, RED ("SYNTAX ERROR! "));
+
+        va_list  (ptr);
+        va_start (ptr, format);
+
+        vfprintf (stderr, format, ptr);
+
+        va_end (ptr);
+
+        fprintf (stderr, RST_CLR "\n" RST_CLR);
+
+        ProgCodeDtor (prog_code);
+
+        assert (0);
+    }
 
     return 0;
 }
