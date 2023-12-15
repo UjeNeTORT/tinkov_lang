@@ -59,25 +59,27 @@ typedef enum
 // syntax analysis
 int     SyntaxAssert (int condition, ProgCode* prog_code, const char* format, ...);
 #define SYNTAX_ASSERT(condition, format, ...) \
-    SyntaxAssert((condition), prog_code, (format) __VA_OPT__(,) __VA_ARGS__)
+    if (SyntaxAssert((condition), prog_code, (format) __VA_OPT__(,) __VA_ARGS__)) \
+        assert (0);
 
 Tree*     BuildAST            (ProgCode* prog_code);
-TreeNode* GetG                (ProgCode* prog_code, Tree* tree);
-TreeNode* GetWrappedStatement (ProgCode* prog_code, Tree* tree);
-TreeNode* GetStatementBlock   (ProgCode* prog_code, Tree* tree);
-TreeNode* GetSingleStatement  (ProgCode* prog_code, Tree* tree);
-TreeNode* GetDoIf             (ProgCode* prog_code, Tree* tree);
-TreeNode* GetAssign           (ProgCode* prog_code, Tree* tree);
-TreeNode* GetRvalue           (ProgCode* prog_code, Tree* tree);
-TreeNode* GetLvalue           (ProgCode* prog_code, Tree* tree);
-TreeNode* GetMathExprRes      (ProgCode* prog_code, Tree* tree);
-TreeNode* GetAddSubRes        (ProgCode* prog_code, Tree* tree);
-TreeNode* GetMulDivRes        (ProgCode* prog_code, Tree* tree);
-TreeNode* GetPowRes           (ProgCode* prog_code, Tree* tree);
-TreeNode* GetOperand          (ProgCode* prog_code, Tree* tree);
-TreeNode* GetSimpleOperand    (ProgCode* prog_code, Tree* tree);
-TreeNode* GetIdentifier       (ProgCode* prog_code, Tree* tree);
-TreeNode* GetNumber           (ProgCode* prog_code, Tree* tree);
+TreeNode* GetG                (ProgCode* prog_code);
+TreeNode* GetWrappedStatement (ProgCode* prog_code);
+TreeNode* GetStatementBlock   (ProgCode* prog_code);
+TreeNode* GetSingleStatement  (ProgCode* prog_code);
+TreeNode* GetWhile            (ProgCode* prog_code);
+TreeNode* GetDoIf             (ProgCode* prog_code);
+TreeNode* GetAssign           (ProgCode* prog_code);
+TreeNode* GetRvalue           (ProgCode* prog_code);
+TreeNode* GetLvalue           (ProgCode* prog_code);
+TreeNode* GetMathExprRes      (ProgCode* prog_code);
+TreeNode* GetAddSubRes        (ProgCode* prog_code);
+TreeNode* GetMulDivRes        (ProgCode* prog_code);
+TreeNode* GetPowRes           (ProgCode* prog_code);
+TreeNode* GetOperand          (ProgCode* prog_code);
+TreeNode* GetSimpleOperand    (ProgCode* prog_code);
+TreeNode* GetIdentifier       (ProgCode* prog_code);
+TreeNode* GetNumber           (ProgCode* prog_code);
 
 // lexic analysis
 LexAnalysRes LexicAnalysis           (ProgText* text);

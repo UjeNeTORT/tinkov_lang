@@ -6,8 +6,12 @@
                         (<SingleStatement>)+
                      "я_олигарх_мне_заебись"
 
-<SingleStatement> ::= <DoIf>
+<SingleStatement> ::= <While>
+                    | <DoIf>
                     | <Assign> "сомнительно_но_окей"
+
+<While> ::= "ну_сколько можно" <MathExpr> "?"
+                <WrappedStatement>
 
 <DoIf> ::=  "я_ссыкло_или_я_не_ссыкло"
                 <WrappedStatement>

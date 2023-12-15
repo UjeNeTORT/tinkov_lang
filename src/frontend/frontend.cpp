@@ -22,6 +22,9 @@
 
 int main()
 {
+    const char* code_math =
+                        "x я_так_чувствую aboba228 ^ 11 сомнительно_но_окей";
+
     const char* code_double_assign =
                        "олег_не_торопись x я_так_чувствую 11 сомнительно_но_окей "
                        "y я_так_чувствую 12 сомнительно_но_окей я_олигарх_мне_заебись";
@@ -31,7 +34,14 @@ int main()
                         "x я_так_чувствую 11 сомнительно_но_окей "
                         "какая_разница aboba228 > 11 ?";
 
-    ProgText* prog_text = ProgTextCtor (doif_code, strlen(doif_code) + 1);
+    const char* while_code =
+                        "ну_сколько_можно x > 11 ^ aboba228 ? "
+                        "олег_не_торопись "
+                        "x я_так_чувствую x + 1 сомнительно_но_окей "
+                        "z я_так_чувствую s + 1 сомнительно_но_окей "
+                        "я_олигарх_мне_заебись ";
+
+    ProgText* prog_text = ProgTextCtor (while_code, strlen(while_code) + 1);
     ProgCode* prog_code = LexicalAnalysisTokenize (prog_text);
     ProgTextDtor (prog_text);
 
@@ -55,19 +65,18 @@ Tree* BuildAST (ProgCode* prog_code)
 
     Tree* ast = TreeCtor();
     NameTableCopy (ast->nametable, prog_code->nametable);
-    ast->root = GetG (prog_code, ast);
+    ast->root = GetG (prog_code);
 
     return ast;
 }
 
 // ============================================================================================
 
-TreeNode* GetG (ProgCode* prog_code, Tree* tree)
+TreeNode* GetG (ProgCode* prog_code)
 {
     assert (prog_code);
-    assert (tree);
 
-    TreeNode* wrapped_statement_res = GetWrappedStatement (prog_code, tree);
+    TreeNode* wrapped_statement_res = GetWrappedStatement (prog_code);
     if (!wrapped_statement_res)
     {
         WARN ("assign res nil");
@@ -80,31 +89,29 @@ TreeNode* GetG (ProgCode* prog_code, Tree* tree)
 
 // ============================================================================================
 
-TreeNode* GetWrappedStatement (ProgCode* prog_code, Tree* tree)
+TreeNode* GetWrappedStatement (ProgCode* prog_code)
 {
     assert (prog_code);
-    assert (tree);
 
     int init_offset = OFFSET;
 
-    TreeNode* wrapped_statement = GetStatementBlock (prog_code, tree);
+    TreeNode* wrapped_statement = GetStatementBlock (prog_code);
 
     if (wrapped_statement)
         return wrapped_statement;
 
     OFFSET = init_offset;
 
-    wrapped_statement = GetSingleStatement (prog_code, tree);
+    wrapped_statement = GetSingleStatement (prog_code);
 
     return wrapped_statement;
 }
 
 // ============================================================================================
 
-TreeNode* GetStatementBlock (ProgCode* prog_code, Tree* tree)
+TreeNode* GetStatementBlock (ProgCode* prog_code)
 {
     assert (prog_code);
-    assert (tree);
 
     if (TOKEN_IS_NOT (SEPARATOR, ENCLOSE_STATEMENT_BEGIN))
         return NULL;
@@ -117,7 +124,7 @@ TreeNode* GetStatementBlock (ProgCode* prog_code, Tree* tree)
 
     do
     {
-        new_statement = GetSingleStatement (prog_code, tree);
+        new_statement = GetSingleStatement (prog_code);
 
         if (new_statement)
             statement_block = TreeNodeCtor (END_STATEMENT, SEPARATOR, NULL, statement_block, NULL, new_statement);
@@ -133,20 +140,25 @@ TreeNode* GetStatementBlock (ProgCode* prog_code, Tree* tree)
 
 // ============================================================================================
 
-TreeNode* GetSingleStatement (ProgCode* prog_code, Tree* tree)
+TreeNode* GetSingleStatement (ProgCode* prog_code)
 {
     assert (prog_code);
-    assert (tree);
 
     int init_offset = OFFSET;
 
-    TreeNode* single_statement = GetDoIf (prog_code, tree);
+    TreeNode* single_statement = GetWhile (prog_code);
     if (single_statement)
         return single_statement;
 
     OFFSET = init_offset;
 
-    single_statement = GetAssign (prog_code, tree);
+    single_statement = GetDoIf (prog_code);
+    if (single_statement)
+        return single_statement;
+
+    OFFSET = init_offset;
+
+    single_statement = GetAssign (prog_code);
     if (!single_statement)
         return NULL; // as the last one
 
@@ -160,44 +172,62 @@ TreeNode* GetSingleStatement (ProgCode* prog_code, Tree* tree)
 
 // ============================================================================================
 
-TreeNode* GetDoIf (ProgCode* prog_code, Tree* tree)
+TreeNode* GetWhile (ProgCode* prog_code)
 {
     assert (prog_code);
-    assert (tree);
 
-    int init_offset = OFFSET;
+    if (TOKEN_IS_NOT (KEYWORD, KW_WHILE))
+        return NULL;
+
+    OFFSET++; // skip while
+    TreeNode* condition = GetMathExprRes (prog_code);
+    SYNTAX_ASSERT(condition != NULL, "condition error");
+
+    SYNTAX_ASSERT (TOKEN_IS (SEPARATOR, END_CONDITION), "\"?\" expected in the end of condition");
+    OFFSET++; // skip "?"
+
+    TreeNode* wrapped_statement = GetWrappedStatement (prog_code);
+    SYNTAX_ASSERT (wrapped_statement != NULL, "No wrapped statement given in while");
+
+    return TreeNodeCtor (KW_WHILE, KEYWORD, NULL, wrapped_statement, condition, NULL);
+}
+
+// ============================================================================================
+
+TreeNode* GetDoIf (ProgCode* prog_code)
+{
+    assert (prog_code);
 
     if (TOKEN_IS_NOT (KEYWORD, KW_DO))
         return NULL;
 
     OFFSET++; // skip "do"
 
-    TreeNode* wrapped_statement = GetWrappedStatement (prog_code, tree);
+    TreeNode* wrapped_statement = GetWrappedStatement (prog_code);
     SYNTAX_ASSERT (wrapped_statement != NULL, "No statement inside do-if given");
 
     SYNTAX_ASSERT (TOKEN_IS (KEYWORD, KW_IF), "Keyword \"какая_разница\" expected");
 
     OFFSET++; // skip "if"
 
-    TreeNode* condition = GetMathExprRes (prog_code, tree);
+    TreeNode* condition = GetMathExprRes (prog_code);
     SYNTAX_ASSERT (condition != NULL, "Condition expected");
 
     SYNTAX_ASSERT (TOKEN_IS (SEPARATOR, END_CONDITION), "Separator \"?\" expected");
 
     OFFSET++; // skip "?"
 
-    return TreeNodeCtor (KW_DO, KEYWORD, NULL, NULL, condition, wrapped_statement);
+    return TreeNodeCtor (KW_DO, KEYWORD, NULL, wrapped_statement, condition, NULL);
 }
 
 // ============================================================================================
 
-TreeNode* GetAssign (ProgCode* prog_code, Tree* tree)
+TreeNode* GetAssign (ProgCode* prog_code)
 {
     assert (prog_code);
-    assert (tree);
 
     int init_offset  = OFFSET;
-    TreeNode* lvalue = GetLvalue (prog_code, tree);
+    TreeNode* lvalue = GetLvalue (prog_code);
     if (!lvalue)
     {
         WARN ("lvalue nil");
@@ -217,7 +247,7 @@ TreeNode* GetAssign (ProgCode* prog_code, Tree* tree)
 
     OFFSET++; // skip "=" operator
 
-    TreeNode* rvalue = GetRvalue (prog_code, tree);
+    TreeNode* rvalue = GetRvalue (prog_code);
     SYNTAX_ASSERT (rvalue != NULL, "Rvalue (nil) error");
 
     return TreeNodeCtor (ASSIGN, OPERATOR, NULL, lvalue, NULL, rvalue);
@@ -225,38 +255,35 @@ TreeNode* GetAssign (ProgCode* prog_code, Tree* tree)
 
 // ============================================================================================
 
-TreeNode* GetRvalue (ProgCode* prog_code, Tree* tree)
+TreeNode* GetRvalue (ProgCode* prog_code)
 {
     assert (prog_code);
-    assert (tree);
 
-    return GetMathExprRes (prog_code, tree);
+    return GetMathExprRes (prog_code);
 }
 
 // ============================================================================================
 
-TreeNode* GetLvalue (ProgCode* prog_code, Tree* tree)
+TreeNode* GetLvalue (ProgCode* prog_code)
 {
     assert (prog_code);
-    assert (tree);
 
-    return GetIdentifier (prog_code, tree);
+    return GetIdentifier (prog_code);
 }
 
 // ============================================================================================
 
-TreeNode* GetMathExprRes (ProgCode* prog_code, Tree* tree)
+TreeNode* GetMathExprRes (ProgCode* prog_code)
 {
     assert (prog_code);
-    assert (tree);
 
     int init_offset = OFFSET;
 
-    TreeNode* math_expr_res = GetAddSubRes (prog_code, tree);
+    TreeNode* math_expr_res = GetAddSubRes (prog_code);
     if (!math_expr_res)
     {
         WARN ("add_sub_res nil");
-        OFFSET = init_offset;
+        // OFFSET = init_offset;
 
         return NULL;
     }
@@ -273,7 +300,7 @@ TreeNode* GetMathExprRes (ProgCode* prog_code, Tree* tree)
 
     OFFSET++; // skip operator
 
-    TreeNode* curr_add_sub_res = GetAddSubRes (prog_code, tree);
+    TreeNode* curr_add_sub_res = GetAddSubRes (prog_code);
     SYNTAX_ASSERT (curr_add_sub_res != NULL, "x >= <error> - nil after comparison operator");
 
     switch (op_cmp)
@@ -312,18 +339,17 @@ TreeNode* GetMathExprRes (ProgCode* prog_code, Tree* tree)
 
 // ============================================================================================
 
-TreeNode* GetAddSubRes (ProgCode* prog_code, Tree* tree)
+TreeNode* GetAddSubRes (ProgCode* prog_code)
 {
     assert (prog_code);
-    assert (tree);
 
     int init_offset = OFFSET;
 
-    TreeNode* add_sub_res = GetMulDivRes (prog_code, tree);
+    TreeNode* add_sub_res = GetMulDivRes (prog_code);
     if (!add_sub_res)
     {
         WARN ("mul_div_res_1 nil");
-        OFFSET = init_offset;
+        // OFFSET = init_offset;
 
         return NULL;
     }
@@ -339,7 +365,7 @@ TreeNode* GetAddSubRes (ProgCode* prog_code, Tree* tree)
 
         OFFSET++; // skip operator
 
-        TreeNode* curr_mul_div_res = GetMulDivRes (prog_code, tree);
+        TreeNode* curr_mul_div_res = GetMulDivRes (prog_code);
         if (!curr_mul_div_res)
         {
             SubtreeDtor (add_sub_res);
@@ -367,18 +393,17 @@ TreeNode* GetAddSubRes (ProgCode* prog_code, Tree* tree)
 
 // ============================================================================================
 
-TreeNode* GetMulDivRes (ProgCode* prog_code, Tree* tree)
+TreeNode* GetMulDivRes (ProgCode* prog_code)
 {
     assert (prog_code);
-    assert (tree);
 
     int init_offset = OFFSET;
 
-    TreeNode* mul_div_res = GetPowRes (prog_code, tree);
+    TreeNode* mul_div_res = GetPowRes (prog_code);
     if (!mul_div_res)
     {
         WARN ("mul_div_res nil");
-        OFFSET = init_offset;
+        // OFFSET = init_offset;
 
         return NULL;
     }
@@ -394,7 +419,7 @@ TreeNode* GetMulDivRes (ProgCode* prog_code, Tree* tree)
 
         OFFSET++; // skip operator
 
-        TreeNode* curr_pow_res = GetPowRes (prog_code, tree);
+        TreeNode* curr_pow_res = GetPowRes (prog_code);
         if (!curr_pow_res)
         {
             SubtreeDtor (mul_div_res);
@@ -423,18 +448,17 @@ TreeNode* GetMulDivRes (ProgCode* prog_code, Tree* tree)
 
 // ============================================================================================
 
-TreeNode* GetPowRes (ProgCode* prog_code, Tree* tree)
+TreeNode* GetPowRes (ProgCode* prog_code)
 {
     assert (prog_code);
-    assert (tree);
 
     int init_offset = OFFSET;
 
-    TreeNode* pow_res = GetOperand (prog_code, tree);
+    TreeNode* pow_res = GetOperand (prog_code);
     if (!pow_res)
     {
         WARN ("pow_res nil");
-        OFFSET = init_offset;
+        // OFFSET = init_offset;
 
         return NULL;
     }
@@ -444,7 +468,7 @@ TreeNode* GetPowRes (ProgCode* prog_code, Tree* tree)
 
     OFFSET++; // skip ^
 
-    TreeNode* operand_2 = GetOperand (prog_code, tree);
+    TreeNode* operand_2 = GetOperand (prog_code);
     SYNTAX_ASSERT (operand_2 != NULL, "in power right operand nil");
 
     pow_res = TreeNodeCtor (POW, OPERATOR, NULL, pow_res, NULL, operand_2);
@@ -454,17 +478,16 @@ TreeNode* GetPowRes (ProgCode* prog_code, Tree* tree)
 
 // ============================================================================================
 
-TreeNode* GetOperand (ProgCode* prog_code, Tree* tree)
+TreeNode* GetOperand (ProgCode* prog_code)
 {
     assert (prog_code);
-    assert (tree);
 
     if (TOKEN_IS_NOT (SEPARATOR, ENCLOSE_MATH_EXPR))
-        return GetSimpleOperand (prog_code, tree);
+        return GetSimpleOperand (prog_code);
 
     OFFSET++; // skip $
 
-    TreeNode* math_expr = GetMathExprRes (prog_code, tree);
+    TreeNode* math_expr = GetMathExprRes (prog_code);
     SYNTAX_ASSERT (math_expr != NULL, "error inside brackets");
 
     SYNTAX_ASSERT (TOKEN_IS (SEPARATOR, ENCLOSE_MATH_EXPR), "Missing separator \"$\"");
@@ -476,25 +499,23 @@ TreeNode* GetOperand (ProgCode* prog_code, Tree* tree)
 
 // ============================================================================================
 
-TreeNode* GetSimpleOperand (ProgCode* prog_code, Tree* tree)
+TreeNode* GetSimpleOperand (ProgCode* prog_code)
 {
     assert (prog_code);
-    assert (tree);
 
-    TreeNode* ret_val = GetIdentifier (prog_code, tree);
+    TreeNode* ret_val = GetIdentifier (prog_code);
 
     if (!ret_val)
-        return GetNumber (prog_code, tree);
+        return GetNumber (prog_code);
 
     return ret_val;
 }
 
 // ============================================================================================
 
-TreeNode* GetIdentifier (ProgCode* prog_code, Tree* tree)
+TreeNode* GetIdentifier (ProgCode* prog_code)
 {
     assert (prog_code);
-    assert (tree);
 
     if (TYPE (CURR_TOKEN) != IDENTIFIER)
         return NULL;
@@ -508,10 +529,9 @@ TreeNode* GetIdentifier (ProgCode* prog_code, Tree* tree)
 
 // ============================================================================================
 
-TreeNode* GetNumber (ProgCode* prog_code, Tree* tree)
+TreeNode* GetNumber (ProgCode* prog_code)
 {
     assert (prog_code);
-    assert (tree);
 
     if (TYPE (CURR_TOKEN) != INT_LITERAL)
         return NULL;
@@ -850,7 +870,7 @@ int SyntaxAssert (int condition, ProgCode* prog_code, const char* format, ...)
 
         ProgCodeDtor (prog_code);
 
-        assert (0);
+        return 1;
     }
 
     return 0;
