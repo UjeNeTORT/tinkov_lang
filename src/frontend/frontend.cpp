@@ -120,7 +120,7 @@ TreeNode* GetStatementBlock (ProgCode* prog_code, Tree* tree)
         new_statement = GetSingleStatement (prog_code, tree);
 
         if (new_statement)
-            statement_block = TreeNodeCtor (END_STATEMENT, SEPARATOR, NULL, statement_block, new_statement);
+            statement_block = TreeNodeCtor (END_STATEMENT, SEPARATOR, NULL, statement_block, NULL, new_statement);
     } while (new_statement);
 
     SYNTAX_ASSERT (TOKEN_IS (SEPARATOR, ENCLOSE_STATEMENT_END),
@@ -186,7 +186,7 @@ TreeNode* GetDoIf (ProgCode* prog_code, Tree* tree)
 
     OFFSET++; // skip "?"
 
-    return TreeNodeCtor (KW_DO, KEYWORD, NULL, condition, wrapped_statement);
+    return TreeNodeCtor (KW_DO, KEYWORD, NULL, NULL, condition, wrapped_statement);
 }
 
 // ============================================================================================
@@ -220,7 +220,7 @@ TreeNode* GetAssign (ProgCode* prog_code, Tree* tree)
     TreeNode* rvalue = GetRvalue (prog_code, tree);
     SYNTAX_ASSERT (rvalue != NULL, "Rvalue (nil) error");
 
-    return TreeNodeCtor (ASSIGN, OPERATOR, NULL, lvalue, rvalue);
+    return TreeNodeCtor (ASSIGN, OPERATOR, NULL, lvalue, NULL, rvalue);
 }
 
 // ============================================================================================
@@ -279,27 +279,27 @@ TreeNode* GetMathExprRes (ProgCode* prog_code, Tree* tree)
     switch (op_cmp)
     {
     case LESS:
-        math_expr_res = TreeNodeCtor (LESS, OPERATOR, NULL, math_expr_res, curr_add_sub_res);
+        math_expr_res = TreeNodeCtor (LESS, OPERATOR, NULL, math_expr_res, NULL, curr_add_sub_res);
         break;
 
     case LESS_EQ:
-        math_expr_res = TreeNodeCtor (LESS_EQ, OPERATOR, NULL, math_expr_res, curr_add_sub_res);
+        math_expr_res = TreeNodeCtor (LESS_EQ, OPERATOR, NULL, math_expr_res, NULL, curr_add_sub_res);
         break;
 
     case EQUAL:
-        math_expr_res = TreeNodeCtor (EQUAL, OPERATOR, NULL, math_expr_res, curr_add_sub_res);
+        math_expr_res = TreeNodeCtor (EQUAL, OPERATOR, NULL, math_expr_res, NULL, curr_add_sub_res);
         break;
 
     case MORE_EQ:
-        math_expr_res = TreeNodeCtor (MORE_EQ, OPERATOR, NULL, math_expr_res, curr_add_sub_res);
+        math_expr_res = TreeNodeCtor (MORE_EQ, OPERATOR, NULL, math_expr_res, NULL, curr_add_sub_res);
         break;
 
     case MORE:
-        math_expr_res = TreeNodeCtor (MORE, OPERATOR, NULL, math_expr_res, curr_add_sub_res);
+        math_expr_res = TreeNodeCtor (MORE, OPERATOR, NULL, math_expr_res, NULL, curr_add_sub_res);
         break;
 
     case UNEQUAL:
-        math_expr_res = TreeNodeCtor (UNEQUAL, OPERATOR, NULL, math_expr_res, curr_add_sub_res);
+        math_expr_res = TreeNodeCtor (UNEQUAL, OPERATOR, NULL, math_expr_res, NULL, curr_add_sub_res);
         break;
 
     default:
@@ -349,11 +349,11 @@ TreeNode* GetAddSubRes (ProgCode* prog_code, Tree* tree)
         switch (op_add_sub)
         {
         case ADD:
-            add_sub_res = TreeNodeCtor (ADD, OPERATOR, NULL, add_sub_res, curr_mul_div_res);
+            add_sub_res = TreeNodeCtor (ADD, OPERATOR, NULL, add_sub_res, NULL, curr_mul_div_res);
             break;
 
         case SUB:
-            add_sub_res = TreeNodeCtor (SUB, OPERATOR, NULL, add_sub_res, curr_mul_div_res);
+            add_sub_res = TreeNodeCtor (SUB, OPERATOR, NULL, add_sub_res, NULL, curr_mul_div_res);
             break;
 
         default:
@@ -404,11 +404,11 @@ TreeNode* GetMulDivRes (ProgCode* prog_code, Tree* tree)
         switch (op_mul_div)
         {
         case MUL:
-            mul_div_res = TreeNodeCtor (MUL, OPERATOR, NULL, mul_div_res, curr_pow_res);
+            mul_div_res = TreeNodeCtor (MUL, OPERATOR, NULL, mul_div_res, NULL, curr_pow_res);
             break;
 
         case DIV:
-            mul_div_res = TreeNodeCtor (DIV, OPERATOR, NULL, mul_div_res, curr_pow_res);
+            mul_div_res = TreeNodeCtor (DIV, OPERATOR, NULL, mul_div_res, NULL, curr_pow_res);
             break;
 
         default:
@@ -447,7 +447,7 @@ TreeNode* GetPowRes (ProgCode* prog_code, Tree* tree)
     TreeNode* operand_2 = GetOperand (prog_code, tree);
     SYNTAX_ASSERT (operand_2 != NULL, "in power right operand nil");
 
-    pow_res = TreeNodeCtor (POW, OPERATOR, NULL, pow_res, operand_2);
+    pow_res = TreeNodeCtor (POW, OPERATOR, NULL, pow_res, NULL, operand_2);
 
     return pow_res;
 }
@@ -499,7 +499,7 @@ TreeNode* GetIdentifier (ProgCode* prog_code, Tree* tree)
     if (TYPE (CURR_TOKEN) != IDENTIFIER)
         return NULL;
 
-    TreeNode* ret_val = TreeNodeCtor (VAL (CURR_TOKEN), TYPE (CURR_TOKEN), NULL, NULL, NULL);
+    TreeNode* ret_val = TreeNodeCtor (VAL (CURR_TOKEN), TYPE (CURR_TOKEN), NULL, NULL, NULL, NULL);
 
     OFFSET++; // skip identifier
 
@@ -516,7 +516,7 @@ TreeNode* GetNumber (ProgCode* prog_code, Tree* tree)
     if (TYPE (CURR_TOKEN) != INT_LITERAL)
         return NULL;
 
-    TreeNode* ret_val = TreeNodeCtor (VAL (CURR_TOKEN), TYPE (CURR_TOKEN), NULL, NULL, NULL);
+    TreeNode* ret_val = TreeNodeCtor (VAL (CURR_TOKEN), TYPE (CURR_TOKEN), NULL, NULL, NULL, NULL);
 
     OFFSET++; // skip number
 
@@ -555,7 +555,7 @@ ProgCode* LexicalAnalysisTokenize (ProgText* text)
                 RET_ERROR (NULL, "Unexpected error: \"%s\" identifier index = -1", lexem);
             }
 
-            new_node = TreeNodeCtor (id_index, IDENTIFIER, NULL, NULL, NULL);
+            new_node = TreeNodeCtor (id_index, IDENTIFIER, NULL, NULL, NULL, NULL);
         }
 
         else if (IsKeyword (lexem)) // unoptimal, requires 2 cycles
@@ -569,7 +569,7 @@ ProgCode* LexicalAnalysisTokenize (ProgText* text)
                                  "index not found in keywords table", lexem);
             }
 
-            new_node = TreeNodeCtor (kw_index, KEYWORD, NULL, NULL, NULL);
+            new_node = TreeNodeCtor (kw_index, KEYWORD, NULL, NULL, NULL, NULL);
         }
 
         else if (IsSeparator (lexem))
@@ -583,7 +583,7 @@ ProgCode* LexicalAnalysisTokenize (ProgText* text)
                                  "index not found in separators table", lexem);
             }
 
-            new_node = TreeNodeCtor (sep_index, SEPARATOR, NULL, NULL, NULL);
+            new_node = TreeNodeCtor (sep_index, SEPARATOR, NULL, NULL, NULL, NULL);
         }
 
         else if (IsOperator (lexem))
@@ -597,12 +597,12 @@ ProgCode* LexicalAnalysisTokenize (ProgText* text)
                                  "index not found in operators table", lexem);
             }
 
-            new_node = TreeNodeCtor (op_index, OPERATOR, NULL, NULL, NULL);
+            new_node = TreeNodeCtor (op_index, OPERATOR, NULL, NULL, NULL, NULL);
         }
 
         else if (IsIntLiteral (lexem))
         {
-            new_node = TreeNodeCtor (atoi (lexem), INT_LITERAL, NULL, NULL, NULL);
+            new_node = TreeNodeCtor (atoi (lexem), INT_LITERAL, NULL, NULL, NULL, NULL);
         }
 
         else
