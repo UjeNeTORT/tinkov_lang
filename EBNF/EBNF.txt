@@ -1,15 +1,29 @@
-<G> ::= <Assign> "сомнительно_но_окей"
+<G> ::= <WrappedStatement>
+
+<WrappedStatement> ::= <StatementBlock> | <SingleStatement>
+
+<StatementBlock> ::= "олег_не_торопись"
+                        (<SingleStatement>)+
+                     "я_олигарх_мне_заебись"
+
+<SingleStatement> ::= <DoIf>
+                    | <Assign> "сомнительно_но_окей"
+
+<DoIf> ::=  "я_ссыкло_или_я_не_ссыкло"
+                <WrappedStatement>
+            "какая_разница" <MathExpr> "?"
+
 <Assign> ::= <Lvalue> "я_так_чувствую" <Rvalue>
 
 <Lvalue> ::= <Identifier>
 <Rvalue> ::= <MathExpr>
 
-<MathExpr>  ::= <AddSubRes> (("<" | "<=" | "==" | ">=" | ">" | "!=") <AddSubRes>)*
+<MathExpr>  ::= <AddSubRes> ("<" | "<=" | "==" | ">=" | ">" | "!=") <AddSubRes>
 <AddSubRes> ::= <MulDivRes> (("+" | "-") <MulDivRes>)*
 <MulDivRes> ::= <PowRes> (("*" | "/") <PowRes>)*
 <PowRes>    ::= <Operand> ("^" <Operand>)?
 <Operand>   ::= "$" <MathExpr> "$" | <SimpleOperand>
 
-<Identifier>    ::= ([A-Z] | [a-z] | "_") ([A-Z] | [a-z] | "_" | [0-9])* " "
-<Number>        ::= ([0-9])+ " "
+<Identifier>    ::= ([A-Z] | [a-z] | "_") ([A-Z] | [a-z] | "_" | [0-9])*
+<Number>        ::= ([0-9])+
 <SimpleOperand> ::= <Identifier> | <Number>
