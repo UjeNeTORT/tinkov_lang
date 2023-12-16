@@ -1,6 +1,6 @@
-<G> ::= <WrappedStatement>
+<G> ::= <CompoundStatement>
 
-<WrappedStatement> ::= <StatementBlock> | <SingleStatement>
+<CompoundStatement> ::= <StatementBlock> | <SingleStatement>
 
 <StatementBlock> ::= "олег_не_торопись"
                         (<SingleStatement>)+
@@ -12,15 +12,15 @@
                     | <Assign> "сомнительно_но_окей"
 
 <While> ::= "ну_сколько можно" <MathExpr> "?"
-                <WrappedStatement>
+                <CompoundStatement>
 
 <IfElse> ::= "какая_разница" <MathExpr> "?"
-                <WrappedStatement>
+                <CompoundStatement>
              ("я_могу_ошибаться"
-                <WrappedStatement>)?
+                <CompoundStatement>)?
 
 <DoIf> ::=  "я_ссыкло_или_я_не_ссыкло"
-                <WrappedStatement>
+                <CompoundStatement>
             "какая_разница" <MathExpr> "?"
 
 <Assign> ::= <Lvalue> "я_так_чувствую" <Rvalue>

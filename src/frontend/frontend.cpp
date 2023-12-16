@@ -99,7 +99,7 @@ TreeNode* GetG (ProgCode* prog_code)
 {
     assert (prog_code);
 
-    TreeNode* wrapped_statement_res = GetWrappedStatement (prog_code);
+    TreeNode* wrapped_statement_res = GetCompoundStatement (prog_code);
     if (!wrapped_statement_res)
     {
         WARN ("assign res nil");
@@ -112,7 +112,7 @@ TreeNode* GetG (ProgCode* prog_code)
 
 // ============================================================================================
 
-TreeNode* GetWrappedStatement (ProgCode* prog_code)
+TreeNode* GetCompoundStatement (ProgCode* prog_code)
 {
     assert (prog_code);
 
@@ -218,7 +218,7 @@ TreeNode* GetWhile (ProgCode* prog_code)
     SYNTAX_ASSERT (TOKEN_IS (SEPARATOR, END_CONDITION), "\"?\" expected in the end of condition");
     OFFSET++; // skip "?"
 
-    TreeNode* wrapped_statement = GetWrappedStatement (prog_code);
+    TreeNode* wrapped_statement = GetCompoundStatement (prog_code);
     SYNTAX_ASSERT (wrapped_statement != NULL, "No wrapped statement given in while");
 
     return TreeNodeCtor (KW_WHILE, KEYWORD, NULL, wrapped_statement, condition, NULL);
@@ -241,7 +241,7 @@ TreeNode* GetIfElse (ProgCode* prog_code)
     SYNTAX_ASSERT (TOKEN_IS (SEPARATOR, END_CONDITION), "\"?\" expected in the end of condition");
     OFFSET++; // skip "?"
 
-    TreeNode* if_statement = GetWrappedStatement (prog_code);
+    TreeNode* if_statement = GetCompoundStatement (prog_code);
     SYNTAX_ASSERT (if_statement != NULL, "No wrapped statement given in while");
 
     if (NO_MORE_TOKENS || TOKEN_IS_NOT (KEYWORD, KW_ELSE))
@@ -249,7 +249,7 @@ TreeNode* GetIfElse (ProgCode* prog_code)
 
     OFFSET++; // skip "else"
 
-    TreeNode* else_statement = GetWrappedStatement (prog_code);
+    TreeNode* else_statement = GetCompoundStatement (prog_code);
     SYNTAX_ASSERT (else_statement != NULL, "\"else\" statement expected");
 
     return TreeNodeCtor (KW_IF, KEYWORD, NULL, if_statement, condition, else_statement);
@@ -266,7 +266,7 @@ TreeNode* GetDoIf (ProgCode* prog_code)
 
     OFFSET++; // skip "do"
 
-    TreeNode* wrapped_statement = GetWrappedStatement (prog_code);
+    TreeNode* wrapped_statement = GetCompoundStatement (prog_code);
     SYNTAX_ASSERT (wrapped_statement != NULL, "No statement inside do-if given");
 
     SYNTAX_ASSERT (TOKEN_IS (KEYWORD, KW_IF), "Keyword \"какая_разница\" expected");
