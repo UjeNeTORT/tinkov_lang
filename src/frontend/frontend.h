@@ -26,7 +26,7 @@
 #define TOKEN(i)   (prog_code->tokens[(i)])
 #define CURR_TOKEN (prog_code->tokens[OFFSET])
 
-#define NO_MORE_TOKENS (prog_code->size <= OFFSET)
+#define HAS_TOKENS_LEFT (OFFSET < prog_code->size)
 
 #define TOKEN_IS(type, val) \
     (TYPE (CURR_TOKEN) == (type) && VAL (CURR_TOKEN) == (val))
@@ -77,9 +77,9 @@ typedef enum
 } LexAnalysRes;
 
 // syntax analysis
-int     SyntaxAssert (int condition, ProgCode* prog_code, const char* format, ...);
+int SyntaxAssert (int has_tokens_left, int condition, ProgCode* prog_code, const char* format, ...);
 #define SYNTAX_ASSERT(condition, format, ...) \
-    if (SyntaxAssert((condition), prog_code, (format) __VA_OPT__(,) __VA_ARGS__)) \
+    if (SyntaxAssert(HAS_TOKENS_LEFT, (condition), prog_code, (format) __VA_OPT__(,) __VA_ARGS__)) \
         assert (0);
 
 Tree*     BuildAST             (ProgCode* prog_code);

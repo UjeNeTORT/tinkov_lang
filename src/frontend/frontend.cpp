@@ -22,7 +22,9 @@
  *       - syntaxer does not give an error if there is no ; in the end
  *       - difference between index of keyword and its opcode is not always trivial
  *       - there are no checks in many places if there are tokens left, if there are no more
- *          tokens left, this may result in attempt to access area behind the array
+ *         tokens left, this may result in attempt to access area behind the array
+ *       - in some places i have to write 2 syntax asserts checking if there are tokens left and then
+ *         getting access to token if ir exists, so it results in copypaste
  *
  * TODO: fix bugs (lol)
 */
@@ -31,16 +33,34 @@
 
 int main()
 {
-    const char* code_math =
+    const char* math_code =
+                        "ДАННОЕ СООБЩЕНИЕ (МАТЕРИАЛ) СОЗДАНО И (ИЛИ) РАСПРОСТРАНЕНО ИНОСТРАННЫМ\n"
+                        "И РОССИЙСКИМ ЮРИДИЧЕСКИМ ЛИЦОМ, ВЫПОЛНЯЮЩИМ ФУНКЦИИ ИНОСТРАННОГО КОМПИЛЯТОРА\n"
+                        "А ТАКЖЕ ФИНАНСИРУЕТСЯ ИЗ ФОНДА КОШЕК ЕДИНИЧКИ И УПОМИНАЕТ НЕКОГО ИНОАГЕНТА\n"
+                        "♂♂♂♂ Oleg ♂ TinCock ♂♂♂♂ (КТО БЫ ЭТО МОГ БЫТЬ). КОЛЯ ЛОХ КСТА, WHEN DANIL???\n"
+                        "ДЛЯ ПОЛУЧЕНИЯ ВЫИГРЫША НАЖМИТЕ ALT+F4.\n"
+
                         "x я_так_чувствую aboba228 ^ 11 сомнительно_но_окей";
 
-    const char* code_double_assign =
-                       "олег_не_торопись x я_так_чувствую 11 сомнительно_но_окей "
-                       "y я_так_чувствую 12 сомнительно_но_окей я_олигарх_мне_заебись";
+    const char* double_assign_code =
+                        "ДАННОЕ СООБЩЕНИЕ (МАТЕРИАЛ) СОЗДАНО И (ИЛИ) РАСПРОСТРАНЕНО ИНОСТРАННЫМ\n"
+                        "И РОССИЙСКИМ ЮРИДИЧЕСКИМ ЛИЦОМ, ВЫПОЛНЯЮЩИМ ФУНКЦИИ ИНОСТРАННОГО КОМПИЛЯТОРА\n"
+                        "А ТАКЖЕ ФИНАНСИРУЕТСЯ ИЗ ФОНДА КОШЕК ЕДИНИЧКИ И УПОМИНАЕТ НЕКОГО ИНОАГЕНТА\n"
+                        "♂♂♂♂ Oleg ♂ TinCock ♂♂♂♂ (КТО БЫ ЭТО МОГ БЫТЬ). КОЛЯ ЛОХ КСТА, WHEN DANIL???\n"
+                        "ДЛЯ ПОЛУЧЕНИЯ ВЫИГРЫША НАЖМИТЕ ALT+F4.\n"
+
+                        "олег_не_торопись x я_так_чувствую 11 сомнительно_но_окей "
+                        "y я_так_чувствую 12 сомнительно_но_окей я_олигарх_мне_заебись";
 
     const char* doif_code =
+                        "ДАННОЕ СООБЩЕНИЕ (МАТЕРИАЛ) СОЗДАНО И (ИЛИ) РАСПРОСТРАНЕНО ИНОСТРАННЫМ\n"
+                        "И РОССИЙСКИМ ЮРИДИЧЕСКИМ ЛИЦОМ, ВЫПОЛНЯЮЩИМ ФУНКЦИИ ИНОСТРАННОГО КОМПИЛЯТОРА\n"
+                        "А ТАКЖЕ ФИНАНСИРУЕТСЯ ИЗ ФОНДА КОШЕК ЕДИНИЧКИ И УПОМИНАЕТ НЕКОГО ИНОАГЕНТА\n"
+                        "♂♂♂♂ Oleg ♂ TinCock ♂♂♂♂ (КТО БЫ ЭТО МОГ БЫТЬ). КОЛЯ ЛОХ КСТА, WHEN DANIL???\n"
+                        "ДЛЯ ПОЛУЧЕНИЯ ВЫИГРЫША НАЖМИТЕ ALT+F4.\n"
+
                         "я_ссыкло_или_я_не_ссыкло "
-                        "x я_так_чувствую 11 сомнительно_но_окей "
+                            "x я_так_чувствую 11 сомнительно_но_окей "
                         "какая_разница aboba228 > 11 ?";
 
     const char* while_code =
@@ -51,19 +71,31 @@ int main()
                         "ДЛЯ ПОЛУЧЕНИЯ ВЫИГРЫША НАЖМИТЕ ALT+F4.\n"
 
                         "ну_сколько_можно x > 11 ^ aboba228 ?\n"
-                        "x я_так_чувствую x + 1 сомнительно_но_окей\n";
+                            "x я_так_чувствую x + 1\n";
 
     const char* if_else_code =
+                        "ДАННОЕ СООБЩЕНИЕ (МАТЕРИАЛ) СОЗДАНО И (ИЛИ) РАСПРОСТРАНЕНО ИНОСТРАННЫМ\n"
+                        "И РОССИЙСКИМ ЮРИДИЧЕСКИМ ЛИЦОМ, ВЫПОЛНЯЮЩИМ ФУНКЦИИ ИНОСТРАННОГО КОМПИЛЯТОРА\n"
+                        "А ТАКЖЕ ФИНАНСИРУЕТСЯ ИЗ ФОНДА КОШЕК ЕДИНИЧКИ И УПОМИНАЕТ НЕКОГО ИНОАГЕНТА\n"
+                        "♂♂♂♂ Oleg ♂ TinCock ♂♂♂♂ (КТО БЫ ЭТО МОГ БЫТЬ). КОЛЯ ЛОХ КСТА, WHEN DANIL???\n"
+                        "ДЛЯ ПОЛУЧЕНИЯ ВЫИГРЫША НАЖМИТЕ ALT+F4.\n"
+
                         "какая_разница aboba_18 > 666 / 2 ? "
                             "x я_так_чувствую 333 + 0 сомнительно_но_окей "
                         "я_могу_ошибаться "
                             "x я_так_чувствую 11 сомнительно_но_окей ";
 
     const char* if_code =
+                        "ДАННОЕ СООБЩЕНИЕ (МАТЕРИАЛ) СОЗДАНО И (ИЛИ) РАСПРОСТРАНЕНО ИНОСТРАННЫМ\n"
+                        "И РОССИЙСКИМ ЮРИДИЧЕСКИМ ЛИЦОМ, ВЫПОЛНЯЮЩИМ ФУНКЦИИ ИНОСТРАННОГО КОМПИЛЯТОРА\n"
+                        "А ТАКЖЕ ФИНАНСИРУЕТСЯ ИЗ ФОНДА КОШЕК ЕДИНИЧКИ И УПОМИНАЕТ НЕКОГО ИНОАГЕНТА\n"
+                        "♂♂♂♂ Oleg ♂ TinCock ♂♂♂♂ (КТО БЫ ЭТО МОГ БЫТЬ). КОЛЯ ЛОХ КСТА, WHEN DANIL???\n"
+                        "ДЛЯ ПОЛУЧЕНИЯ ВЫИГРЫША НАЖМИТЕ ALT+F4.\n"
+
                         "какая_разница aboba_18 > 666 / 2 ? "
                             "x я_так_чувствую 333 + 0 сомнительно_но_окей ";
 
-    ProgText* prog_text = ProgTextCtor (if_else_code, strlen(if_else_code) + 1);
+    ProgText* prog_text = ProgTextCtor (while_code, strlen (while_code) + 1);
     ProgCode* prog_code = LexicalAnalysisTokenize (prog_text);
     ProgTextDtor (prog_text);
     if (!prog_code) return 1;
@@ -193,6 +225,8 @@ TreeNode* GetSingleStatement (ProgCode* prog_code)
     if (!single_statement)
         return NULL; // as the last one
 
+    SYNTAX_ASSERT (HAS_TOKENS_LEFT, "\"сомнительно_но_окей\" expected in the end of statement");
+
     SYNTAX_ASSERT (TOKEN_IS (SEPARATOR, END_STATEMENT),
                    "\"сомнительно_но_окей\" expected in the end of statement");
 
@@ -207,7 +241,7 @@ TreeNode* GetWhile (ProgCode* prog_code)
 {
     assert (prog_code);
 
-    if (NO_MORE_TOKENS || TOKEN_IS_NOT (KEYWORD, KW_WHILE))
+    if (!HAS_TOKENS_LEFT || TOKEN_IS_NOT (KEYWORD, KW_WHILE))
         return NULL;
 
     OFFSET++; // skip "while"
@@ -215,6 +249,7 @@ TreeNode* GetWhile (ProgCode* prog_code)
     TreeNode* condition = GetMathExprRes (prog_code);
     SYNTAX_ASSERT(condition != NULL, "condition error");
 
+    SYNTAX_ASSERT (HAS_TOKENS_LEFT, "\"?\" expected in the end of condition");
     SYNTAX_ASSERT (TOKEN_IS (SEPARATOR, END_CONDITION), "\"?\" expected in the end of condition");
     OFFSET++; // skip "?"
 
@@ -244,7 +279,7 @@ TreeNode* GetIfElse (ProgCode* prog_code)
     TreeNode* if_statement = GetCompoundStatement (prog_code);
     SYNTAX_ASSERT (if_statement != NULL, "No wrapped statement given in while");
 
-    if (NO_MORE_TOKENS || TOKEN_IS_NOT (KEYWORD, KW_ELSE))
+    if (!HAS_TOKENS_LEFT || TOKEN_IS_NOT (KEYWORD, KW_ELSE))
         return TreeNodeCtor (KW_IF, KEYWORD, NULL, if_statement, condition, NULL);
 
     OFFSET++; // skip "else"
@@ -307,10 +342,10 @@ TreeNode* GetAssign (ProgCode* prog_code)
 
         return NULL;
     }
-
     OFFSET++; // skip "=" operator
 
     TreeNode* rvalue = GetRvalue (prog_code);
+
     SYNTAX_ASSERT (rvalue != NULL, "Rvalue (nil) error");
 
     return TreeNodeCtor (ASSIGN, OPERATOR, NULL, lvalue, NULL, rvalue);
@@ -351,7 +386,8 @@ TreeNode* GetMathExprRes (ProgCode* prog_code)
         return NULL;
     }
 
-    if (TOKEN_IS_NOT (OPERATOR, LESS)     &&
+    if (!HAS_TOKENS_LEFT ||
+        TOKEN_IS_NOT (OPERATOR, LESS)     &&
         TOKEN_IS_NOT (OPERATOR, LESS_EQ)  &&
         TOKEN_IS_NOT (OPERATOR, EQUAL)    &&
         TOKEN_IS_NOT (OPERATOR, MORE_EQ)  &&
@@ -417,12 +453,14 @@ TreeNode* GetAddSubRes (ProgCode* prog_code)
         return NULL;
     }
 
-    if (TOKEN_IS_NOT (OPERATOR, ADD) &&
+    if (!HAS_TOKENS_LEFT ||
+        TOKEN_IS_NOT (OPERATOR, ADD) &&
         TOKEN_IS_NOT (OPERATOR, SUB))
         return add_sub_res;
 
-    while (TOKEN_IS (OPERATOR, ADD) ||
-           TOKEN_IS (OPERATOR, SUB))
+    while (HAS_TOKENS_LEFT && (
+           TOKEN_IS (OPERATOR, ADD) ||
+           TOKEN_IS (OPERATOR, SUB)))
     {
         int op_add_sub = VAL (CURR_TOKEN);
 
@@ -471,12 +509,14 @@ TreeNode* GetMulDivRes (ProgCode* prog_code)
         return NULL;
     }
 
-    if (TOKEN_IS_NOT (OPERATOR, MUL) &&
+    if (!HAS_TOKENS_LEFT ||
+        TOKEN_IS_NOT (OPERATOR, MUL) &&
         TOKEN_IS_NOT (OPERATOR, DIV))
         return mul_div_res;
 
-    while (TOKEN_IS (OPERATOR, MUL) ||
-           TOKEN_IS (OPERATOR, DIV))
+    while (HAS_TOKENS_LEFT && (
+           TOKEN_IS (OPERATOR, MUL) ||
+           TOKEN_IS (OPERATOR, DIV)))
     {
         int op_mul_div = VAL (CURR_TOKEN);
 
@@ -516,7 +556,6 @@ TreeNode* GetPowRes (ProgCode* prog_code)
     assert (prog_code);
 
     int init_offset = OFFSET;
-
     TreeNode* pow_res = GetOperand (prog_code);
     if (!pow_res)
     {
@@ -526,7 +565,7 @@ TreeNode* GetPowRes (ProgCode* prog_code)
         return NULL;
     }
 
-    if (TOKEN_IS_NOT (OPERATOR, POW))
+    if (!HAS_TOKENS_LEFT || TOKEN_IS_NOT (OPERATOR, POW))
         return pow_res;
 
     OFFSET++; // skip ^
@@ -615,7 +654,7 @@ ProgCode* LexicalAnalysisTokenize (ProgText* text)
 
     if (!HasForeignAgent (text))
     {
-        printf(NO_FOREIGN_AGENT_BANNER_ERROR);
+        printf("%s", NO_FOREIGN_AGENT_BANNER_ERROR);
 
         return NULL;
     }
@@ -951,13 +990,14 @@ int StripLexem (char* lexem)
 
 // ============================================================================================
 
-int SyntaxAssert (int condition, ProgCode* prog_code, const char* format, ...)
+int SyntaxAssert (int has_tokens_left, int condition, ProgCode* prog_code, const char* format, ...)
 {
-    // assert (prog_code);
+    assert (prog_code);
 
     if (!condition)
     {
-        fprintf (stderr, RED ("In token (TYPE = %d, VAL = %d) OFSSET = %d\n"),
+        if (has_tokens_left)
+            fprintf (stderr, RED ("In token (TYPE = %d, VAL = %d) OFSSET = %d\n"),
                                          TYPE (CURR_TOKEN), VAL (CURR_TOKEN), OFFSET);
         fprintf (stderr, RED ("SYNTAX ERROR! "));
 
