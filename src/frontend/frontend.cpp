@@ -8,14 +8,15 @@
  *************************************************************************/
 
 /**
- * BUGS: lexer thinks that "131aboba" is a number 131
- *       lexer thinks that "_aboba228_ is unknown lexem"
- *       lexer does not take \n as a space between tokens
- *       syntaxer does not give an error if there is no ; in the end
- *       difference between index of keyword and its opcode is not always trivial
+ * BUGS: - lexer thinks that "131aboba" is a number 131
+ *       - lexer thinks that "_aboba228_ is unknown lexem"
+ *       - lexer does not take \n as a space between tokens (I THINK THE PROBLEM IS NOT IN THIS, NOT A BUG)
+ *       - syntaxer does not give an error if there is no ; in the end
+ *       - difference between index of keyword and its opcode is not always trivial
+ *       - there are no checks in many places if there are tokens left, if there are no more
+ *          tokens left, this may result in attempt to access area behind the array
  *
- * TODO: fix bugs
- *       syntax_assert instead of return NULL
+ * TODO: fix bugs (lol)
 */
 
 #include "frontend.h"
@@ -35,8 +36,8 @@ int main()
                         "какая_разница aboba228 > 11 ?";
 
     const char* while_code =
-                        "ну_сколько_можно x > 11 ^ aboba228 ? "
-                        "x я_так_чувствую x + 1 сомнительно_но_окей ";
+                        "ну_сколько_можно x > 11 ^ aboba228 ?\n"
+                        "x я_так_чувствую x + 1 сомнительно_но_окей\n";
 
     const char* if_else_code =
                         "какая_разница aboba_18 > 666 / 2 ? "
@@ -44,7 +45,11 @@ int main()
                         "я_могу_ошибаться "
                             "x я_так_чувствую 11 сомнительно_но_окей ";
 
-    ProgText* prog_text = ProgTextCtor (if_else_code, strlen(if_else_code) + 1);
+    const char* if_code =
+                        "какая_разница aboba_18 > 666 / 2 ? "
+                            "x я_так_чувствую 333 + 0 сомнительно_но_окей ";
+
+    ProgText* prog_text = ProgTextCtor (while_code, strlen(while_code) + 1);
     ProgCode* prog_code = LexicalAnalysisTokenize (prog_text);
     ProgTextDtor (prog_text);
 
@@ -187,7 +192,7 @@ TreeNode* GetWhile (ProgCode* prog_code)
 {
     assert (prog_code);
 
-    if (TOKEN_IS_NOT (KEYWORD, KW_WHILE))
+    if (NO_MORE_TOKENS || TOKEN_IS_NOT (KEYWORD, KW_WHILE))
         return NULL;
 
     OFFSET++; // skip "while"
@@ -224,7 +229,7 @@ TreeNode* GetIfElse (ProgCode* prog_code)
     TreeNode* if_statement = GetWrappedStatement (prog_code);
     SYNTAX_ASSERT (if_statement != NULL, "No wrapped statement given in while");
 
-    if (TOKEN_IS_NOT (KEYWORD, KW_ELSE))
+    if (NO_MORE_TOKENS || TOKEN_IS_NOT (KEYWORD, KW_ELSE))
         return TreeNodeCtor (KW_IF, KEYWORD, NULL, if_statement, condition, NULL);
 
     OFFSET++; // skip "else"

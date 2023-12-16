@@ -25,13 +25,14 @@
 #define OFFSET     (prog_code->offset)
 #define TOKEN(i)   (prog_code->tokens[(i)])
 #define CURR_TOKEN (prog_code->tokens[OFFSET])
+
+#define NO_MORE_TOKENS (prog_code->size <= OFFSET)
+
 #define TOKEN_IS(type, val) \
     (TYPE (CURR_TOKEN) == (type) && VAL (CURR_TOKEN) == (val))
 
 #define TOKEN_IS_NOT(type, val) \
     (TYPE (CURR_TOKEN) != (type) || VAL (CURR_TOKEN) != (val))
-
-#define NO_MORE_TOKENS prog_code->size >= OFFSET
 // ===========================================================
 
 const int MAX_STRING_TOKEN = 300;
