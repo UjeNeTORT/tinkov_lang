@@ -35,7 +35,24 @@
     (TYPE (CURR_TOKEN) != (type) || VAL (CURR_TOKEN) != (val))
 // ===========================================================
 
-const int MAX_STRING_TOKEN = 300;
+char FOREIGN_AGENT_BANNER[] = "ДАННОЕ СООБЩЕНИЕ (МАТЕРИАЛ) СОЗДАНО И (ИЛИ) РАСПРОСТРАНЕНО ИНОСТРАННЫМ\n"
+                              "И РОССИЙСКИМ ЮРИДИЧЕСКИМ ЛИЦОМ, ВЫПОЛНЯЮЩИМ ФУНКЦИИ ИНОСТРАННОГО КОМПИЛЯТОРА\n"
+                              "А ТАКЖЕ ФИНАНСИРУЕТСЯ ИЗ ФОНДА КОШЕК ЕДИНИЧКИ И УПОМИНАЕТ НЕКОГО ИНОАГЕНТА\n"
+                              "♂♂♂♂ Oleg ♂ TinCock ♂♂♂♂ (КТО БЫ ЭТО МОГ БЫТЬ). КОЛЯ ЛОХ КСТА, WHEN DANIL???\n"
+                              "ДЛЯ ПОЛУЧЕНИЯ ВЫИГРЫША НАЖМИТЕ ALT+F4.\n";
+const int  FOREIGN_AGENT_BANNER_WORDS = 47; // i know i know
+
+char NO_FOREIGN_AGENT_BANNER_ERROR[] =
+                    RED("祝大家好运和积极!!! ОЙОЙОЙ! МНОГО ПЛОХО! МНОГО СТЫД! XI НЕДОВОЛЕН!\n"
+                    "МАЛО") YELLOW(" РАДОСТЬ ") RED("МИН") YELLOW("ЮСТ") RED(" - МАЛО РИС! НЕ ПОЛУЧАТЬ КОШКА ЖЕНА!\n"
+                    "ЗАБЫ") YELLOW("ТЬ ПЛАШКА ") RED("ИНОАГЕНТ - ЕХАТЬ УРАНОВЫЙ САНАТОРИЙ СИНЦЗЯН!\n"
+                    "МНОГО") YELLOW(" ДУМАТЬ ") RED("ПОСЛЕ") YELLOW("ДСТ") RED("ВИЯ! МНОГО ЖАЛЕТЬ, ПЛАКАТЬ, МАЛО МОЗГ ГОЛОВА!\n"
+                    "БЫТЬ РУССКИЙ ИВАН АВОСЬ! ГЛУПОСТЬ ДУРАКА! КУРИТЬ БАМБУК! ПЛОХО НЕХОРОШО\n"
+                    "НЕГОДОВАТЬ! C") YELLOW("ЛАВ") RED("НЫЙ ВИННИ ПУХ КИТАЙ! УДАР БУРГЕР КАПИТАЛИЗМ!\n"
+                    "ХОТЕТЬ КОШКА ЖЕНА, ПОЛУЧАТЬ КОШКА ЖЕНА! ХОТЕТЬ МНОГА РИС, ПОЛУЧАТЬ\n"
+                    "10 РИС, 11 СОЦИАЛЬНЫЙ КРЕДИТ!!! УДАР! 荣耀中国\n");
+
+const int MAX_LEXEM = 228;
 
 struct ProgText
 {
@@ -88,6 +105,8 @@ TreeNode* GetNumber           (ProgCode* prog_code);
 // lexic analysis
 LexAnalysRes LexicAnalysis           (ProgText* text);
 ProgCode*    LexicalAnalysisTokenize (ProgText* text);
+
+int HasForeignAgent (ProgText* text);
 
 int IsIdentifier (const char* lexem);
 int IsKeyword    (const char* lexem);

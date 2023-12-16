@@ -8,6 +8,14 @@
  *************************************************************************/
 
 /**
+ *  ДАННОЕ СООБЩЕНИЕ (МАТЕРИАЛ) СОЗДАНО И (ИЛИ) РАСПРОСТРАНЕНО ИНОСТРАННЫМ
+ *  И РОССИЙСКИМ ЮРИДИЧЕСКИМ ЛИЦОМ, ВЫПОЛНЯЮЩИМ ФУНКЦИИ ИНОСТРАННОГО КОМПИЛЯТОРА
+ *  А ТАКЖЕ ФИНАНСИРУЕТСЯ ИЗ ФОНДА КОШЕК ЕДИНИЧКИ И УПОМИНАЕТ НЕКОГО ИНОАГЕНТА
+ *  ♂♂♂♂ Oleg ♂ TinCock ♂♂♂♂ (КТО БЫ ЭТО МОГ БЫТЬ). КОЛЯ ЛОХ КСТА, WHEN DANIL???
+ *  ДЛЯ ПОЛУЧЕНИЯ ВЫИГРЫША НАЖМИТЕ ALT+F4.
+*/
+
+/**
  * BUGS: - lexer thinks that "131aboba" is a number 131
  *       - lexer thinks that "_aboba228_ is unknown lexem"
  *       - lexer does not take \n as a space between tokens (I THINK THE PROBLEM IS NOT IN THIS, NOT A BUG)
@@ -36,6 +44,12 @@ int main()
                         "какая_разница aboba228 > 11 ?";
 
     const char* while_code =
+                        "ДАННОЕ СООБЩЕНИЕ (МАТЕРИАЛ) СОЗДАНО И (ИЛИ) РАСПРОСТРАНЕНО ИНОСТРАННЫМ\n"
+                        "И РОССИЙСКИМ ЮРИДИЧЕСКИМ ЛИЦОМ, ВЫПОЛНЯЮЩИМ ФУНКЦИИ ИНОСТРАННОГО КОМПИЛЯТОРА\n"
+                        "А ТАКЖЕ ФИНАНСИРУЕТСЯ ИЗ ФОНДА КОШЕК ЕДИНИЧКИ И УПОМИНАЕТ НЕКОГО ИНОАГЕНТА\n"
+                        "♂♂♂♂ Oleg ♂ TinCock ♂♂♂♂ (КТО БЫ ЭТО МОГ БЫТЬ). КОЛЯ ЛОХ КСТА, WHEN DANIL???\n"
+                        "ДЛЯ ПОЛУЧЕНИЯ ВЫИГРЫША НАЖМИТЕ ALT+F4.\n"
+
                         "ну_сколько_можно x > 11 ^ aboba228 ?\n"
                         "x я_так_чувствую x + 1 сомнительно_но_окей\n";
 
@@ -49,9 +63,10 @@ int main()
                         "какая_разница aboba_18 > 666 / 2 ? "
                             "x я_так_чувствую 333 + 0 сомнительно_но_окей ";
 
-    ProgText* prog_text = ProgTextCtor (while_code, strlen(while_code) + 1);
+    ProgText* prog_text = ProgTextCtor (if_else_code, strlen(if_else_code) + 1);
     ProgCode* prog_code = LexicalAnalysisTokenize (prog_text);
     ProgTextDtor (prog_text);
+    if (!prog_code) return 1;
 
     Tree* ast = BuildAST (prog_code);
 
@@ -598,11 +613,19 @@ ProgCode* LexicalAnalysisTokenize (ProgText* text)
 {
     assert (text);
 
+    if (!HasForeignAgent (text))
+    {
+        printf(NO_FOREIGN_AGENT_BANNER_ERROR);
+
+        return NULL;
+    }
+
+
     ProgCode* prog_code = ProgCodeCtor ();
 
     int n_readen = 0;
 
-    char lexem[MAX_STRING_TOKEN] = "";
+    char lexem[MAX_LEXEM] = "";
 
     while (sscanf (text->text + text->offset, "%s%n", lexem, &n_readen) != EOF)
     {
@@ -683,6 +706,37 @@ ProgCode* LexicalAnalysisTokenize (ProgText* text)
     }
 
     return prog_code;
+}
+
+// ============================================================================================
+
+int HasForeignAgent (ProgText* text)
+{
+    assert (text);
+
+    if (text->offset != 0) return 0;
+
+    char lexem[MAX_LEXEM] = "";
+    char *next_word = NULL;
+
+    int add_offset = 0;
+    int is_first_call = 1;
+
+    for (int i = 0; i < FOREIGN_AGENT_BANNER_WORDS; i++)
+    {
+        sscanf (text->text + text->offset, "%s%n", lexem, &add_offset);
+
+        next_word = strtok((is_first_call ? FOREIGN_AGENT_BANNER : NULL), " \n\r\t");
+
+        if (is_first_call) is_first_call = 0;
+
+        if (strcmp (lexem, next_word))
+            return 0;
+
+        text->offset += add_offset;
+    }
+
+    return 1;
 }
 
 // ============================================================================================
