@@ -1,4 +1,10 @@
-<G> ::= <CompoundStatement>
+<G> ::= (<FunctionDeclaration>)+
+
+<FunctionDeclaration> ::= <FunctionDeclarator>
+            <Identifier> "за" (<Identifier>)+ "почти_без_переплат"
+            <CompoundStatement>
+
+<FunctionDeclarator> ::= "россии_нужен"
 
 <CompoundStatement> ::= <StatementBlock> | <SingleStatement>
 
@@ -10,6 +16,7 @@
                     | <IfElse>
                     | <DoIf>
                     | <Assign> "сомнительно_но_окей"
+                    | <Return> "сомнительно_но_окей"
 
 <While> ::= "ну_сколько можно" <MathExpr> "?"
                 <CompoundStatement>
@@ -23,10 +30,14 @@
                 <CompoundStatement>
             "какая_разница" <MathExpr> "?"
 
-<Assign> ::= <Lvalue> "я_так_чувствую" <Rvalue>
+<Assign> ::= <VariableDeclarator>?
+         <Lvalue> "я_так_чувствую" <Rvalue>
+
+<Return> ::= "никто_никогда_не_вернет" <Identifier>
 
 <Lvalue> ::= <Identifier>
 <Rvalue> ::= <MathExpr>
+<VariableDeclarator> ::= "але_здравствуйте_меня_зовут_ольга_звоню_вам_из_тинькок_банка_вам_удобно_сейчас_разговаривать"
 
 <MathExpr>  ::= <AddSubRes> ("<" | "<=" | "==" | ">=" | ">" | "!=") <AddSubRes>
 <AddSubRes> ::= <MulDivRes> (("+" | "-") <MulDivRes>)*
