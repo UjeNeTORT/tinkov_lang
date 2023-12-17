@@ -14,10 +14,31 @@ const int ILL_OPNUM = __INT_MAX__;
 
 typedef enum
 {
-    KW_DO    = 0,
-    KW_IF    = 1,
-    KW_ELSE  = 2,
-    KW_WHILE = 3,
+    FUNC_DECLARATOR = 0,
+    VAR_DECLARATOR  = 1,
+} DeclaratorCode;
+
+struct Declarator
+{
+    const char* const name;
+    DeclaratorCode dclr_code;
+};
+
+const Declarator DECLARATORS[] =
+{
+    {"россии_нужен", FUNC_DECLARATOR},
+    {"але_здравствуйте_меня_зовут_ольга_звоню_вам_из_тинькок_банка_вам_удобно_сейчас_разговаривать",
+                     VAR_DECLARATOR},
+};
+const int N_DECLARATORS = sizeof (DECLARATORS) / sizeof (DECLARATORS[0]);
+
+typedef enum
+{
+    KW_DO     = 0,
+    KW_IF     = 1,
+    KW_ELSE   = 2,
+    KW_WHILE  = 3,
+    KW_RETURN = 4,
 } KeywordCode;
 
 struct Keyword
@@ -31,7 +52,8 @@ const Keyword KEYWORDS[] =
     {"я_ссыкло_или_я_не_ссыкло", KW_DO},
     {"какая_разница",            KW_IF},
     {"я_могу_ошибаться",         KW_ELSE},
-    {"ну_сколько_можно",         KW_WHILE}
+    {"ну_сколько_можно",         KW_WHILE},
+    {"никто_никогда_не_вернет",  KW_RETURN},
 };
 const int N_KEYWORDS = sizeof(KEYWORDS) / sizeof(KEYWORDS[0]);
 
@@ -42,6 +64,8 @@ typedef enum
     ENCLOSE_STATEMENT_END   = 2,
     ENCLOSE_MATH_EXPR       = 3,
     END_CONDITION           = 4,
+    BEGIN_FUNC_PARAMS       = 5,
+    END_FUNC_PARAMS         = 6,
 } SeparatorCode;
 
 struct Separator
@@ -56,7 +80,9 @@ const Separator SEPARATORS[] =
     {"олег_не_торопись",      ENCLOSE_STATEMENT_BEGIN},
     {"я_олигарх_мне_заебись", ENCLOSE_STATEMENT_END},
     {"$",                     ENCLOSE_MATH_EXPR},
-    {"?",                     END_CONDITION}
+    {"?",                     END_CONDITION},
+    {"за",                    BEGIN_FUNC_PARAMS},
+    {"почти_без_переплат",    END_FUNC_PARAMS},
 };
 const int N_SEPARATORS = sizeof(SEPARATORS) / sizeof(SEPARATORS[0]);
 
@@ -105,10 +131,11 @@ typedef enum
 {
     ERROR       = 0, // none of other token types match, error (it is to be caught during syntax analysis) ?DO I NEED THIS?
     IDENTIFIER  = 1, // names assigned by the programmer
-    KEYWORD     = 2, // reserved words of the language (while, for, if, return, int in C)
-    SEPARATOR   = 3, // punctuation characters ({, (, ;, in C)
-    OPERATOR    = 4, // symbols that operate on arguments and produce result (<, =, +, / in C)
-    INT_LITERAL = 5, // integer decimal number
+    DECLARATOR  = 2, //
+    KEYWORD     = 3, // reserved words of the language (while, for, if, return, int in C)
+    SEPARATOR   = 4, // punctuation characters ({, (, ;, in C)
+    OPERATOR    = 5, // symbols that operate on arguments and produce result (<, =, +, / in C)
+    INT_LITERAL = 6, // integer decimal number
 } NodeType;
 typedef NodeType TokenType;
 

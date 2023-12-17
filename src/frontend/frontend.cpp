@@ -15,16 +15,28 @@
  *  ДЛЯ ПОЛУЧЕНИЯ ВЫИГРЫША НАЖМИТЕ ALT+F4.
 */
 
+#define FOREIGN_AGENT "ДАННОЕ СООБЩЕНИЕ (МАТЕРИАЛ) СОЗДАНО И (ИЛИ) РАСПРОСТРАНЕНО ИНОСТРАННЫМ\n" \
+                        "И РОССИЙСКИМ ЮРИДИЧЕСКИМ ЛИЦОМ, ВЫПОЛНЯЮЩИМ ФУНКЦИИ ИНОСТРАННОГО КОМПИЛЯТОРА\n" \
+                        "А ТАКЖЕ ФИНАНСИРУЕТСЯ ИЗ ФОНДА КОШЕК ЕДИНИЧКИ И УПОМИНАЕТ НЕКОГО ИНОАГЕНТА\n" \
+                        "♂♂♂♂ Oleg ♂ TinCock ♂♂♂♂ (КТО БЫ ЭТО МОГ БЫТЬ). КОЛЯ ЛОХ КСТА, WHEN DANIL???\n" \
+                        "ДЛЯ ПОЛУЧЕНИЯ ВЫИГРЫША НАЖМИТЕ ALT+F4.\n"
+
+#define DEC_VAR "але_здравствуйте_меня_зовут_ольга_звоню_вам_из_тинькок_банка_вам_удобно_сейчас_разговаривать"
+
+#define SHOW_PROG_CODE for (int i = 0; i < prog_code->size; i++) printf ("%2d | t %d | v %5d |\n", i, TYPE(prog_code->tokens[i]), VAL(prog_code->tokens[i]));
+
+
 /**
  * BUGS: - lexer thinks that "131aboba" is a number 131
  *       - lexer thinks that "_aboba228_ is unknown lexem"
- *       - lexer does not take \n as a space between tokens (I THINK THE PROBLEM IS NOT IN THIS, NOT A BUG)
- *       - syntaxer does not give an error if there is no ; in the end
+ *       x lexer does not take \n as a space between tokens (I THINK THE PROBLEM IS NOT IN THIS, NOT A BUG)
+ *       x syntaxer does not give an error if there is no ; in the end
  *       - difference between index of keyword and its opcode is not always trivial
  *       - there are no checks in many places if there are tokens left, if there are no more
  *         tokens left, this may result in attempt to access area behind the array
  *       - in some places i have to write 2 syntax asserts checking if there are tokens left and then
  *         getting access to token if ir exists, so it results in copypaste
+ *       - lexer does not understand russian
  *
  * TODO: fix bugs (lol)
 */
@@ -71,7 +83,7 @@ int main()
                         "ДЛЯ ПОЛУЧЕНИЯ ВЫИГРЫША НАЖМИТЕ ALT+F4.\n"
 
                         "ну_сколько_можно x > 11 ^ aboba228 ?\n"
-                            "x я_так_чувствую x + 1\n";
+                            "x я_так_чувствую x + 1 сомнительно_но_окей\n";
 
     const char* if_else_code =
                         "ДАННОЕ СООБЩЕНИЕ (МАТЕРИАЛ) СОЗДАНО И (ИЛИ) РАСПРОСТРАНЕНО ИНОСТРАННЫМ\n"
@@ -92,13 +104,41 @@ int main()
                         "♂♂♂♂ Oleg ♂ TinCock ♂♂♂♂ (КТО БЫ ЭТО МОГ БЫТЬ). КОЛЯ ЛОХ КСТА, WHEN DANIL???\n"
                         "ДЛЯ ПОЛУЧЕНИЯ ВЫИГРЫША НАЖМИТЕ ALT+F4.\n"
 
+                        DEC_VAR " aboba_18 я_так_чувствую 228 сомнительно_но_окей "
+                        DEC_VAR " x        я_так_чувствую 48  сомнительно_но_окей "
                         "какая_разница aboba_18 > 666 / 2 ? "
                             "x я_так_чувствую 333 + 0 сомнительно_но_окей ";
 
-    ProgText* prog_text = ProgTextCtor (while_code, strlen (while_code) + 1);
+    const char* new_lexer_code =
+                        "ДАННОЕ СООБЩЕНИЕ (МАТЕРИАЛ) СОЗДАНО И (ИЛИ) РАСПРОСТРАНЕНО ИНОСТРАННЫМ\n"
+                        "И РОССИЙСКИМ ЮРИДИЧЕСКИМ ЛИЦОМ, ВЫПОЛНЯЮЩИМ ФУНКЦИИ ИНОСТРАННОГО КОМПИЛЯТОРА\n"
+                        "А ТАКЖЕ ФИНАНСИРУЕТСЯ ИЗ ФОНДА КОШЕК ЕДИНИЧКИ И УПОМИНАЕТ НЕКОГО ИНОАГЕНТА\n"
+                        "♂♂♂♂ Oleg ♂ TinCock ♂♂♂♂ (КТО БЫ ЭТО МОГ БЫТЬ). КОЛЯ ЛОХ КСТА, WHEN DANIL???\n"
+                        "ДЛЯ ПОЛУЧЕНИЯ ВЫИГРЫША НАЖМИТЕ ALT+F4.\n"
+
+                        DEC_VAR " x я_так_чувствую 11 сомнительно_но_окей "
+                        "x я_так_чувствую 12 сомнительно_но_окей "
+                        "никто_никогда_не_вернет 2007_год сомнительно_но_окей"
+                        ;
+
+    const char* func_lexer_code =
+                        "ДАННОЕ СООБЩЕНИЕ (МАТЕРИАЛ) СОЗДАНО И (ИЛИ) РАСПРОСТРАНЕНО ИНОСТРАННЫМ\n"
+                        "И РОССИЙСКИМ ЮРИДИЧЕСКИМ ЛИЦОМ, ВЫПОЛНЯЮЩИМ ФУНКЦИИ ИНОСТРАННОГО КОМПИЛЯТОРА\n"
+                        "А ТАКЖЕ ФИНАНСИРУЕТСЯ ИЗ ФОНДА КОШЕК ЕДИНИЧКИ И УПОМИНАЕТ НЕКОГО ИНОАГЕНТА\n"
+                        "♂♂♂♂ Oleg ♂ TinCock ♂♂♂♂ (КТО БЫ ЭТО МОГ БЫТЬ). КОЛЯ ЛОХ КСТА, WHEN DANIL???\n"
+                        "ДЛЯ ПОЛУЧЕНИЯ ВЫИГРЫША НАЖМИТЕ ALT+F4.\n"
+
+                        DEC_VAR " platno я_так_чувствую 0 сомнительно_но_окей "
+                        DEC_VAR " besplatno я_так_чувствую platno сомнительно_но_окей "
+                        "россии_нужен TinkoffPlatinum за besplatno почти_без_переплат";
+
+    ProgText* prog_text = ProgTextCtor (func_lexer_code, strlen (func_lexer_code) + 1);
     ProgCode* prog_code = LexicalAnalysisTokenize (prog_text);
     ProgTextDtor (prog_text);
+
     if (!prog_code) return 1;
+
+    SHOW_PROG_CODE;
 
     Tree* ast = BuildAST (prog_code);
 
@@ -675,15 +715,47 @@ ProgCode* LexicalAnalysisTokenize (ProgText* text)
         TreeNode* new_node = NULL;
 
         // the whole statement is quite unoptimal because many functions duplicate each other
-        if (IsIdentifier (lexem))
+        if (IsDeclarator (lexem))
         {
-            int id_index = GetIdentifierIndex (lexem, prog_code->nametable);
-            if (id_index == -1)
-            {
-                ProgCodeDtor (prog_code);
+            int dclr_index = GetDeclaratorIndex (lexem);
+            if (dclr_index == -1)
+                LEXER_ERR ("Unexpected error: declarator \"%s\" "
+                           "index not found in declarators table", lexem);
 
-                RET_ERROR (NULL, "Unexpected error: \"%s\" identifier index = -1", lexem);
+            char next_lexem[MAX_LEXEM] = "";
+            int dummy = 0;
+            int scan_res = sscanf (text->text + text->offset, "%s%n", next_lexem, &dummy);
+            PRINTF_DEBUG ("next lexem = %s\n", next_lexem);
+            if (!IsIdentifier (next_lexem))
+                LEXER_ERR ("Declarator must have identifier after it. Instead there is"
+                                                    " \"%s\". SHAME!", next_lexem);
+
+            if (FindInNametable (next_lexem, prog_code->nametable) != -1) // variable already declared
+                    LEXER_ERR ("Redeclaration of %s. SHAME!", next_lexem);
+
+            UpdNameTable (next_lexem, prog_code->nametable);
+
+            switch (DECLARATORS[dclr_index].dclr_code)
+            {
+            case VAR_DECLARATOR:
+                new_node = TreeNodeCtor (VAR_DECLARATOR, DECLARATOR, NULL, NULL, NULL, NULL);
+                break;
+
+            case FUNC_DECLARATOR:
+                new_node = TreeNodeCtor (FUNC_DECLARATOR, DECLARATOR, NULL, NULL, NULL, NULL);
+                break;
+
+            default:
+                LEXER_ERR ("Declarator not found in DECLARATORS[]");
+                break;
             }
+        }
+
+        else if (IsIdentifier (lexem))
+        {
+            int id_index = FindInNametable (lexem, prog_code->nametable);
+            if (id_index == -1)
+                LEXER_ERR ("Undefined reference to %s", lexem);
 
             new_node = TreeNodeCtor (id_index, IDENTIFIER, NULL, NULL, NULL, NULL);
         }
@@ -692,12 +764,8 @@ ProgCode* LexicalAnalysisTokenize (ProgText* text)
         {
             int kw_index = GetKeywordIndex (lexem);
             if (kw_index == -1)
-            {
-                ProgCodeDtor (prog_code);
-
-                RET_ERROR (NULL, "Unexpected error: keyword \"%s\" "
-                                 "index not found in keywords table", lexem);
-            }
+                LEXER_ERR ("Unexpected error: keyword \"%s\" "
+                           "index not found in keywords table", lexem);
 
             new_node = TreeNodeCtor (kw_index, KEYWORD, NULL, NULL, NULL, NULL);
         }
@@ -706,12 +774,8 @@ ProgCode* LexicalAnalysisTokenize (ProgText* text)
         {
             int sep_index = GetSeparatorIndex (lexem);
             if (sep_index == -1)
-            {
-                ProgCodeDtor (prog_code);
-
-                RET_ERROR (NULL, "Unexpected error: separator \"%s\" "
-                                 "index not found in separators table", lexem);
-            }
+                LEXER_ERR ("Unexpected error: separator \"%s\" "
+                           "index not found in separators table", lexem);
 
             new_node = TreeNodeCtor (sep_index, SEPARATOR, NULL, NULL, NULL, NULL);
         }
@@ -720,12 +784,8 @@ ProgCode* LexicalAnalysisTokenize (ProgText* text)
         {
             int op_index = GetOperatorIndex (lexem);
             if (op_index == -1)
-            {
-                ProgCodeDtor (prog_code);
-
-                RET_ERROR (NULL, "Unexpected error: operator \"%s\" "
-                                 "index not found in operators table", lexem);
-            }
+                LEXER_ERR ("Unexpected error: operator \"%s\" "
+                           "index not found in operators table", lexem);
 
             new_node = TreeNodeCtor (op_index, OPERATOR, NULL, NULL, NULL, NULL);
         }
@@ -737,8 +797,7 @@ ProgCode* LexicalAnalysisTokenize (ProgText* text)
 
         else
         {
-            ProgCodeDtor (prog_code);
-            RET_ERROR (NULL, "Unknown lexem \"%s\"", lexem);
+            LEXER_ERR ("Unknown lexem \"%s\"", lexem);
         }
 
         prog_code->tokens[prog_code->size++] = new_node;
@@ -790,6 +849,21 @@ int IsIdentifier (const char* lexem)
         if (!isalnum(*lexem) && *lexem != '_') return 0;
 
     return 1;
+}
+
+// ============================================================================================
+
+int IsDeclarator (const char* lexem)
+{
+    assert (lexem);
+
+    for (int i = 0; i < N_DECLARATORS; i++)
+    {
+        if (streq (lexem, DECLARATORS[i].name))
+            return 1;
+    }
+
+    return 0;
 }
 
 // ============================================================================================
@@ -857,11 +931,26 @@ int GetIdentifierIndex (const char* identifier, NameTable* nametable)
     assert (identifier);
     assert (nametable);
 
-    int id_index = FindVarInNametable (identifier, nametable);
+    int id_index = FindInNametable (identifier, nametable);
     if (id_index  != -1)
         return id_index;
 
     return UpdNameTable (identifier, nametable);
+}
+
+// ============================================================================================
+
+int GetDeclaratorIndex (const char* keyword)
+{
+    assert (keyword);
+
+    for (int i = 0; i < N_DECLARATORS; i++)
+    {
+        if (streq (keyword, DECLARATORS[i].name))
+            return i;
+    }
+
+    return -1; // this is unlikely to happen, but if this happens it is not handled
 }
 
 // ============================================================================================

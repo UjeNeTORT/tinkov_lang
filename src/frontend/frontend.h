@@ -22,6 +22,9 @@
 
 // =========================== DSL ===========================
 
+#define LEXER_ERR(err_text_format, ...) {ProgCodeDtor (prog_code); \
+        RET_ERROR (NULL, err_text_format __VA_OPT__(,) __VA_ARGS__);}
+
 #define OFFSET     (prog_code->offset)
 #define TOKEN(i)   (prog_code->tokens[(i)])
 #define CURR_TOKEN (prog_code->tokens[OFFSET])
@@ -40,7 +43,7 @@ char FOREIGN_AGENT_BANNER[] = "ДАННОЕ СООБЩЕНИЕ (МАТЕРИАЛ
                               "А ТАКЖЕ ФИНАНСИРУЕТСЯ ИЗ ФОНДА КОШЕК ЕДИНИЧКИ И УПОМИНАЕТ НЕКОГО ИНОАГЕНТА\n"
                               "♂♂♂♂ Oleg ♂ TinCock ♂♂♂♂ (КТО БЫ ЭТО МОГ БЫТЬ). КОЛЯ ЛОХ КСТА, WHEN DANIL???\n"
                               "ДЛЯ ПОЛУЧЕНИЯ ВЫИГРЫША НАЖМИТЕ ALT+F4.\n";
-const int  FOREIGN_AGENT_BANNER_WORDS = 47; // i know i know
+const int FOREIGN_AGENT_BANNER_WORDS = 47; // i know i know
 
 char NO_FOREIGN_AGENT_BANNER_ERROR[] =
                     RED("祝大家好运和积极!!! ОЙОЙОЙ! МНОГО ПЛОХО! МНОГО СТЫД! XI НЕДОВОЛЕН!\n"
@@ -109,12 +112,14 @@ ProgCode*    LexicalAnalysisTokenize (ProgText* text);
 int HasForeignAgent (ProgText* text);
 
 int IsIdentifier (const char* lexem);
+int IsDeclarator (const char* lexem);
 int IsKeyword    (const char* lexem);
 int IsSeparator  (const char* lexem);
 int IsOperator   (const char* lexem);
 int IsIntLiteral (const char* lexem);
 
 int GetIdentifierIndex (const char* identifier, NameTable* nametable);
+int GetDeclaratorIndex (const char* keyword);
 int GetKeywordIndex    (const char* keyword);
 int GetSeparatorIndex  (const char* separator);
 int GetOperatorIndex   (const char* operator_); // !!! operator__________ <- why??

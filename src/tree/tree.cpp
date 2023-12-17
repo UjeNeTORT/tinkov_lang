@@ -690,7 +690,7 @@ ReadAssignVariableRes ReadAssignVariable (NodeData* data, char* var_name, const 
     if (IsVarNameCorrect((const char *) var_name))
         RET_ERROR (READ_ASSIGN_VAR_ERR, "Incorrect variable name \"%s\"\n", var_name);
 
-    int var_id = FindVarInNametable (var_name, tree->nametable);
+    int var_id = FindInNametable (var_name, tree->nametable);
 
     if (var_id == -1) // not found in nametable
     {
@@ -795,7 +795,7 @@ WriteTreeRes WriteNodeData (FILE* stream, NodeData data, const NameTable* nameta
 
 // ============================================================================================
 
-int FindVarInNametable (const char* word, const NameTable* nametable)
+int FindInNametable (const char* word, const NameTable* nametable)
 {
     assert (nametable);
     assert (word);

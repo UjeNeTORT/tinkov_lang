@@ -216,7 +216,7 @@ WriteTreeRes WriteTree     (FILE* stream, const Tree* tree);
 WriteTreeRes WriteSubtree  (FILE* stream, const TreeNode* node, const Tree* tree);
 WriteTreeRes WriteNodeData (FILE* stream, NodeData data, const NameTable* nametable);
 
-int FindVarInNametable (const char* word, const NameTable* nametable);
+int FindInNametable (const char* word, const NameTable* nametable);
 int UpdNameTable       (const char* word, NameTable* nametable);
 int IsVarNameCorrect   (const char* word);
 
