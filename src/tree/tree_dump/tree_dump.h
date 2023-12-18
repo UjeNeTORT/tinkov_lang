@@ -31,6 +31,7 @@ const int MAX_TREE_FNAME = 100;
 const char GRAPH_BGCLR[]   = "#EDDDD4";
 const char GRAPH_TEXTCLR[] = "#EDDDD4";
 const char GRAPH_INTCLR[]  = "#197278";
+const char GRAPH_DECCLR[] = "#FF8966";
 const char GRAPH_OPCLR[]   = "#C44536";
 const char GRAPH_IDCLR[]   = "#283D3B";
 const char GRAPH_ERRCLR[]  = "#000000";

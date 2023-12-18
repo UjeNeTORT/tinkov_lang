@@ -210,6 +210,12 @@ DotTreePrintRes DotSubtreePrint (FILE* dot_file, const TreeNode* node, const Tre
 
         break;
 
+    case DECLARATOR:
+        color = GRAPH_DECCLR;
+        sprintf (node_data, "%s", DECLARATORS[VAL (node)].name);
+
+        break;
+
     case KEYWORD:
         color = GRAPH_KWCLR;
         sprintf (node_data, "%s", KEYWORDS[VAL (node)].name);
@@ -241,7 +247,7 @@ DotTreePrintRes DotSubtreePrint (FILE* dot_file, const TreeNode* node, const Tre
         break;
     }
 
-    fprintf (dot_file, "\tnode_%d [style = filled, shape = circle, label = \"%s\", fillcolor = \"%s\", fontcolor = \"%s\"];\n", *node_id, node_data, color, GRAPH_TEXTCLR);
+    fprintf (dot_file, "\tnode_%d [style = \"filled, rounded\", shape = rectangle, label = \"%s\", fillcolor = \"%s\", fontcolor = \"%s\"];\n", *node_id, node_data, color, GRAPH_TEXTCLR);
 
     int left_subtree_id  = 0;
     int mid_subtree_id   = 0;
@@ -314,6 +320,10 @@ DotTreePrintRes DotSubtreeDetailedPrint (FILE* dot_file, const TreeNode* node, c
         color = GRAPH_IDCLR;
         break;
 
+    case DECLARATOR:
+        color = GRAPH_DECCLR;
+        break;
+
     case KEYWORD:
         color = GRAPH_KWCLR;
         break;
@@ -340,9 +350,13 @@ DotTreePrintRes DotSubtreeDetailedPrint (FILE* dot_file, const TreeNode* node, c
     fprintf (dot_file, "\tdetailed_node_%d [label = \"{type = %d | val = %d}\"];\n", *node_id, TYPE(node), VAL(node));
 
     int left_subtree_id  = 0;
+    int mid_subtree_id  = 0;
     int right_subtree_id = 0;
 
     if (DotSubtreeDetailedPrint (dot_file, (const TreeNode *) node->left, tree, &left_subtree_id) != DOT_PRINT_SUCCESS)
+        RET_ERROR (DOT_PRINT_ERR, "Previous function returned error code");
+
+    if (DotSubtreeDetailedPrint (dot_file, (const TreeNode *) node->mid, tree, &mid_subtree_id) != DOT_PRINT_SUCCESS)
         RET_ERROR (DOT_PRINT_ERR, "Previous function returned error code");
 
     if (DotSubtreeDetailedPrint (dot_file, (const TreeNode *) node->right, tree, &right_subtree_id) != DOT_PRINT_SUCCESS)
@@ -351,6 +365,8 @@ DotTreePrintRes DotSubtreeDetailedPrint (FILE* dot_file, const TreeNode* node, c
     if (left_subtree_id != 0)
         fprintf (dot_file, "\tdetailed_node_%d -> detailed_node_%d;\n", *node_id, left_subtree_id);
 
+    if (mid_subtree_id != 0)
+        fprintf (dot_file, "\tdetailed_node_%d -> detailed_node_%d;\n", *node_id, mid_subtree_id);
     if (right_subtree_id != 0)
         fprintf (dot_file, "\tdetailed_node_%d -> detailed_node_%d;\n", *node_id, right_subtree_id);
 
