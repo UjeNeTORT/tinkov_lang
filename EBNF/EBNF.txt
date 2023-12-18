@@ -1,10 +1,8 @@
 <G> ::= (<FunctionDeclaration>)+
 
-<FunctionDeclaration> ::= <FunctionDeclarator>
+<FunctionDeclaration> ::= "россии_нужен"
             <Identifier> "за" (<Identifier>)+ "почти_без_переплат"
             <CompoundStatement>
-
-<FunctionDeclarator> ::= "россии_нужен"
 
 <CompoundStatement> ::= <StatementBlock> | <SingleStatement>
 
@@ -45,6 +43,6 @@
 <PowRes>    ::= <Operand> ("^" <Operand>)?
 <Operand>   ::= "$" <MathExpr> "$" | <SimpleOperand>
 
-<Identifier>    ::= ([A-Z] | [a-z] | "_") ([A-Z] | [a-z] | "_" | [0-9])*
+<Identifier>    ::= ([A-Z] | [А-Я] | [a-z] | [а-я] | "_") ([A-Z] | [А-Я] | [a-z] | [а-я] | "_" | [0-9])*
 <Number>        ::= ([0-9])+
 <SimpleOperand> ::= <Identifier> | <Number>
