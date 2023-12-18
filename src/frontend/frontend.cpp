@@ -31,14 +31,19 @@
  *       - lexer thinks that "_aboba228_ is unknown lexem"
  *       x lexer does not take \n as a space between tokens (I THINK THE PROBLEM IS NOT IN THIS, NOT A BUG)
  *       x syntaxer does not give an error if there is no ; in the end
- *       - difference between index of keyword and its opcode is not always trivial
+ *       x difference between index of keyword and its opcode is not always trivial
  *       - there are no checks in many places if there are tokens left, if there are no more
  *         tokens left, this may result in attempt to access area behind the array
  *       - in some places i have to write 2 syntax asserts checking if there are tokens left and then
  *         getting access to token if ir exists, so it results in copypaste
- *       - lexer does not understand russian
+ *       x lexer does not understand russian
+ *       - syntaxer allows same variable names in function parameters
+ *       - chaos with declaration check in lexer
+ *       - if no function declared - falls with segfault
+ *       - it should handle not Fucnitons sequence but (function | operation)+ sequence
+ *       x does not require having an entry point
  *
- * TODO: fix bugs (lol)
+ * TODO: - fix bugs (lol)
 */
 
 #include "frontend.h"
@@ -46,91 +51,58 @@
 int main()
 {
     const char* math_code =
-                        "ДАННОЕ СООБЩЕНИЕ (МАТЕРИАЛ) СОЗДАНО И (ИЛИ) РАСПРОСТРАНЕНО ИНОСТРАННЫМ\n"
-                        "И РОССИЙСКИМ ЮРИДИЧЕСКИМ ЛИЦОМ, ВЫПОЛНЯЮЩИМ ФУНКЦИИ ИНОСТРАННОГО КОМПИЛЯТОРА\n"
-                        "А ТАКЖЕ ФИНАНСИРУЕТСЯ ИЗ ФОНДА КОШЕК ЕДИНИЧКИ И УПОМИНАЕТ НЕКОГО ИНОАГЕНТА\n"
-                        "♂♂♂♂ Oleg ♂ TinCock ♂♂♂♂ (КТО БЫ ЭТО МОГ БЫТЬ). КОЛЯ ЛОХ КСТА, WHEN DANIL???\n"
-                        "ДЛЯ ПОЛУЧЕНИЯ ВЫИГРЫША НАЖМИТЕ ALT+F4.\n"
-
+                        FOREIGN_AGENT
                         "x я_так_чувствую aboba228 ^ 11 сомнительно_но_окей";
 
     const char* double_assign_code =
-                        "ДАННОЕ СООБЩЕНИЕ (МАТЕРИАЛ) СОЗДАНО И (ИЛИ) РАСПРОСТРАНЕНО ИНОСТРАННЫМ\n"
-                        "И РОССИЙСКИМ ЮРИДИЧЕСКИМ ЛИЦОМ, ВЫПОЛНЯЮЩИМ ФУНКЦИИ ИНОСТРАННОГО КОМПИЛЯТОРА\n"
-                        "А ТАКЖЕ ФИНАНСИРУЕТСЯ ИЗ ФОНДА КОШЕК ЕДИНИЧКИ И УПОМИНАЕТ НЕКОГО ИНОАГЕНТА\n"
-                        "♂♂♂♂ Oleg ♂ TinCock ♂♂♂♂ (КТО БЫ ЭТО МОГ БЫТЬ). КОЛЯ ЛОХ КСТА, WHEN DANIL???\n"
-                        "ДЛЯ ПОЛУЧЕНИЯ ВЫИГРЫША НАЖМИТЕ ALT+F4.\n"
-
+                        FOREIGN_AGENT
                         "олег_не_торопись x я_так_чувствую 11 сомнительно_но_окей "
                         "y я_так_чувствую 12 сомнительно_но_окей я_олигарх_мне_заебись";
 
     const char* doif_code =
-                        "ДАННОЕ СООБЩЕНИЕ (МАТЕРИАЛ) СОЗДАНО И (ИЛИ) РАСПРОСТРАНЕНО ИНОСТРАННЫМ\n"
-                        "И РОССИЙСКИМ ЮРИДИЧЕСКИМ ЛИЦОМ, ВЫПОЛНЯЮЩИМ ФУНКЦИИ ИНОСТРАННОГО КОМПИЛЯТОРА\n"
-                        "А ТАКЖЕ ФИНАНСИРУЕТСЯ ИЗ ФОНДА КОШЕК ЕДИНИЧКИ И УПОМИНАЕТ НЕКОГО ИНОАГЕНТА\n"
-                        "♂♂♂♂ Oleg ♂ TinCock ♂♂♂♂ (КТО БЫ ЭТО МОГ БЫТЬ). КОЛЯ ЛОХ КСТА, WHEN DANIL???\n"
-                        "ДЛЯ ПОЛУЧЕНИЯ ВЫИГРЫША НАЖМИТЕ ALT+F4.\n"
-
+                        FOREIGN_AGENT
                         "я_ссыкло_или_я_не_ссыкло "
                             "x я_так_чувствую 11 сомнительно_но_окей "
                         "какая_разница aboba228 > 11 ?";
 
     const char* while_code =
-                        "ДАННОЕ СООБЩЕНИЕ (МАТЕРИАЛ) СОЗДАНО И (ИЛИ) РАСПРОСТРАНЕНО ИНОСТРАННЫМ\n"
-                        "И РОССИЙСКИМ ЮРИДИЧЕСКИМ ЛИЦОМ, ВЫПОЛНЯЮЩИМ ФУНКЦИИ ИНОСТРАННОГО КОМПИЛЯТОРА\n"
-                        "А ТАКЖЕ ФИНАНСИРУЕТСЯ ИЗ ФОНДА КОШЕК ЕДИНИЧКИ И УПОМИНАЕТ НЕКОГО ИНОАГЕНТА\n"
-                        "♂♂♂♂ Oleg ♂ TinCock ♂♂♂♂ (КТО БЫ ЭТО МОГ БЫТЬ). КОЛЯ ЛОХ КСТА, WHEN DANIL???\n"
-                        "ДЛЯ ПОЛУЧЕНИЯ ВЫИГРЫША НАЖМИТЕ ALT+F4.\n"
-
+                        FOREIGN_AGENT
                         "ну_сколько_можно x > 11 ^ aboba228 ?\n"
                             "x я_так_чувствую x + 1 сомнительно_но_окей\n";
 
     const char* if_else_code =
-                        "ДАННОЕ СООБЩЕНИЕ (МАТЕРИАЛ) СОЗДАНО И (ИЛИ) РАСПРОСТРАНЕНО ИНОСТРАННЫМ\n"
-                        "И РОССИЙСКИМ ЮРИДИЧЕСКИМ ЛИЦОМ, ВЫПОЛНЯЮЩИМ ФУНКЦИИ ИНОСТРАННОГО КОМПИЛЯТОРА\n"
-                        "А ТАКЖЕ ФИНАНСИРУЕТСЯ ИЗ ФОНДА КОШЕК ЕДИНИЧКИ И УПОМИНАЕТ НЕКОГО ИНОАГЕНТА\n"
-                        "♂♂♂♂ Oleg ♂ TinCock ♂♂♂♂ (КТО БЫ ЭТО МОГ БЫТЬ). КОЛЯ ЛОХ КСТА, WHEN DANIL???\n"
-                        "ДЛЯ ПОЛУЧЕНИЯ ВЫИГРЫША НАЖМИТЕ ALT+F4.\n"
-
+                        FOREIGN_AGENT
                         "какая_разница aboba_18 > 666 / 2 ? "
                             "x я_так_чувствую 333 + 0 сомнительно_но_окей "
                         "я_могу_ошибаться "
                             "x я_так_чувствую 11 сомнительно_но_окей ";
 
     const char* if_code =
-                        "ДАННОЕ СООБЩЕНИЕ (МАТЕРИАЛ) СОЗДАНО И (ИЛИ) РАСПРОСТРАНЕНО ИНОСТРАННЫМ\n"
-                        "И РОССИЙСКИМ ЮРИДИЧЕСКИМ ЛИЦОМ, ВЫПОЛНЯЮЩИМ ФУНКЦИИ ИНОСТРАННОГО КОМПИЛЯТОРА\n"
-                        "А ТАКЖЕ ФИНАНСИРУЕТСЯ ИЗ ФОНДА КОШЕК ЕДИНИЧКИ И УПОМИНАЕТ НЕКОГО ИНОАГЕНТА\n"
-                        "♂♂♂♂ Oleg ♂ TinCock ♂♂♂♂ (КТО БЫ ЭТО МОГ БЫТЬ). КОЛЯ ЛОХ КСТА, WHEN DANIL???\n"
-                        "ДЛЯ ПОЛУЧЕНИЯ ВЫИГРЫША НАЖМИТЕ ALT+F4.\n"
-
+                        FOREIGN_AGENT
                         DEC_VAR " aboba_18 я_так_чувствую 228 сомнительно_но_окей "
                         DEC_VAR " x        я_так_чувствую 48  сомнительно_но_окей "
                         "какая_разница aboba_18 > 666 / 2 ? "
                             "x я_так_чувствую 333 + 0 сомнительно_но_окей ";
 
     const char* new_lexer_code =
-                        "ДАННОЕ СООБЩЕНИЕ (МАТЕРИАЛ) СОЗДАНО И (ИЛИ) РАСПРОСТРАНЕНО ИНОСТРАННЫМ\n"
-                        "И РОССИЙСКИМ ЮРИДИЧЕСКИМ ЛИЦОМ, ВЫПОЛНЯЮЩИМ ФУНКЦИИ ИНОСТРАННОГО КОМПИЛЯТОРА\n"
-                        "А ТАКЖЕ ФИНАНСИРУЕТСЯ ИЗ ФОНДА КОШЕК ЕДИНИЧКИ И УПОМИНАЕТ НЕКОГО ИНОАГЕНТА\n"
-                        "♂♂♂♂ Oleg ♂ TinCock ♂♂♂♂ (КТО БЫ ЭТО МОГ БЫТЬ). КОЛЯ ЛОХ КСТА, WHEN DANIL???\n"
-                        "ДЛЯ ПОЛУЧЕНИЯ ВЫИГРЫША НАЖМИТЕ ALT+F4.\n"
-
+                        FOREIGN_AGENT
                         DEC_VAR " x я_так_чувствую 11 сомнительно_но_окей "
                         "x я_так_чувствую 12 сомнительно_но_окей "
                         "никто_никогда_не_вернет 2007_год сомнительно_но_окей"
                         ;
 
     const char* func_lexer_code =
-                        "ДАННОЕ СООБЩЕНИЕ (МАТЕРИАЛ) СОЗДАНО И (ИЛИ) РАСПРОСТРАНЕНО ИНОСТРАННЫМ\n"
-                        "И РОССИЙСКИМ ЮРИДИЧЕСКИМ ЛИЦОМ, ВЫПОЛНЯЮЩИМ ФУНКЦИИ ИНОСТРАННОГО КОМПИЛЯТОРА\n"
-                        "А ТАКЖЕ ФИНАНСИРУЕТСЯ ИЗ ФОНДА КОШЕК ЕДИНИЧКИ И УПОМИНАЕТ НЕКОГО ИНОАГЕНТА\n"
-                        "♂♂♂♂ Oleg ♂ TinCock ♂♂♂♂ (КТО БЫ ЭТО МОГ БЫТЬ). КОЛЯ ЛОХ КСТА, WHEN DANIL???\n"
-                        "ДЛЯ ПОЛУЧЕНИЯ ВЫИГРЫША НАЖМИТЕ ALT+F4.\n"
+                        FOREIGN_AGENT
 
-                        DEC_VAR " platno я_так_чувствую 0 сомнительно_но_окей "
-                        DEC_VAR " besplatno я_так_чувствую platno сомнительно_но_окей "
-                        "россии_нужен TinkoffPlatinum за besplatno почти_без_переплат";
+                        "россии_нужен ЦАРЬ за почти_без_переплат "
+                        "олег_не_торопись \n"
+                            DEC_VAR " платно я_так_чувствую 0 сомнительно_но_окей "
+                        "я_олигарх_мне_заебись \n"
+
+                        "россии_нужен ТинькоффПлатинум за платно платно платно почти_без_переплат "
+                        "олег_не_торопись \n"
+                            "платно я_так_чувствую 0 сомнительно_но_окей "
+                        "я_олигарх_мне_заебись \n";
 
     ProgText* prog_text = ProgTextCtor (func_lexer_code, strlen (func_lexer_code) + 1);
     ProgCode* prog_code = LexicalAnalysisTokenize (prog_text);
@@ -138,7 +110,7 @@ int main()
 
     if (!prog_code) return 1;
 
-    SHOW_PROG_CODE;
+    SHOW_PROG_CODE; //
 
     Tree* ast = BuildAST (prog_code);
 
@@ -171,15 +143,61 @@ TreeNode* GetG (ProgCode* prog_code)
 {
     assert (prog_code);
 
-    TreeNode* wrapped_statement_res = GetCompoundStatement (prog_code);
-    if (!wrapped_statement_res)
+    TreeNode* new_func   = NULL;
+    TreeNode* func_block = NULL;
+
+    do
     {
-        WARN ("assign res nil");
+        new_func = GetFunctionDeclaration (prog_code);
 
-        return NULL; // error or not?
-    }
+        if (new_func)
+            func_block = TreeNodeCtor (END_STATEMENT, SEPARATOR, NULL,
+                        func_block, NULL, new_func);
+    } while (new_func && HAS_TOKENS_LEFT);
 
-    return wrapped_statement_res;
+    SYNTAX_ASSERT (func_block != NULL, "Expected at least one function");
+
+    return func_block;
+}
+
+// ============================================================================================
+
+TreeNode* GetFunctionDeclaration (ProgCode* prog_code)
+{
+    assert (prog_code);
+
+    if (TOKEN_IS_NOT (DECLARATOR, FUNC_DECLARATOR))
+        return NULL;
+
+    OFFSET++; // skip "def" - func declarator
+
+    TreeNode* func_id = GetIdentifier (prog_code);
+    SYNTAX_ASSERT (HAS_TOKENS_LEFT, "separator begin function params expected");
+    SYNTAX_ASSERT (TOKEN_IS (SEPARATOR, BEGIN_FUNC_PARAMS),
+                    "separator begin function params expected");
+
+    OFFSET++; // skip "("
+
+    TreeNode* new_identifier = NULL;
+    TreeNode* params_block   = NULL;
+
+    do
+    {
+        new_identifier = GetIdentifier (prog_code);
+
+        if (new_identifier)
+            params_block = TreeNodeCtor (END_STATEMENT, SEPARATOR, NULL, params_block, NULL, new_identifier);
+    } while (new_identifier);
+
+    SYNTAX_ASSERT (TOKEN_IS (SEPARATOR, END_FUNC_PARAMS),
+                    "separator end function params expected");
+
+    OFFSET++; // skip ")"
+
+    TreeNode* func_body = GetCompoundStatement (prog_code);
+    SYNTAX_ASSERT (func_body != NULL, "Function body is bodyless");
+
+    return TreeNodeCtor (FUNC_DECLARATOR, DECLARATOR, NULL, func_body, params_block, func_id);
 }
 
 // ============================================================================================
@@ -191,7 +209,6 @@ TreeNode* GetCompoundStatement (ProgCode* prog_code)
     int init_offset = OFFSET;
 
     TreeNode* wrapped_statement = GetStatementBlock (prog_code);
-
     if (wrapped_statement)
         return wrapped_statement;
 
@@ -220,7 +237,7 @@ TreeNode* GetStatementBlock (ProgCode* prog_code)
     do
     {
         new_statement = GetSingleStatement (prog_code);
-
+        PRINTF_DEBUG ("t %d v %d", TYPE (CURR_TOKEN), VAL (CURR_TOKEN));
         if (new_statement)
             statement_block = TreeNodeCtor (END_STATEMENT, SEPARATOR, NULL, statement_block, NULL, new_statement);
     } while (new_statement);
@@ -261,7 +278,23 @@ TreeNode* GetSingleStatement (ProgCode* prog_code)
 
     OFFSET = init_offset;
 
+    single_statement = GetReturn (prog_code);
+    if (single_statement)
+    {
+        SYNTAX_ASSERT (HAS_TOKENS_LEFT, "\"сомнительно_но_окей\" expected in the end of statement");
+
+        SYNTAX_ASSERT (TOKEN_IS (SEPARATOR, END_STATEMENT),
+                        "\"сомнительно_но_окей\" expected in the end of statement");
+
+        OFFSET++; // skip ";"
+
+        return single_statement;
+    }
+
+    OFFSET = init_offset;
+
     single_statement = GetAssign (prog_code);
+
     if (!single_statement)
         return NULL; // as the last one
 
@@ -365,6 +398,10 @@ TreeNode* GetAssign (ProgCode* prog_code)
     assert (prog_code);
 
     int init_offset  = OFFSET;
+    PRINTF_DEBUG ("t %d v %d", TYPE (CURR_TOKEN), VAL (CURR_TOKEN));
+    if (TOKEN_IS (DECLARATOR, VAR_DECLARATOR))
+        OFFSET++; // skip "let" - declarator TODOTODO TODO TODO
+    PRINTF_DEBUG ("t %d v %d", TYPE (CURR_TOKEN), VAL (CURR_TOKEN));
     TreeNode* lvalue = GetLvalue (prog_code);
     if (!lvalue)
     {
@@ -374,7 +411,7 @@ TreeNode* GetAssign (ProgCode* prog_code)
         return NULL;
     }
 
-    if (!TOKEN_IS (OPERATOR, ASSIGN))
+    if (TOKEN_IS_NOT (OPERATOR, ASSIGN))
     {
         OFFSET = init_offset;
 
@@ -389,6 +426,23 @@ TreeNode* GetAssign (ProgCode* prog_code)
     SYNTAX_ASSERT (rvalue != NULL, "Rvalue (nil) error");
 
     return TreeNodeCtor (ASSIGN, OPERATOR, NULL, lvalue, NULL, rvalue);
+}
+
+// ============================================================================================
+
+TreeNode* GetReturn (ProgCode* prog_code)
+{
+    assert (prog_code);
+
+    if (TOKEN_IS_NOT (KEYWORD, KW_RETURN))
+        return NULL;
+
+    OFFSET++; // skip "return"
+
+    TreeNode* identifier = GetIdentifier (prog_code);
+    SYNTAX_ASSERT (identifier != NULL, "Identifier expected after return");
+
+    return TreeNodeCtor (KW_RETURN, KEYWORD, NULL, identifier, NULL, NULL);
 }
 
 // ============================================================================================
@@ -699,7 +753,6 @@ ProgCode* LexicalAnalysisTokenize (ProgText* text)
         return NULL;
     }
 
-
     ProgCode* prog_code = ProgCodeCtor ();
 
     int n_readen = 0;
@@ -725,7 +778,7 @@ ProgCode* LexicalAnalysisTokenize (ProgText* text)
             char next_lexem[MAX_LEXEM] = "";
             int dummy = 0;
             int scan_res = sscanf (text->text + text->offset, "%s%n", next_lexem, &dummy);
-            PRINTF_DEBUG ("next lexem = %s\n", next_lexem);
+
             if (!IsIdentifier (next_lexem))
                 LEXER_ERR ("Declarator must have identifier after it. Instead there is"
                                                     " \"%s\". SHAME!", next_lexem);
@@ -749,15 +802,6 @@ ProgCode* LexicalAnalysisTokenize (ProgText* text)
                 LEXER_ERR ("Declarator not found in DECLARATORS[]");
                 break;
             }
-        }
-
-        else if (IsIdentifier (lexem))
-        {
-            int id_index = FindInNametable (lexem, prog_code->nametable);
-            if (id_index == -1)
-                LEXER_ERR ("Undefined reference to %s", lexem);
-
-            new_node = TreeNodeCtor (id_index, IDENTIFIER, NULL, NULL, NULL, NULL);
         }
 
         else if (IsKeyword (lexem)) // unoptimal, requires 2 cycles
@@ -790,6 +834,17 @@ ProgCode* LexicalAnalysisTokenize (ProgText* text)
             new_node = TreeNodeCtor (op_index, OPERATOR, NULL, NULL, NULL, NULL);
         }
 
+        else if (IsIdentifier (lexem))
+        {
+            int id_index = FindInNametable (lexem, prog_code->nametable);
+            if (id_index == -1)
+                LEXER_ERR ("Undefined reference to %s", lexem);
+
+            if (IsMainFunction (lexem)) prog_code->nametable->main_index = id_index;
+
+            new_node = TreeNodeCtor (id_index, IDENTIFIER, NULL, NULL, NULL, NULL);
+        }
+
         else if (IsIntLiteral (lexem))
         {
             new_node = TreeNodeCtor (atoi (lexem), INT_LITERAL, NULL, NULL, NULL, NULL);
@@ -802,6 +857,9 @@ ProgCode* LexicalAnalysisTokenize (ProgText* text)
 
         prog_code->tokens[prog_code->size++] = new_node;
     }
+
+    if (prog_code->nametable->main_index == -1)
+        LEXER_ERR ("No function \"%s\", no entry point", MAIN_FUNC_NAME);
 
     return prog_code;
 }
@@ -843,10 +901,10 @@ int IsIdentifier (const char* lexem)
 {
     assert (lexem);
 
-    if (!isalpha(*lexem)) return 0;
+    if (!isalpha (*lexem) && *lexem != '_' && !strchr (RU_SYMBOLS, *lexem)) return 0;
 
     while (*++lexem)
-        if (!isalnum(*lexem) && *lexem != '_') return 0;
+        if (!isalnum (*lexem) && *lexem != '_' && !strchr (RU_SYMBOLS, *lexem)) return 0;
 
     return 1;
 }
@@ -926,16 +984,11 @@ int IsIntLiteral (const char* lexem)
 
 // ============================================================================================
 
-int GetIdentifierIndex (const char* identifier, NameTable* nametable)
+int IsMainFunction (const char* lexem)
 {
-    assert (identifier);
-    assert (nametable);
+    assert (lexem);
 
-    int id_index = FindInNametable (identifier, nametable);
-    if (id_index  != -1)
-        return id_index;
-
-    return UpdNameTable (identifier, nametable);
+    return streq (lexem, MAIN_FUNC_NAME);
 }
 
 // ============================================================================================
@@ -1007,8 +1060,8 @@ ProgCode* ProgCodeCtor ()
     prog_code->nametable = NameTableCtor ();
 
     prog_code->tokens = (TreeNode**) calloc (MAX_N_NODES, sizeof(TreeNode*));
-    prog_code->size   = 0;
-    OFFSET = 0;
+    prog_code->size     = 0;
+    prog_code->offset   = 0;
 
     return prog_code;
 }
@@ -1097,7 +1150,7 @@ int SyntaxAssert (int has_tokens_left, int condition, ProgCode* prog_code, const
 
         va_end (ptr);
 
-        fprintf (stderr, RST_CLR "\n" RST_CLR);
+        fprintf (stderr, RST_CLR "\n\n\n" RST_CLR);
 
         ProgCodeDtor (prog_code);
 

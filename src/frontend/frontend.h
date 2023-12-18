@@ -38,6 +38,11 @@
     (TYPE (CURR_TOKEN) != (type) || VAL (CURR_TOKEN) != (val))
 // ===========================================================
 
+const char RU_SYMBOLS[] =
+    "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюя";
+
+char MAIN_FUNC_NAME[] = "ЦАРЬ";
+
 char FOREIGN_AGENT_BANNER[] = "ДАННОЕ СООБЩЕНИЕ (МАТЕРИАЛ) СОЗДАНО И (ИЛИ) РАСПРОСТРАНЕНО ИНОСТРАННЫМ\n"
                               "И РОССИЙСКИМ ЮРИДИЧЕСКИМ ЛИЦОМ, ВЫПОЛНЯЮЩИМ ФУНКЦИИ ИНОСТРАННОГО КОМПИЛЯТОРА\n"
                               "А ТАКЖЕ ФИНАНСИРУЕТСЯ ИЗ ФОНДА КОШЕК ЕДИНИЧКИ И УПОМИНАЕТ НЕКОГО ИНОАГЕНТА\n"
@@ -85,25 +90,27 @@ int SyntaxAssert (int has_tokens_left, int condition, ProgCode* prog_code, const
     if (SyntaxAssert(HAS_TOKENS_LEFT, (condition), prog_code, (format) __VA_OPT__(,) __VA_ARGS__)) \
         assert (0);
 
-Tree*     BuildAST             (ProgCode* prog_code);
-TreeNode* GetG                 (ProgCode* prog_code);
-TreeNode* GetCompoundStatement (ProgCode* prog_code);
-TreeNode* GetStatementBlock    (ProgCode* prog_code);
-TreeNode* GetSingleStatement   (ProgCode* prog_code);
-TreeNode* GetWhile             (ProgCode* prog_code);
-TreeNode* GetIfElse            (ProgCode* prog_code);
-TreeNode* GetDoIf              (ProgCode* prog_code);
-TreeNode* GetAssign            (ProgCode* prog_code);
-TreeNode* GetRvalue            (ProgCode* prog_code);
-TreeNode* GetLvalue            (ProgCode* prog_code);
-TreeNode* GetMathExprRes       (ProgCode* prog_code);
-TreeNode* GetAddSubRes         (ProgCode* prog_code);
-TreeNode* GetMulDivRes         (ProgCode* prog_code);
-TreeNode* GetPowRes            (ProgCode* prog_code);
-TreeNode* GetOperand           (ProgCode* prog_code);
-TreeNode* GetSimpleOperand     (ProgCode* prog_code);
-TreeNode* GetIdentifier        (ProgCode* prog_code);
-TreeNode* GetNumber            (ProgCode* prog_code);
+Tree*     BuildAST               (ProgCode* prog_code);
+TreeNode* GetG                   (ProgCode* prog_code);
+TreeNode* GetFunctionDeclaration (ProgCode* prog_code);
+TreeNode* GetCompoundStatement   (ProgCode* prog_code);
+TreeNode* GetStatementBlock      (ProgCode* prog_code);
+TreeNode* GetSingleStatement     (ProgCode* prog_code);
+TreeNode* GetWhile               (ProgCode* prog_code);
+TreeNode* GetIfElse              (ProgCode* prog_code);
+TreeNode* GetDoIf                (ProgCode* prog_code);
+TreeNode* GetAssign              (ProgCode* prog_code);
+TreeNode* GetReturn              (ProgCode* prog_code);
+TreeNode* GetRvalue              (ProgCode* prog_code);
+TreeNode* GetLvalue              (ProgCode* prog_code);
+TreeNode* GetMathExprRes         (ProgCode* prog_code);
+TreeNode* GetAddSubRes           (ProgCode* prog_code);
+TreeNode* GetMulDivRes           (ProgCode* prog_code);
+TreeNode* GetPowRes              (ProgCode* prog_code);
+TreeNode* GetOperand             (ProgCode* prog_code);
+TreeNode* GetSimpleOperand       (ProgCode* prog_code);
+TreeNode* GetIdentifier          (ProgCode* prog_code);
+TreeNode* GetNumber              (ProgCode* prog_code);
 
 // lexic analysis
 LexAnalysRes LexicAnalysis           (ProgText* text);
@@ -111,14 +118,14 @@ ProgCode*    LexicalAnalysisTokenize (ProgText* text);
 
 int HasForeignAgent (ProgText* text);
 
-int IsIdentifier (const char* lexem);
-int IsDeclarator (const char* lexem);
-int IsKeyword    (const char* lexem);
-int IsSeparator  (const char* lexem);
-int IsOperator   (const char* lexem);
-int IsIntLiteral (const char* lexem);
+int IsIdentifier   (const char* lexem);
+int IsDeclarator   (const char* lexem);
+int IsKeyword      (const char* lexem);
+int IsSeparator    (const char* lexem);
+int IsOperator     (const char* lexem);
+int IsIntLiteral   (const char* lexem);
+int IsMainFunction (const char* lexem);
 
-int GetIdentifierIndex (const char* identifier, NameTable* nametable);
 int GetDeclaratorIndex (const char* keyword);
 int GetKeywordIndex    (const char* keyword);
 int GetSeparatorIndex  (const char* separator);
