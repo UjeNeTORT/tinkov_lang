@@ -145,6 +145,7 @@ struct NameTable
 {
     char*  names [NAMETABLE_CAPACITY];
     double vals  [NAMETABLE_CAPACITY];
+    int main_index;
     int free;
 };
 

@@ -404,6 +404,7 @@ NameTable* NameTableCtor ()
         if (!nametable->names[i]) RET_ERROR (NULL, "names[%d] allocation error", i);
     }
 
+    nametable->main_index = -1;
     nametable->free  = 0;
 
     return nametable;
