@@ -16,10 +16,10 @@
 */
 
 #define FOREIGN_AGENT "ДАННОЕ СООБЩЕНИЕ (МАТЕРИАЛ) СОЗДАНО И (ИЛИ) РАСПРОСТРАНЕНО ИНОСТРАННЫМ\n" \
-                        "И РОССИЙСКИМ ЮРИДИЧЕСКИМ ЛИЦОМ, ВЫПОЛНЯЮЩИМ ФУНКЦИИ ИНОСТРАННОГО КОМПИЛЯТОРА\n" \
-                        "А ТАКЖЕ ФИНАНСИРУЕТСЯ ИЗ ФОНДА КОШЕК ЕДИНИЧКИ И УПОМИНАЕТ НЕКОГО ИНОАГЕНТА\n" \
-                        "♂♂♂♂ Oleg ♂ TinCock ♂♂♂♂ (КТО БЫ ЭТО МОГ БЫТЬ). КОЛЯ ЛОХ КСТА, WHEN DANIL???\n" \
-                        "ДЛЯ ПОЛУЧЕНИЯ ВЫИГРЫША НАЖМИТЕ ALT+F4.\n"
+                      "И РОССИЙСКИМ ЮРИДИЧЕСКИМ ЛИЦОМ, ВЫПОЛНЯЮЩИМ ФУНКЦИИ ИНОСТРАННОГО КОМПИЛЯТОРА\n" \
+                      "А ТАКЖЕ ФИНАНСИРУЕТСЯ ИЗ ФОНДА КОШЕК ЕДИНИЧКИ И УПОМИНАЕТ НЕКОГО ИНОАГЕНТА\n" \
+                      "♂♂♂♂ Oleg ♂ TinCock ♂♂♂♂ (КТО БЫ ЭТО МОГ БЫТЬ). КОЛЯ ЛОХ КСТА, WHEN DANIL???\n" \
+                      "ДЛЯ ПОЛУЧЕНИЯ ВЫИГРЫША НАЖМИТЕ ALT+F4.\n"
 
 #define DEC_VAR "але_здравствуйте_меня_зовут_ольга_звоню_вам_из_тинькок_банка_вам_удобно_сейчас_разговаривать"
 
@@ -42,6 +42,7 @@
  *       - if no function declared - falls with segfault
  *       - it should handle not Fucnitons sequence but (function | operation)+ sequence
  *       x does not require having an entry point
+ *       - var declarators in tree are not represented
  *
  * TODO: - fix bugs (lol)
 */
@@ -52,12 +53,13 @@ int main()
 {
     const char* math_code =
                         FOREIGN_AGENT
-                        "x я_так_чувствую aboba228 ^ 11 сомнительно_но_окей";
+                        DEC_VAR " x я_так_чувствую aboba228 ^ 11 сомнительно_но_окей";
 
     const char* double_assign_code =
                         FOREIGN_AGENT
-                        "олег_не_торопись x я_так_чувствую 11 сомнительно_но_окей "
-                        "y я_так_чувствую 12 сомнительно_но_окей я_олигарх_мне_заебись";
+                        "олег_не_торопись\n"
+                        DEC_VAR " x я_так_чувствую 11 сомнительно_но_окей "
+                        DEC_VAR " y я_так_чувствую 12 сомнительно_но_окей я_олигарх_мне_заебись";
 
     const char* doif_code =
                         FOREIGN_AGENT
@@ -88,15 +90,17 @@ int main()
                         FOREIGN_AGENT
                         DEC_VAR " x я_так_чувствую 11 сомнительно_но_окей "
                         "x я_так_чувствую 12 сомнительно_но_окей "
-                        "никто_никогда_не_вернет 2007_год сомнительно_но_окей"
+                        "никто_никогда_не_вернет год_2007 сомнительно_но_окей"
                         ;
 
     const char* func_lexer_code =
                         FOREIGN_AGENT
 
+                        DEC_VAR " платно я_так_чувствую 0 сомнительно_но_окей \n"
                         "россии_нужен ЦАРЬ за почти_без_переплат "
                         "олег_не_торопись \n"
-                            DEC_VAR " платно я_так_чувствую 0 сомнительно_но_окей "
+                            "платно я_так_чувствую 10 сомнительно_но_окей "
+                            "никто_никогда_не_вернет платно сомнительно_но_окей "
                         "я_олигарх_мне_заебись \n"
 
                         "россии_нужен ТинькоффПлатинум за платно платно платно почти_без_переплат "
@@ -104,7 +108,7 @@ int main()
                             "платно я_так_чувствую 0 сомнительно_но_окей "
                         "я_олигарх_мне_заебись \n";
 
-    ProgText* prog_text = ProgTextCtor (func_lexer_code, strlen (func_lexer_code) + 1);
+    ProgText* prog_text = ProgTextCtor (new_lexer_code, strlen (new_lexer_code) + 1);
     ProgCode* prog_code = LexicalAnalysisTokenize (prog_text);
     ProgTextDtor (prog_text);
 
@@ -143,21 +147,25 @@ TreeNode* GetG (ProgCode* prog_code)
 {
     assert (prog_code);
 
-    TreeNode* new_func   = NULL;
-    TreeNode* func_block = NULL;
+    TreeNode* new_statement = NULL;
+    TreeNode* code_block = NULL;
 
     do
     {
-        new_func = GetFunctionDeclaration (prog_code);
+        new_statement = GetFunctionDeclaration (prog_code);
 
-        if (new_func)
-            func_block = TreeNodeCtor (END_STATEMENT, SEPARATOR, NULL,
-                        func_block, NULL, new_func);
-    } while (new_func && HAS_TOKENS_LEFT);
+        if (!new_statement)
+            new_statement = GetCompoundStatement (prog_code);
 
-    SYNTAX_ASSERT (func_block != NULL, "Expected at least one function");
+        if (new_statement)
+            code_block = TreeNodeCtor (END_STATEMENT, SEPARATOR, NULL,
+                        code_block, NULL, new_statement);
 
-    return func_block;
+    } while (new_statement && HAS_TOKENS_LEFT);
+
+    SYNTAX_ASSERT (code_block != NULL, "Expected at least one function or statements");
+
+    return code_block;
 }
 
 // ============================================================================================
@@ -172,7 +180,8 @@ TreeNode* GetFunctionDeclaration (ProgCode* prog_code)
     OFFSET++; // skip "def" - func declarator
 
     TreeNode* func_id = GetIdentifier (prog_code);
-    SYNTAX_ASSERT (HAS_TOKENS_LEFT, "separator begin function params expected");
+    SYNTAX_ASSERT (func_id != NULL, "Identifier expected after function declarator");
+
     SYNTAX_ASSERT (TOKEN_IS (SEPARATOR, BEGIN_FUNC_PARAMS),
                     "separator begin function params expected");
 
@@ -194,8 +203,8 @@ TreeNode* GetFunctionDeclaration (ProgCode* prog_code)
 
     OFFSET++; // skip ")"
 
-    TreeNode* func_body = GetCompoundStatement (prog_code);
-    SYNTAX_ASSERT (func_body != NULL, "Function body is bodyless");
+    TreeNode* func_body = GetStatementBlock (prog_code);
+    SYNTAX_ASSERT (func_body != NULL, "no function body");
 
     return TreeNodeCtor (FUNC_DECLARATOR, DECLARATOR, NULL, func_body, params_block, func_id);
 }
@@ -237,7 +246,7 @@ TreeNode* GetStatementBlock (ProgCode* prog_code)
     do
     {
         new_statement = GetSingleStatement (prog_code);
-        PRINTF_DEBUG ("t %d v %d", TYPE (CURR_TOKEN), VAL (CURR_TOKEN));
+
         if (new_statement)
             statement_block = TreeNodeCtor (END_STATEMENT, SEPARATOR, NULL, statement_block, NULL, new_statement);
     } while (new_statement);
@@ -281,10 +290,8 @@ TreeNode* GetSingleStatement (ProgCode* prog_code)
     single_statement = GetReturn (prog_code);
     if (single_statement)
     {
-        SYNTAX_ASSERT (HAS_TOKENS_LEFT, "\"сомнительно_но_окей\" expected in the end of statement");
-
         SYNTAX_ASSERT (TOKEN_IS (SEPARATOR, END_STATEMENT),
-                        "\"сомнительно_но_окей\" expected in the end of statement");
+               "\"сомнительно_но_окей\" expected in the end of statement");
 
         OFFSET++; // skip ";"
 
@@ -294,11 +301,8 @@ TreeNode* GetSingleStatement (ProgCode* prog_code)
     OFFSET = init_offset;
 
     single_statement = GetAssign (prog_code);
-
     if (!single_statement)
         return NULL; // as the last one
-
-    SYNTAX_ASSERT (HAS_TOKENS_LEFT, "\"сомнительно_но_окей\" expected in the end of statement");
 
     SYNTAX_ASSERT (TOKEN_IS (SEPARATOR, END_STATEMENT),
                    "\"сомнительно_но_окей\" expected in the end of statement");
@@ -398,18 +402,46 @@ TreeNode* GetAssign (ProgCode* prog_code)
     assert (prog_code);
 
     int init_offset  = OFFSET;
-    PRINTF_DEBUG ("t %d v %d", TYPE (CURR_TOKEN), VAL (CURR_TOKEN));
-    if (TOKEN_IS (DECLARATOR, VAR_DECLARATOR))
-        OFFSET++; // skip "let" - declarator TODOTODO TODO TODO
-    PRINTF_DEBUG ("t %d v %d", TYPE (CURR_TOKEN), VAL (CURR_TOKEN));
-    TreeNode* lvalue = GetLvalue (prog_code);
-    if (!lvalue)
-    {
-        WARN ("lvalue nil");
-        OFFSET = init_offset;
 
-        return NULL;
+    int var_is_being_declared = 0;
+
+    if (TOKEN_IS (DECLARATOR, VAR_DECLARATOR))
+    {
+        var_is_being_declared = 1;
+        OFFSET++; // skip "let" - declarator TODOTODO TODO TODO
     }
+
+    TreeNode* id_token = CURR_TOKEN;
+
+    TreeNode* lvalue = GetLvalue (prog_code);
+
+    if (var_is_being_declared)
+    {
+        SYNTAX_ASSERT (lvalue != NULL, "Identifier expected after veriable declarator");
+        int id_index =
+            FindInNametable (prog_code->nametable->names[VAL (id_token)],
+                             prog_code->nametable);
+        SYNTAX_ASSERT (id_index > -1,
+                        "%s not found in nametable", ID_NAME (id_token)); // precaution
+
+        ID_IS_DECLARED (id_token) = 1;
+    }
+
+    else
+    {
+        if (!lvalue)
+        {
+            OFFSET = init_offset;
+
+            return NULL;
+        }
+
+        SYNTAX_ASSERT (ID_IS_DECLARED (id_token) == 1,
+                    "Undefined reference to %s", ID_NAME (id_token));
+    }
+
+    if (var_is_being_declared)
+        SYNTAX_ASSERT (TOKEN_IS (OPERATOR, ASSIGN), "Initialize variable");
 
     if (TOKEN_IS_NOT (OPERATOR, ASSIGN))
     {
@@ -419,13 +451,19 @@ TreeNode* GetAssign (ProgCode* prog_code)
 
         return NULL;
     }
+
     OFFSET++; // skip "=" operator
 
     TreeNode* rvalue = GetRvalue (prog_code);
 
     SYNTAX_ASSERT (rvalue != NULL, "Rvalue (nil) error");
 
-    return TreeNodeCtor (ASSIGN, OPERATOR, NULL, lvalue, NULL, rvalue);
+    TreeNode* assign_node = TreeNodeCtor (ASSIGN, OPERATOR, NULL, lvalue, NULL, rvalue);
+
+    if (var_is_being_declared)
+        return TreeNodeCtor (VAR_DECLARATOR, DECLARATOR, NULL, assign_node, NULL, NULL);
+
+    return assign_node;
 }
 
 // ============================================================================================
@@ -775,19 +813,6 @@ ProgCode* LexicalAnalysisTokenize (ProgText* text)
                 LEXER_ERR ("Unexpected error: declarator \"%s\" "
                            "index not found in declarators table", lexem);
 
-            char next_lexem[MAX_LEXEM] = "";
-            int dummy = 0;
-            int scan_res = sscanf (text->text + text->offset, "%s%n", next_lexem, &dummy);
-
-            if (!IsIdentifier (next_lexem))
-                LEXER_ERR ("Declarator must have identifier after it. Instead there is"
-                                                    " \"%s\". SHAME!", next_lexem);
-
-            if (FindInNametable (next_lexem, prog_code->nametable) != -1) // variable already declared
-                    LEXER_ERR ("Redeclaration of %s. SHAME!", next_lexem);
-
-            UpdNameTable (next_lexem, prog_code->nametable);
-
             switch (DECLARATORS[dclr_index].dclr_code)
             {
             case VAR_DECLARATOR:
@@ -838,7 +863,9 @@ ProgCode* LexicalAnalysisTokenize (ProgText* text)
         {
             int id_index = FindInNametable (lexem, prog_code->nametable);
             if (id_index == -1)
-                LEXER_ERR ("Undefined reference to %s", lexem);
+                id_index = UpdNameTable (lexem, prog_code->nametable);
+            if (id_index == -1)
+                LEXER_ERR ("Couldnt find/place identifier to nametable");
 
             if (IsMainFunction (lexem)) prog_code->nametable->main_index = id_index;
 
@@ -858,8 +885,8 @@ ProgCode* LexicalAnalysisTokenize (ProgText* text)
         prog_code->tokens[prog_code->size++] = new_node;
     }
 
-    if (prog_code->nametable->main_index == -1)
-        LEXER_ERR ("No function \"%s\", no entry point", MAIN_FUNC_NAME);
+    // if (prog_code->nametable->main_index == -1)
+        // LEXER_ERR ("No function \"%s\", no entry point", MAIN_FUNC_NAME);
 
     return prog_code;
 }

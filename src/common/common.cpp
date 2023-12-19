@@ -61,7 +61,7 @@ int PrintfWarning (const char * funcname, int line, const char * filename, const
     assert (filename);
     assert (format);
 
-    fprintf (stderr, BLUE_CLR "[%s (%d) %s]\nWARNING: ", funcname, line, filename);
+    fprintf (stderr, CYAN_CLR "[%s (%d) %s]\nWARNING: ", funcname, line, filename);
 
     va_list ptr;
 

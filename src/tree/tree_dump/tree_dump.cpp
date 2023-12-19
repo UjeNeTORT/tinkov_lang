@@ -184,6 +184,7 @@ DotTreePrintRes DotSubtreePrint (FILE* dot_file, const TreeNode* node, const Tre
     if (!node)
     {
         WARN ("node null");
+
         *node_id = 0;
 
         return DOT_PRINT_SUCCESS;
@@ -207,32 +208,26 @@ DotTreePrintRes DotSubtreePrint (FILE* dot_file, const TreeNode* node, const Tre
     case IDENTIFIER:
         color = GRAPH_IDCLR;
         sprintf (node_data, "%s", tree->nametable->names[VAL (node)]); // get varname from nametable
-
         break;
 
     case DECLARATOR:
         color = GRAPH_DECCLR;
         sprintf (node_data, "%s", DECLARATORS[VAL (node)].name);
-
         break;
 
     case KEYWORD:
         color = GRAPH_KWCLR;
         sprintf (node_data, "%s", KEYWORDS[VAL (node)].name);
-
         break;
 
     case SEPARATOR:
         color = GRAPH_SEPCLR;
         sprintf (node_data, "%s", SEPARATORS[VAL (node)].name);
-
         break;
 
     case OPERATOR:
         color = GRAPH_OPCLR;
-
         sprintf (node_data, "%s", OPERATORS[VAL (node)].name);
-
         break;
 
     case INT_LITERAL:
@@ -243,7 +238,6 @@ DotTreePrintRes DotSubtreePrint (FILE* dot_file, const TreeNode* node, const Tre
 
     default:
         RET_ERROR (DOT_PRINT_ERR, "Unknown node type (%d)", TYPE(node));
-
         break;
     }
 

@@ -42,8 +42,12 @@ int PrintfWarning (const char* funcname, int line, const char* filename, const c
 #define PRINTF_DEBUG(format, ...) \
     PrintfDebug (__FUNCTION__, __LINE__, __FILE__, format __VA_OPT__(,) __VA_ARGS__)
 
-#define WARN(format, ...) \
+#ifdef WARNINGS
+    #define WARN(format, ...) \
     PrintfWarning (__FUNCTION__, __LINE__, __FILE__, format __VA_OPT__(,) __VA_ARGS__)
+#else // WARNINGS
+    #define WARN(format, ...) ;
+#endif // WARNINGS
 
 #define ERROR(format, ...) \
     PrintfError (__FUNCTION__, __LINE__, __FILE__, format __VA_OPT__(,) __VA_ARGS__)

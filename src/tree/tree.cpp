@@ -402,6 +402,8 @@ NameTable* NameTableCtor ()
         nametable->names[i] = (char *) calloc (MAX_OP, sizeof(char));
 
         if (!nametable->names[i]) RET_ERROR (NULL, "names[%d] allocation error", i);
+
+        nametable->is_declared[i] = 0;
     }
 
     nametable->main_index = -1;

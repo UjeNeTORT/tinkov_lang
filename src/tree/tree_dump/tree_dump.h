@@ -14,7 +14,7 @@
 
 #include "../tree.h"
 
-#define WARNINGS 1
+// #define WARNINGS
 
 const char DOT_FILE_PATH[]   = "src/tree/tree_dump/dumps/dot/";
 const char GRAPH_SVGS_PATH[] = "src/tree/tree_dump/dumps/png/";
@@ -24,14 +24,14 @@ const char PDF_DUMPS_PATH[]  = "src/tree/tree_dump/dumps/pdf";
 
 const int DOT_CODE_BUF_SIZE = 15000;
 
-const int COMMAND_BUF_SIZE = 400;
-const int MAX_PATH = 100;
+const int COMMAND_BUF_SIZE = 500;
+const int MAX_PATH = 110;
 const int MAX_TREE_FNAME = 100;
 
 const char GRAPH_BGCLR[]   = "#EDDDD4";
 const char GRAPH_TEXTCLR[] = "#EDDDD4";
 const char GRAPH_INTCLR[]  = "#197278";
-const char GRAPH_DECCLR[] = "#FF8966";
+const char GRAPH_DECCLR[]  = "#FF8966";
 const char GRAPH_OPCLR[]   = "#C44536";
 const char GRAPH_IDCLR[]   = "#283D3B";
 const char GRAPH_ERRCLR[]  = "#000000";

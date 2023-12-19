@@ -29,6 +29,9 @@
 #define TOKEN(i)   (prog_code->tokens[(i)])
 #define CURR_TOKEN (prog_code->tokens[OFFSET])
 
+#define ID_NAME(i) prog_code->nametable->names[VAL(i)]
+#define ID_IS_DECLARED(i) prog_code->nametable->is_declared[VAL(i)]
+
 #define HAS_TOKENS_LEFT (OFFSET < prog_code->size)
 
 #define TOKEN_IS(type, val) \
@@ -101,8 +104,8 @@ TreeNode* GetIfElse              (ProgCode* prog_code);
 TreeNode* GetDoIf                (ProgCode* prog_code);
 TreeNode* GetAssign              (ProgCode* prog_code);
 TreeNode* GetReturn              (ProgCode* prog_code);
-TreeNode* GetRvalue              (ProgCode* prog_code);
 TreeNode* GetLvalue              (ProgCode* prog_code);
+TreeNode* GetRvalue              (ProgCode* prog_code);
 TreeNode* GetMathExprRes         (ProgCode* prog_code);
 TreeNode* GetAddSubRes           (ProgCode* prog_code);
 TreeNode* GetMulDivRes           (ProgCode* prog_code);
