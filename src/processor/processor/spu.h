@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../stacklib/stack.h"
+#include "../../stack/stack.h"
 
 const int SHOW_INTERMED_INFO = 1;
 

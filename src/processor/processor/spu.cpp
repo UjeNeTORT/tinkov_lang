@@ -7,7 +7,6 @@
 
 #include "../enums.h"
 #include "spu.h"
-#include "../stacklib/stack.h"
 #include "../text_processing_lib/text_buf.h"
 
 /**
