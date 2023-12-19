@@ -101,9 +101,9 @@ struct ScopeTableStack
 };
 
 // syntax analysis
-int SyntaxAssert (int has_tokens_left, int condition, ProgCode* prog_code, const char* format, ...);
+int SyntaxAssert (int line, int has_tokens_left, int condition, ProgCode* prog_code, const char* format, ...);
 #define SYNTAX_ASSERT(condition, format, ...) \
-    if (SyntaxAssert(HAS_TOKENS_LEFT, (condition), prog_code, (format) __VA_OPT__(,) __VA_ARGS__)) \
+    if (SyntaxAssert(__LINE__, HAS_TOKENS_LEFT, (condition), prog_code, (format) __VA_OPT__(,) __VA_ARGS__)) \
         assert (0);
 
 Tree*     BuildAST               (ProgCode* prog_code);
@@ -125,6 +125,7 @@ TreeNode* GetMulDivRes           (ProgCode* prog_code, ScopeTableStack* sts);
 TreeNode* GetPowRes              (ProgCode* prog_code, ScopeTableStack* sts);
 TreeNode* GetOperand             (ProgCode* prog_code, ScopeTableStack* sts);
 TreeNode* GetSimpleOperand       (ProgCode* prog_code, ScopeTableStack* sts);
+TreeNode* GetFunctionCall        (ProgCode* prog_code, ScopeTableStack* sts);
 TreeNode* GetIdentifier          (ProgCode* prog_code, ScopeTableStack* sts);
 TreeNode* GetNumber              (ProgCode* prog_code, ScopeTableStack* sts);
 
@@ -160,6 +161,8 @@ int       ProgCodeDtor (ProgCode* prog_code);
 
 ProgText* ProgTextCtor (const char* text, int text_len);
 int       ProgTextDtor (ProgText* prog_text);
+
+int GetProgSize (FILE* prog_file);
 
 int StripLexem (char* lexem);
 

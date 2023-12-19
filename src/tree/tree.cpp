@@ -392,14 +392,14 @@ TreeDtorRes TreeDtor (Tree* tree)
 NameTable* NameTableCtor ()
 {
     NameTable* nametable = (NameTable*) calloc (1, sizeof (NameTable));
-
     if (!nametable) RET_ERROR (NULL, "nametable allocation error");
 
     for(size_t i = 0; i < NAMETABLE_CAPACITY; i++)
     {
         nametable->names[i] = (char *) calloc (MAX_OP, sizeof(char));
-
         if (!nametable->names[i]) RET_ERROR (NULL, "names[%d] allocation error", i);
+
+        nametable->n_params[i] = -1;
     }
 
     nametable->main_index = -1;

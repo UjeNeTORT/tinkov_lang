@@ -143,7 +143,8 @@ typedef enum
 
 struct NameTable
 {
-    char* names [NAMETABLE_CAPACITY];
+    char* names    [NAMETABLE_CAPACITY];
+    int   n_params [NAMETABLE_CAPACITY];
     int   main_index;
     int   free;
 };

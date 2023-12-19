@@ -8,11 +8,11 @@
  *************************************************************************/
 
 /**
- *  ДАННОЕ СООБЩЕНИЕ (МАТЕРИАЛ) СОЗДАНО И (ИЛИ) РАСПРОСТРАНЕНО ИНОСТРАННЫМ
- *  И РОССИЙСКИМ ЮРИДИЧЕСКИМ ЛИЦОМ, ВЫПОЛНЯЮЩИМ ФУНКЦИИ ИНОСТРАННОГО КОМПИЛЯТОРА
- *  А ТАКЖЕ ФИНАНСИРУЕТСЯ ИЗ ФОНДА КОШЕК ЕДИНИЧКИ И УПОМИНАЕТ НЕКОГО ИНОАГЕНТА
- *  ♂♂♂♂ Oleg ♂ TinCock ♂♂♂♂ (КТО БЫ ЭТО МОГ БЫТЬ). КОЛЯ ЛОХ КСТА, WHEN DANIL???
- *  ДЛЯ ПОЛУЧЕНИЯ ВЫИГРЫША НАЖМИТЕ ALT+F4.
+    ДАННОЕ СООБЩЕНИЕ (МАТЕРИАЛ) СОЗДАНО И (ИЛИ) РАСПРОСТРАНЕНО ИНОСТРАННЫМ
+    И РОССИЙСКИМ ЮРИДИЧЕСКИМ ЛИЦОМ, ВЫПОЛНЯЮЩИМ ФУНКЦИИ ИНОСТРАННОГО КОМПИЛЯТОРА
+    А ТАКЖЕ ФИНАНСИРУЕТСЯ ИЗ ФОНДА КОШЕК ЕДИНИЧКИ И УПОМИНАЕТ НЕКОГО ИНОАГЕНТА
+    ♂♂♂♂ Oleg ♂ TinCock ♂♂♂♂ (КТО БЫ ЭТО МОГ БЫТЬ). КОЛЯ ЛОХ КСТА, WHEN DANIL???
+    ДЛЯ ПОЛУЧЕНИЯ ВЫИГРЫША НАЖМИТЕ ALT+F4.
 */
 
 #define FOREIGN_AGENT "ДАННОЕ СООБЩЕНИЕ (МАТЕРИАЛ) СОЗДАНО И (ИЛИ) РАСПРОСТРАНЕНО ИНОСТРАННЫМ\n" \
@@ -50,7 +50,7 @@
 
 #include "frontend.h"
 
-int main()
+int main(int argc, char* argv[])
 {
     const char* math_code =
                         FOREIGN_AGENT
@@ -113,7 +113,18 @@ int main()
                             "я_олигарх_мне_заебись\n"
                         "я_олигарх_мне_заебись\n";
 
-    ProgText* prog_text = ProgTextCtor (func_lexer_code, strlen (func_lexer_code) + 1);
+    char* prog_name = argv[1];
+
+    FILE* prog_file = fopen (prog_name, "rb");
+    int prog_size = GetProgSize (prog_file);
+
+    char* raw_prog_text = (char*) calloc (prog_size, sizeof (char));
+    fread ((char*) raw_prog_text, sizeof (char), prog_size, prog_file); // check syscall
+
+    ProgText* prog_text = ProgTextCtor (raw_prog_text, prog_size);
+    free (raw_prog_text);
+    fclose (prog_file);
+
     ProgCode* prog_code = LexicalAnalysisTokenize (prog_text);
     ProgTextDtor (prog_text);
 
@@ -208,16 +219,21 @@ TreeNode* GetFunctionDeclaration (ProgCode* prog_code, ScopeTableStack* sts)
     TreeNode* new_identifier = NULL;
     TreeNode* params_block   = NULL;
 
+    int n_params = 0;
+
     do
     {
         new_identifier = GetIdentifier (prog_code, sts);
 
         if (new_identifier)
         {
+            n_params++;
+
             DECLARE (new_identifier);
 
             params_block = TreeNodeCtor (END_STATEMENT, SEPARATOR,
                                          NULL, params_block, NULL, new_identifier);
+
         }
     } while (new_identifier);
 
@@ -230,6 +246,8 @@ TreeNode* GetFunctionDeclaration (ProgCode* prog_code, ScopeTableStack* sts)
     SYNTAX_ASSERT (func_body != NULL, "no function body");
 
     CLOSE_SCOPE;
+
+    prog_code->nametable->n_params[VAL (func_id)] = n_params;
 
     return TreeNodeCtor (FUNC_DECLARATOR, DECLARATOR,
                          NULL, func_body, params_block, func_id);
@@ -270,7 +288,6 @@ TreeNode* GetStatementBlock (ProgCode* prog_code, ScopeTableStack* sts)
     OPEN_NEW_SCOPE;
 
     TreeNode* new_statement = NULL;
-
     TreeNode* statement_block = NULL;
 
     do
@@ -336,7 +353,11 @@ TreeNode* GetSingleStatement (ProgCode* prog_code, ScopeTableStack* sts)
 
     single_statement = GetAssign (prog_code, sts);
     if (!single_statement)
+    {
+        OFFSET = init_offset;
+
         return NULL; // as the last one
+    }
 
     SYNTAX_ASSERT (TOKEN_IS (SEPARATOR, END_STATEMENT),
                    "\"сомнительно_но_окей\" expected in the end of statement");
@@ -442,7 +463,7 @@ TreeNode* GetAssign (ProgCode* prog_code, ScopeTableStack* sts)
     int init_offset  = OFFSET;
 
     int var_is_being_declared = 0;
-    PRINTF_DEBUG ("inside assign");
+
     if (TOKEN_IS (DECLARATOR, VAR_DECLARATOR))
     {
         var_is_being_declared = 1;
@@ -515,10 +536,14 @@ TreeNode* GetReturn (ProgCode* prog_code, ScopeTableStack* sts)
 
     OFFSET++; // skip "return"
 
-    TreeNode* identifier = GetIdentifier (prog_code, sts);
-    SYNTAX_ASSERT (identifier != NULL, "Identifier expected after return");
+    TreeNode* return_value = GetNumber (prog_code, sts);
+    if (return_value)
+        return TreeNodeCtor (KW_RETURN, KEYWORD, NULL, return_value, NULL, NULL);
 
-    return TreeNodeCtor (KW_RETURN, KEYWORD, NULL, identifier, NULL, NULL);
+    return_value = GetRvalue (prog_code, sts);
+    SYNTAX_ASSERT (return_value != NULL, "Return value expected after return");
+
+    return TreeNodeCtor (KW_RETURN, KEYWORD, NULL, return_value, NULL, NULL);
 }
 
 // ============================================================================================
@@ -783,12 +808,74 @@ TreeNode* GetSimpleOperand (ProgCode* prog_code, ScopeTableStack* sts)
     assert (prog_code);
     assert (sts);
 
-    TreeNode* ret_val = GetIdentifier (prog_code, sts);
+    TreeNode* ret_val = GetNumber (prog_code, sts);
 
     if (!ret_val)
-        return GetNumber (prog_code, sts);
+        ret_val = GetFunctionCall (prog_code, sts);
+
+    if (!ret_val)
+        ret_val = GetIdentifier (prog_code, sts);
 
     return ret_val;
+}
+
+// ============================================================================================
+
+TreeNode* GetFunctionCall (ProgCode* prog_code, ScopeTableStack* sts)
+{
+    assert (prog_code);
+    assert (sts);
+
+    int init_offset = OFFSET;
+
+    if (TYPE (CURR_TOKEN) != IDENTIFIER)
+        return NULL;
+
+    TreeNode* identifier = TreeNodeCtor (VAL (CURR_TOKEN), TYPE (CURR_TOKEN), NULL, NULL, NULL, NULL); // something is wrong
+
+    OFFSET++; // skip func name
+
+    if (TOKEN_IS_NOT (SEPARATOR, ENCLOSE_MATH_EXPR))
+    {
+        OFFSET = init_offset;
+        free (identifier);
+
+        return NULL;
+    }
+
+    OFFSET++; // skip "("
+
+    TreeNode* new_parameter = NULL;
+    TreeNode* parameters    = NULL;
+
+    int n_params = 0;
+
+    do
+    {
+        new_parameter = GetIdentifier (prog_code, sts);
+
+        if (new_parameter)
+        {
+            SYNTAX_ASSERT (IsIdDeclared (sts, VAL (new_parameter)), "Undeclared parameter");
+
+            n_params++;
+
+            parameters = TreeNodeCtor (END_STATEMENT, SEPARATOR,
+                                       NULL, parameters, NULL, new_parameter);
+        }
+    } while (new_parameter && HAS_TOKENS_LEFT);
+
+    SYNTAX_ASSERT (TOKEN_IS (SEPARATOR, ENCLOSE_MATH_EXPR), "Missing closing brackets");
+
+    OFFSET++; // skip ")"
+
+    SYNTAX_ASSERT (prog_code->nametable->n_params[VAL (identifier)] == n_params,
+                    "Invalid parameters count (%d vs %d)",
+                    prog_code->nametable->n_params[VAL (identifier)], n_params);
+
+    identifier->left = parameters;
+
+    return identifier;
 }
 
 // ============================================================================================
@@ -933,8 +1020,8 @@ ProgCode* LexicalAnalysisTokenize (ProgText* text)
         prog_code->tokens[prog_code->size++] = new_node;
     }
 
-    // if (prog_code->nametable->main_index == -1)
-        // LEXER_ERR ("No function \"%s\", no entry point", MAIN_FUNC_NAME);
+    if (prog_code->nametable->main_index == -1)
+        LEXER_ERR ("No function \"%s\", no entry point", MAIN_FUNC_NAME);
 
     return prog_code;
 }
@@ -1262,9 +1349,9 @@ ProgText* ProgTextCtor (const char* text, int text_len)
 
     char* text_copy = (char*) calloc (text_len, sizeof (char));
 
-    strcpy (text_copy, text);
+    strncpy (text_copy, text, text_len);
 
-    ProgText* prog_text = (ProgText*) calloc (1, sizeof(ProgText));
+    ProgText* prog_text = (ProgText*) calloc (1, sizeof (ProgText));
 
     prog_text->text   = text_copy;
     prog_text->offset = 0;
@@ -1291,6 +1378,19 @@ int ProgTextDtor (ProgText* prog_text)
 
 // ============================================================================================
 
+int GetProgSize (FILE* prog_file)
+{
+    assert (prog_file);
+
+    fseek (prog_file, 0, SEEK_END);
+    int size = ftell (prog_file);
+    rewind (prog_file);
+
+    return size;
+}
+
+// ============================================================================================
+
 int StripLexem (char* lexem)
 {
     assert (lexem);
@@ -1302,7 +1402,7 @@ int StripLexem (char* lexem)
 
 // ============================================================================================
 
-int SyntaxAssert (int has_tokens_left, int condition, ProgCode* prog_code, const char* format, ...)
+int SyntaxAssert (int line, int has_tokens_left, int condition, ProgCode* prog_code, const char* format, ...)
 {
     assert (prog_code);
 
@@ -1310,8 +1410,8 @@ int SyntaxAssert (int has_tokens_left, int condition, ProgCode* prog_code, const
     {
         if (has_tokens_left)
             fprintf (stderr, RED ("In token (TYPE = %d, VAL = %d) OFSSET = %d\n"),
-                                         TYPE (CURR_TOKEN), VAL (CURR_TOKEN), OFFSET);
-        fprintf (stderr, RED ("SYNTAX ERROR! "));
+                                       TYPE (CURR_TOKEN), VAL (CURR_TOKEN), OFFSET);
+        fprintf (stderr, RED ("(%d) SYNTAX ERROR! "), line);
 
         va_list  (ptr);
         va_start (ptr, format);
