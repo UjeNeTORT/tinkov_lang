@@ -31,6 +31,18 @@
 
 #define ID_NAME(i) prog_code->nametable->names[VAL(i)]
 
+#define OPEN_NEW_SCOPE SYNTAX_ASSERT (PushScope (sts) == 0, "Only %d nested scopes allowed, " \
+                                    "think with your brain to reduce the number", MAX_SCOPE_DEPTH);
+
+#define CLOSE_SCOPE SYNTAX_ASSERT (DelScope (sts) == 0, "Unexpected error while deleting scope");
+
+#define DECLARE(token) \
+    {                                                                   \
+        SYNTAX_ASSERT (IsIdDeclared (sts, VAL (token)) == 0,            \
+                   "Redeclaration of \"%s\"", ID_NAME (token));         \
+        SYNTAX_ASSERT (DeclareId (sts, VAL (token)) == 0, "Unexpected \"%s\" declaration error", ID_NAME (token)); \
+    }
+
 #define HAS_TOKENS_LEFT (OFFSET < prog_code->size)
 
 #define TOKEN_IS(type, val) \
@@ -38,6 +50,7 @@
 
 #define TOKEN_IS_NOT(type, val) \
     (TYPE (CURR_TOKEN) != (type) || VAL (CURR_TOKEN) != (val))
+
 // ===========================================================
 
 const char RU_SYMBOLS[] =

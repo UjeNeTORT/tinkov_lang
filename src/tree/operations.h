@@ -125,7 +125,7 @@ const Operator OPERATORS[] =
     {MORE,    ">"},
     {UNEQUAL, "!="},
 };
-const int N_OPERATORS = sizeof(OPERATORS) / sizeof(OPERATORS[0]);
+const int N_OPERATORS = sizeof (OPERATORS) / sizeof (OPERATORS[0]);
 
 typedef enum
 {

@@ -42,7 +42,7 @@
  *       - if no function declared - falls with segfault
  *       - it should handle not Fucnitons sequence but (function | operation)+ sequence
  *       x does not require having an entry point
- *       - var declarators in tree are not represented
+ *       x var declarators in tree are not represented
  *       - what if we delete global scope?
  *
  * TODO: - fix bugs (lol)
@@ -105,13 +105,13 @@ int main()
                             "никто_никогда_не_вернет платно сомнительно_но_окей "
                         "я_олигарх_мне_заебись \n"
 
-                        "россии_нужен ТинькоффПлатинум за платно платно платно почти_без_переплат "
+                        "россии_нужен ТинькоффПлатинум за платно десять почти_без_переплат "
                         "олег_не_торопись \n"
-                            DEC_VAR " платно я_так_чувствую 0 сомнительно_но_окей\n"
+                            "платно я_так_чувствую 0 сомнительно_но_окей\n"
                             "олег_не_торопись\n"
                                 "платно я_так_чувствую 666 сомнительно_но_окей\n"
                             "я_олигарх_мне_заебись\n"
-                        "я_олигарх_мне_заебись \n";
+                        "я_олигарх_мне_заебись\n";
 
     ProgText* prog_text = ProgTextCtor (func_lexer_code, strlen (func_lexer_code) + 1);
     ProgCode* prog_code = LexicalAnalysisTokenize (prog_text);
@@ -119,7 +119,7 @@ int main()
 
     if (!prog_code) return 1;
 
-    SHOW_PROG_CODE; //
+    SHOW_PROG_CODE; // debug
 
     Tree* ast = BuildAST (prog_code);
 
@@ -193,8 +193,12 @@ TreeNode* GetFunctionDeclaration (ProgCode* prog_code, ScopeTableStack* sts)
 
     OFFSET++; // skip "def" - func declarator
 
+    OPEN_NEW_SCOPE;
+
     TreeNode* func_id = GetIdentifier (prog_code, sts);
     SYNTAX_ASSERT (func_id != NULL, "Identifier expected after function declarator");
+
+    DECLARE (func_id);
 
     SYNTAX_ASSERT (TOKEN_IS (SEPARATOR, BEGIN_FUNC_PARAMS),
                     "separator begin function params expected");
@@ -209,8 +213,12 @@ TreeNode* GetFunctionDeclaration (ProgCode* prog_code, ScopeTableStack* sts)
         new_identifier = GetIdentifier (prog_code, sts);
 
         if (new_identifier)
+        {
+            DECLARE (new_identifier);
+
             params_block = TreeNodeCtor (END_STATEMENT, SEPARATOR,
                                          NULL, params_block, NULL, new_identifier);
+        }
     } while (new_identifier);
 
     SYNTAX_ASSERT (TOKEN_IS (SEPARATOR, END_FUNC_PARAMS),
@@ -220,6 +228,8 @@ TreeNode* GetFunctionDeclaration (ProgCode* prog_code, ScopeTableStack* sts)
 
     TreeNode* func_body = GetStatementBlock (prog_code, sts);
     SYNTAX_ASSERT (func_body != NULL, "no function body");
+
+    CLOSE_SCOPE;
 
     return TreeNodeCtor (FUNC_DECLARATOR, DECLARATOR,
                          NULL, func_body, params_block, func_id);
@@ -257,8 +267,7 @@ TreeNode* GetStatementBlock (ProgCode* prog_code, ScopeTableStack* sts)
 
     OFFSET++; // skip {
 
-    SYNTAX_ASSERT (PushScope (sts) == 0, "Only %d nested scopes allowed, "
-                                    "think with your brain to reduce the number", MAX_SCOPE_DEPTH);
+    OPEN_NEW_SCOPE;
 
     TreeNode* new_statement = NULL;
 
@@ -266,7 +275,7 @@ TreeNode* GetStatementBlock (ProgCode* prog_code, ScopeTableStack* sts)
 
     do
     {
-        new_statement = GetSingleStatement (prog_code, sts);
+        new_statement = GetCompoundStatement (prog_code, sts);
 
         if (new_statement)
             statement_block = TreeNodeCtor (END_STATEMENT, SEPARATOR,
@@ -278,7 +287,7 @@ TreeNode* GetStatementBlock (ProgCode* prog_code, ScopeTableStack* sts)
 
     OFFSET++; // skip }
 
-    SYNTAX_ASSERT (DelScope (sts) == 0, "Error while removing scope");
+    CLOSE_SCOPE;
 
     return statement_block;
 }
@@ -433,7 +442,7 @@ TreeNode* GetAssign (ProgCode* prog_code, ScopeTableStack* sts)
     int init_offset  = OFFSET;
 
     int var_is_being_declared = 0;
-
+    PRINTF_DEBUG ("inside assign");
     if (TOKEN_IS (DECLARATOR, VAR_DECLARATOR))
     {
         var_is_being_declared = 1;
@@ -451,8 +460,8 @@ TreeNode* GetAssign (ProgCode* prog_code, ScopeTableStack* sts)
         SYNTAX_ASSERT (VAL (id_token) > -1,
                         "%s not found in nametable", ID_NAME (id_token)); // precaution
 
-        int dclr_res = DeclareId (sts, VAL (id_token));
-        SYNTAX_ASSERT (dclr_res == 0, "Variable declaration error");
+
+        DECLARE (id_token);
     }
 
     else
