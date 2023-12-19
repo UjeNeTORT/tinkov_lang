@@ -7,7 +7,7 @@
 <CompoundStatement> ::= <StatementBlock> | <SingleStatement>
 
 <StatementBlock> ::= "олег_не_торопись"
-                        (<SingleStatement>)+
+                        (<CompoundStatement>)+
                      "я_олигарх_мне_заебись"
 
 <SingleStatement> ::= <While>
@@ -29,7 +29,7 @@
             "какая_разница" <MathExpr> "?"
 
 <Assign> ::= <VariableDeclarator>?
-         <Lvalue> "я_так_чувствую" <Rvalue>
+         <Lvalue> ("я_так_чувствую" <Rvalue>)?
 
 <Return> ::= "никто_никогда_не_вернет" <Identifier>
 
