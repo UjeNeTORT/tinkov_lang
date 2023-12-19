@@ -1,8 +1,8 @@
-<G> ::= (<FunctionDeclaration>)+
+<G> ::= (<FunctionDeclaration> | <CompoundStatement>)+
 
 <FunctionDeclaration> ::= "россии_нужен"
             <Identifier> "за" (<Identifier>)+ "почти_без_переплат"
-            <CompoundStatement>
+            <StatementBlock>
 
 <CompoundStatement> ::= <StatementBlock> | <SingleStatement>
 
