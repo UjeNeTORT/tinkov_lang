@@ -32,15 +32,15 @@
  *       x lexer does not take \n as a space between tokens (I THINK THE PROBLEM IS NOT IN THIS, NOT A BUG)
  *       x syntaxer does not give an error if there is no ; in the end
  *       x difference between index of keyword and its opcode is not always trivial
- *       - there are no checks in many places if there are tokens left, if there are no more
+ *       x there are no checks in many places if there are tokens left, if there are no more
  *         tokens left, this may result in attempt to access area behind the array
- *       - in some places i have to write 2 syntax asserts checking if there are tokens left and then
+ *       x in some places i have to write 2 syntax asserts checking if there are tokens left and then
  *         getting access to token if ir exists, so it results in copypaste
  *       x lexer does not understand russian
- *       - syntaxer allows same variable names in function parameters
- *       - chaos with declaration check in lexer
- *       - if no function declared - falls with segfault
- *       - it should handle not Fucnitons sequence but (function | operation)+ sequence
+ *       x syntaxer allows same variable names in function parameters
+ *       x chaos with declaration check in lexer
+ *       x if no function declared - falls with segfault
+ *       x it should handle not Fucnitons sequence but (function | operation)+ sequence
  *       x does not require having an entry point
  *       x var declarators in tree are not represented
  *       - what if we delete global scope?
@@ -240,14 +240,14 @@ TreeNode* GetFunctionDeclaration (ProgCode* prog_code, ScopeTableStack* sts)
     SYNTAX_ASSERT (TOKEN_IS (SEPARATOR, END_FUNC_PARAMS),
                     "separator end function params expected");
 
+    prog_code->nametable->n_params[VAL (func_id)] = n_params;
+
     OFFSET++; // skip ")"
 
     TreeNode* func_body = GetStatementBlock (prog_code, sts);
     SYNTAX_ASSERT (func_body != NULL, "no function body");
 
     CLOSE_SCOPE;
-
-    prog_code->nametable->n_params[VAL (func_id)] = n_params;
 
     return TreeNodeCtor (FUNC_DECLARATOR, DECLARATOR,
                          NULL, func_body, params_block, func_id);
@@ -407,6 +407,7 @@ TreeNode* GetIfElse (ProgCode* prog_code, ScopeTableStack* sts)
     TreeNode* condition = GetMathExprRes (prog_code, sts);
     SYNTAX_ASSERT (condition != NULL, "condition error");
 
+    PRINTF_DEBUG ("t %d v %d", TYPE (CURR_TOKEN), VAL (CURR_TOKEN));
     SYNTAX_ASSERT (TOKEN_IS (SEPARATOR, END_CONDITION), "\"?\" expected in the end of condition");
     OFFSET++; // skip "?"
 
@@ -572,7 +573,7 @@ TreeNode* GetMathExprRes (ProgCode* prog_code, ScopeTableStack* sts)
 {
     assert (prog_code);
     assert (sts);
-
+PRINTF_DEBUG ("enter");
     int init_offset = OFFSET;
 
     TreeNode* math_expr_res = GetAddSubRes (prog_code, sts);
@@ -870,8 +871,8 @@ TreeNode* GetFunctionCall (ProgCode* prog_code, ScopeTableStack* sts)
     OFFSET++; // skip ")"
 
     SYNTAX_ASSERT (prog_code->nametable->n_params[VAL (identifier)] == n_params,
-                    "Invalid parameters count (%d vs %d)",
-                    prog_code->nametable->n_params[VAL (identifier)], n_params);
+                    "Invalid parameters count (%s(%d) vs (%d))",
+                    ID_NAME (identifier), prog_code->nametable->n_params[VAL (identifier)], n_params);
 
     identifier->left = parameters;
 

@@ -95,12 +95,12 @@ typedef enum
     DIV    = 4,
     POW    = 5,
 
-    LESS    = 10,
-    LESS_EQ = 11,
-    EQUAL   = 12,
-    MORE_EQ = 13,
-    MORE    = 14,
-    UNEQUAL = 15,
+    LESS    = 6,
+    LESS_EQ = 7,
+    EQUAL   = 8,
+    MORE_EQ = 9,
+    MORE    = 10,
+    UNEQUAL = 11,
 } OperatorCode;
 
 struct Operator
