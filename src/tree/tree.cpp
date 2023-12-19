@@ -53,8 +53,6 @@ TreeEvalRes SubtreeEval (const TreeNode* node, const Tree* tree, int* result)
         break;
 
     case IDENTIFIER:
-        *result = tree->nametable->vals[VAL(node)];
-
         break;
 
     case OPERATOR:
@@ -402,8 +400,6 @@ NameTable* NameTableCtor ()
         nametable->names[i] = (char *) calloc (MAX_OP, sizeof(char));
 
         if (!nametable->names[i]) RET_ERROR (NULL, "names[%d] allocation error", i);
-
-        nametable->is_declared[i] = 0;
     }
 
     nametable->main_index = -1;
@@ -471,7 +467,6 @@ NameTableCopyRes NameTableCopy (NameTable* dst, const NameTable* src)
     for (size_t i = 0; i < NAMETABLE_CAPACITY; i++)
     {
         memcpy (dst->names[i], src->names[i], strlen(src->names[i]));
-        dst->vals[i] = src->vals[i];
     }
 
     dst->free  = src->free;
@@ -696,29 +691,13 @@ ReadAssignVariableRes ReadAssignVariable (NodeData* data, char* var_name, const 
     int var_id = FindInNametable (var_name, tree->nametable);
 
     if (var_id == -1) // not found in nametable
-    {
         var_id = UpdNameTable (var_name, tree->nametable);
 
-        if (!ScanVariableVal (tree->nametable, var_id))
-            RET_ERROR (READ_ASSIGN_VAR_ERR, "Variable scanning error: number not assigned");
-    }
 
     data->type = IDENTIFIER;
     data->val  = var_id;
 
     return READ_ASSIGN_VAR_SUCCESS;
-}
-
-// ============================================================================================
-
-int ScanVariableVal (NameTable* nametable, int var_id)
-{
-    assert (nametable);
-    if (!nametable) RET_ERROR (0, "Nametable null pointer");
-
-    fprintf (stdout, "Please specify variable \"%s\"\n>> ", nametable->names[var_id]);
-
-    return fscanf (stdin, "%lf", &nametable->vals[var_id]);
 }
 
 // ============================================================================================

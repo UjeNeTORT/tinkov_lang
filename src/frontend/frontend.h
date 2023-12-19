@@ -30,7 +30,6 @@
 #define CURR_TOKEN (prog_code->tokens[OFFSET])
 
 #define ID_NAME(i) prog_code->nametable->names[VAL(i)]
-#define ID_IS_DECLARED(i) prog_code->nametable->is_declared[VAL(i)]
 
 #define HAS_TOKENS_LEFT (OFFSET < prog_code->size)
 
@@ -64,6 +63,7 @@ char NO_FOREIGN_AGENT_BANNER_ERROR[] =
                     "10 РИС, 11 СОЦИАЛЬНЫЙ КРЕДИТ!!! УДАР! 荣耀中国\n");
 
 const int MAX_LEXEM = 228;
+const int MAX_SCOPE_DEPTH = 10; // naming?
 
 struct ProgText
 {
@@ -74,18 +74,18 @@ struct ProgText
 
 struct ProgCode
 {
-    TreeNode** tokens;
-    NameTable* nametable;
-    int        offset;
-    int        size;
+    TreeNode**  tokens;
+    NameTable*  nametable;
+    int         offset;
+    int         size;
 };
 
-// todo more
-typedef enum
+struct ScopeTableStack
 {
-    LEX_SUCCESS = 0,
-    LEX_ERROR   = 1,
-} LexAnalysRes;
+    int** is_declared;
+    int size;
+    int capacity;
+};
 
 // syntax analysis
 int SyntaxAssert (int has_tokens_left, int condition, ProgCode* prog_code, const char* format, ...);
@@ -94,30 +94,29 @@ int SyntaxAssert (int has_tokens_left, int condition, ProgCode* prog_code, const
         assert (0);
 
 Tree*     BuildAST               (ProgCode* prog_code);
-TreeNode* GetG                   (ProgCode* prog_code);
-TreeNode* GetFunctionDeclaration (ProgCode* prog_code);
-TreeNode* GetCompoundStatement   (ProgCode* prog_code);
-TreeNode* GetStatementBlock      (ProgCode* prog_code);
-TreeNode* GetSingleStatement     (ProgCode* prog_code);
-TreeNode* GetWhile               (ProgCode* prog_code);
-TreeNode* GetIfElse              (ProgCode* prog_code);
-TreeNode* GetDoIf                (ProgCode* prog_code);
-TreeNode* GetAssign              (ProgCode* prog_code);
-TreeNode* GetReturn              (ProgCode* prog_code);
-TreeNode* GetLvalue              (ProgCode* prog_code);
-TreeNode* GetRvalue              (ProgCode* prog_code);
-TreeNode* GetMathExprRes         (ProgCode* prog_code);
-TreeNode* GetAddSubRes           (ProgCode* prog_code);
-TreeNode* GetMulDivRes           (ProgCode* prog_code);
-TreeNode* GetPowRes              (ProgCode* prog_code);
-TreeNode* GetOperand             (ProgCode* prog_code);
-TreeNode* GetSimpleOperand       (ProgCode* prog_code);
-TreeNode* GetIdentifier          (ProgCode* prog_code);
-TreeNode* GetNumber              (ProgCode* prog_code);
+TreeNode* GetG                   (ProgCode* prog_code, ScopeTableStack* sts);
+TreeNode* GetFunctionDeclaration (ProgCode* prog_code, ScopeTableStack* sts);
+TreeNode* GetCompoundStatement   (ProgCode* prog_code, ScopeTableStack* sts);
+TreeNode* GetStatementBlock      (ProgCode* prog_code, ScopeTableStack* sts);
+TreeNode* GetSingleStatement     (ProgCode* prog_code, ScopeTableStack* sts);
+TreeNode* GetWhile               (ProgCode* prog_code, ScopeTableStack* sts);
+TreeNode* GetIfElse              (ProgCode* prog_code, ScopeTableStack* sts);
+TreeNode* GetDoIf                (ProgCode* prog_code, ScopeTableStack* sts);
+TreeNode* GetAssign              (ProgCode* prog_code, ScopeTableStack* sts);
+TreeNode* GetReturn              (ProgCode* prog_code, ScopeTableStack* sts);
+TreeNode* GetLvalue              (ProgCode* prog_code, ScopeTableStack* sts);
+TreeNode* GetRvalue              (ProgCode* prog_code, ScopeTableStack* sts);
+TreeNode* GetMathExprRes         (ProgCode* prog_code, ScopeTableStack* sts);
+TreeNode* GetAddSubRes           (ProgCode* prog_code, ScopeTableStack* sts);
+TreeNode* GetMulDivRes           (ProgCode* prog_code, ScopeTableStack* sts);
+TreeNode* GetPowRes              (ProgCode* prog_code, ScopeTableStack* sts);
+TreeNode* GetOperand             (ProgCode* prog_code, ScopeTableStack* sts);
+TreeNode* GetSimpleOperand       (ProgCode* prog_code, ScopeTableStack* sts);
+TreeNode* GetIdentifier          (ProgCode* prog_code, ScopeTableStack* sts);
+TreeNode* GetNumber              (ProgCode* prog_code, ScopeTableStack* sts);
 
 // lexic analysis
-LexAnalysRes LexicAnalysis           (ProgText* text);
-ProgCode*    LexicalAnalysisTokenize (ProgText* text);
+ProgCode* LexicalAnalysisTokenize (ProgText* text);
 
 int HasForeignAgent (ProgText* text);
 
@@ -135,6 +134,14 @@ int GetSeparatorIndex  (const char* separator);
 int GetOperatorIndex   (const char* operator_); // !!! operator__________ <- why??
 
 // anscillary
+ScopeTableStack* ScopeTableStackCtor ();
+int ScopeTableStackDtor (ScopeTableStack* sts);
+
+int PushScope    (ScopeTableStack* sts);
+int DelScope     (ScopeTableStack* sts);
+int IsIdDeclared (const ScopeTableStack* sts, const int identifier_index);
+int DeclareId    (ScopeTableStack* sts, const int identifier_index);
+
 ProgCode* ProgCodeCtor ();
 int       ProgCodeDtor (ProgCode* prog_code);
 

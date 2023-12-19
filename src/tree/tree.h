@@ -143,11 +143,9 @@ typedef enum
 
 struct NameTable
 {
-    char*  names       [NAMETABLE_CAPACITY];
-    double vals        [NAMETABLE_CAPACITY];
-    int    is_declared [NAMETABLE_CAPACITY];
-    int    main_index;
-    int    free;
+    char* names [NAMETABLE_CAPACITY];
+    int   main_index;
+    int   free;
 };
 
 struct NodeData
@@ -211,8 +209,6 @@ NodeData   ReadNodeData (const char* infix_tree, const Tree* tree, int* offset);
 ReadAssignDoubleRes   ReadAssignDouble   (NodeData* data, char* word);
 ReadAssignOperatorRes ReadAssignOperator (NodeData* data, char* word);
 ReadAssignVariableRes ReadAssignVariable (NodeData* data, char* word, const Tree* tree);
-
-int ScanVariableVal (NameTable* nametable, int var_id);
 
 WriteTreeRes WriteTree     (FILE* stream, const Tree* tree);
 WriteTreeRes WriteSubtree  (FILE* stream, const TreeNode* node, const Tree* tree);
