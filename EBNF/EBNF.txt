@@ -1,7 +1,7 @@
 <G> ::= (<FunctionDeclaration> | <CompoundStatement>)+
 
 <FunctionDeclaration> ::= "россии_нужен"
-            <Identifier> "за" (<Identifier>)+ "почти_без_переплат"
+            <Identifier> "за" (<Identifier>)* "почти_без_переплат"
             <StatementBlock>
 
 <CompoundStatement> ::= <StatementBlock> | <SingleStatement>
@@ -29,9 +29,9 @@
             "какая_разница" <MathExpr> "?"
 
 <Assign> ::= <VariableDeclarator>?
-         <Lvalue> ("я_так_чувствую" <Rvalue>)?
+         <Lvalue> "я_так_чувствую" <Rvalue>
 
-<Return> ::= "никто_никогда_не_вернет" <Identifier>
+<Return> ::= "никто_никогда_не_вернет" <Rvalue>
 
 <Lvalue> ::= <Identifier>
 <Rvalue> ::= <MathExpr>
@@ -43,6 +43,7 @@
 <PowRes>    ::= <Operand> ("^" <Operand>)?
 <Operand>   ::= "$" <MathExpr> "$" | <SimpleOperand>
 
+<SimpleOperand> ::= <Number> | <FunctionCall> | <Identifier>
+<FunctionCall>  ::= <Identifier> "$" (<Identifier>)* "$"
 <Identifier>    ::= ([A-Z] | [А-Я] | [a-z] | [а-я] | "_") ([A-Z] | [А-Я] | [a-z] | [а-я] | "_" | [0-9])*
 <Number>        ::= ([0-9])+
-<SimpleOperand> ::= <Identifier> | <Number>
