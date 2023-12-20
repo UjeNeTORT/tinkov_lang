@@ -212,6 +212,8 @@ DotTreePrintRes DotSubtreePrint (FILE* dot_file, const TreeNode* node, const Tre
 
     case DECLARATOR:
         color = GRAPH_DECCLR;
+        if (VAL (node) == FUNC_DECLARATOR)
+            color = GRAPH_SCOPECLR;
         sprintf (node_data, "%s", DECLARATORS[VAL (node)].name);
         break;
 
@@ -222,6 +224,8 @@ DotTreePrintRes DotSubtreePrint (FILE* dot_file, const TreeNode* node, const Tre
 
     case SEPARATOR:
         color = GRAPH_SEPCLR;
+        if (VAL (node) == ENCLOSE_STATEMENT_BEGIN)
+            color = GRAPH_SCOPECLR;
         sprintf (node_data, "%s", SEPARATORS[VAL (node)].name);
         break;
 
@@ -309,6 +313,8 @@ DotTreePrintRes DotSubtreeDetailedPrint (FILE* dot_file, const TreeNode* node, c
 
     case DECLARATOR:
         color = GRAPH_DECCLR;
+        if (VAL (node) == FUNC_DECLARATOR)
+            color = GRAPH_SCOPECLR;
         break;
 
     case KEYWORD:
@@ -317,6 +323,8 @@ DotTreePrintRes DotSubtreeDetailedPrint (FILE* dot_file, const TreeNode* node, c
 
     case SEPARATOR:
         color = GRAPH_SEPCLR;
+        if (VAL (node) == ENCLOSE_STATEMENT_BEGIN)
+            color = GRAPH_SCOPECLR;
         break;
 
     case OPERATOR:
