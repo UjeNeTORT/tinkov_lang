@@ -100,6 +100,10 @@ struct ScopeTableStack
     int capacity;
 };
 
+// in main
+ProgText*    GetProgText (const char* prog_name);
+WriteTreeRes WriteAST    (const Tree* ast, const char* prog_name);
+
 // syntax analysis
 int SyntaxAssert (int line, int has_tokens_left, int condition, ProgCode* prog_code, const char* format, ...);
 #define SYNTAX_ASSERT(condition, format, ...) \
@@ -107,7 +111,7 @@ int SyntaxAssert (int line, int has_tokens_left, int condition, ProgCode* prog_c
         assert (0);
 
 Tree*     BuildAST               (ProgCode* prog_code);
-TreeNode* GetG                   (ProgCode* prog_code, ScopeTableStack* sts);
+TreeNode* GetAST                 (ProgCode* prog_code, ScopeTableStack* sts);
 TreeNode* GetFunctionDeclaration (ProgCode* prog_code, ScopeTableStack* sts);
 TreeNode* GetCompoundStatement   (ProgCode* prog_code, ScopeTableStack* sts);
 TreeNode* GetStatementBlock      (ProgCode* prog_code, ScopeTableStack* sts);
@@ -129,8 +133,8 @@ TreeNode* GetFunctionCall        (ProgCode* prog_code, ScopeTableStack* sts);
 TreeNode* GetIdentifier          (ProgCode* prog_code, ScopeTableStack* sts);
 TreeNode* GetNumber              (ProgCode* prog_code, ScopeTableStack* sts);
 
-// lexic analysis
-ProgCode* LexicalAnalysisTokenize (ProgText* text);
+// lexical analysis
+ProgCode* LexerTokenize (ProgText* text);
 
 int HasForeignAgent (ProgText* text);
 

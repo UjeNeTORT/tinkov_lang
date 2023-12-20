@@ -16,9 +16,9 @@
 #include "../common/colors.h"
 #include "operations.h"
 
-const int MAX_N_NODES = 5000; // max number of nodes in AST
-const int MAX_TREE    = 5000; // max len of a string-written tree in a file
-const int MAX_OP      = 200;  // max len of an operator
+const int MAX_N_NODES = 5000;  // max number of nodes in AST
+const int MAX_TREE    = 50000; // max len of a string-written tree in a file
+const int MAX_OP      = 200;   // max len of an operator
 
 const int NAMETABLE_CAPACITY = 100;
 
@@ -61,7 +61,6 @@ typedef enum
     NAMETABLE_CTOR_ERR        = 1,
     NAMETABLE_CTOR_ERR_PARAMS = 2,
 } NameTableCtorRes;
-
 
 typedef enum
 {
@@ -109,10 +108,31 @@ typedef enum
 
 typedef enum
 {
-    READ_ASSIGN_VAR_SUCCESS    = 0,
-    READ_ASSIGN_VAR_ERR        = 1,
-    READ_ASSIGN_VAR_ERR_PARAMS = 2,
-} ReadAssignVariableRes;
+    READ_ASSIGN_ID_SUCCESS       = 0,
+    READ_ASSIGN_ID_ERR_NOT_FOUND = 1,
+    READ_ASSIGN_ID_ERR_PARAMS    = 2,
+} ReadAssignIdentifierRes;
+
+typedef enum
+{
+    READ_ASSIGN_DECLR_SUCCESS       = 0,
+    READ_ASSIGN_DECLR_ERR_NOT_FOUND = 1,
+    READ_ASSIGN_DECLR_ERR_PARAMS    = 2,
+} ReadAssignDeclaratorRes;
+
+typedef enum
+{
+    READ_ASSIGN_KW_SUCCESS       = 0,
+    READ_ASSIGN_KW_ERR_NOT_FOUND = 1,
+    READ_ASSIGN_KW_ERR_PARAMS    = 2,
+} ReadAssignKeywordRes;
+
+typedef enum
+{
+    READ_ASSIGN_SEP_SUCCESS       = 0,
+    READ_ASSIGN_SEP_ERR_NOT_FOUND = 1,
+    READ_ASSIGN_SEP_ERR_PARAMS    = 2,
+} ReadAssignSeparatorRes;
 
 typedef enum
 {
@@ -123,10 +143,10 @@ typedef enum
 
 typedef enum
 {
-    READ_ASSIGN_DBL_SUCCESS     = 0,
-    READ_ASSIGN_DBL_ERR         = 1,
-    READ_ASSIGN_DBL_ERR_PARAMS  = 2,
-} ReadAssignDoubleRes;
+    READ_ASSIGN_NUM_SUCCESS     = 0,
+    READ_ASSIGN_NUM_ERR         = 1,
+    READ_ASSIGN_NUM_ERR_PARAMS  = 2,
+} ReadAssignNumberRes;
 
 typedef enum
 {
@@ -162,7 +182,6 @@ struct TreeNode
     TreeNode* prev;
 
     TreeNode* left;
-    TreeNode* mid;  // mostly used for conditions
     TreeNode* right;
 };
 
@@ -185,7 +204,7 @@ TreeSimplifyRes SubtreeSimplify (TreeNode* node);
 TreeSimplifyRes SubtreeSimplifyConstants (TreeNode* node, int* tree_changed_flag);
 TreeSimplifyRes SubtreeSimplifyNeutrals  (TreeNode* node, int* tree_changed_flag);
 
-TreeNode* TreeNodeCtor (int val, NodeType type, TreeNode* prev, TreeNode* left, TreeNode* mid, TreeNode* right);
+TreeNode* TreeNodeCtor (int val, NodeType type, TreeNode* prev, TreeNode* left, TreeNode* right);
 int       TreeNodeDtor (TreeNode* node);
 int       SubtreeDtor  (TreeNode* node);
 
@@ -207,9 +226,12 @@ Tree*      ReadTree     (const char* infix_tree);
 TreeNode*  ReadSubtree  (const char* infix_tree, const Tree* tree, int* offset);
 NodeData   ReadNodeData (const char* infix_tree, const Tree* tree, int* offset);
 
-ReadAssignDoubleRes   ReadAssignDouble   (NodeData* data, char* word);
-ReadAssignOperatorRes ReadAssignOperator (NodeData* data, char* word);
-ReadAssignVariableRes ReadAssignVariable (NodeData* data, char* word, const Tree* tree);
+ReadAssignNumberRes     ReadAssignNumber      (NodeData* data, char* word);
+ReadAssignDeclaratorRes ReadAssignDeclarator  (NodeData* data, char* word);
+ReadAssignKeywordRes    ReadAssignKeyword     (NodeData* data, char* word);
+ReadAssignSeparatorRes  ReadAssignSeparator   (NodeData* data, char* word);
+ReadAssignOperatorRes   ReadAssignOperator    (NodeData* data, char* word);
+ReadAssignIdentifierRes ReadAssignIdentifier  (NodeData* data, char* word, const Tree* tree);
 
 WriteTreeRes WriteTree     (FILE* stream, const Tree* tree);
 WriteTreeRes WriteSubtree  (FILE* stream, const TreeNode* node, const Tree* tree);
@@ -219,7 +241,10 @@ int FindInNametable (const char* word, const NameTable* nametable);
 int UpdNameTable       (const char* word, NameTable* nametable);
 int IsVarNameCorrect   (const char* word);
 
-int FindOperation (int opcode);
+int FindDeclarator (int declr_code);
+int FindKeyword    (int kw_code);
+int FindSeparator  (int sep_code);
+int FindOperator   (int op_code);
 
 int SubtreeHasVars (const TreeNode* node, const NameTable* nametable);
 

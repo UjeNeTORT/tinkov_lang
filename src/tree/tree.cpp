@@ -317,14 +317,13 @@ TreeSimplifyRes SubtreeSimplifyNeutrals  (TreeNode* node, int* tree_changed_flag
 
 // ============================================================================================
 
-TreeNode* TreeNodeCtor (int val, NodeType type, TreeNode* prev, TreeNode* left, TreeNode* mid, TreeNode* right)
+TreeNode* TreeNodeCtor (int val, NodeType type, TreeNode* prev, TreeNode* left, TreeNode* right)
 {
     TreeNode* new_node = (TreeNode *) calloc (1, sizeof (TreeNode));
 
     new_node->data  = {type, val};
     new_node->prev  = prev;
     new_node->left  = left;
-    new_node->mid   = mid;
     new_node->right = right;
 
     return new_node;
@@ -346,7 +345,6 @@ int SubtreeDtor (TreeNode* node)
     if (!node) return 0;
 
     SubtreeDtor (node->left);
-    SubtreeDtor (node->mid);
     SubtreeDtor (node->right);
 
     TreeNodeDtor (node);
@@ -450,7 +448,7 @@ TreeNode* SubtreeCopyOf (const TreeNode* node)
     if (!node) return NULL;
 
     TreeNode* copied = TreeNodeCtor(VAL(node), TYPE(node), node->prev,
-                                        SubtreeCopyOf(node->left), SubtreeCopyOf(node->mid), SubtreeCopyOf(node->right));
+                                        SubtreeCopyOf(node->left), SubtreeCopyOf(node->right));
 
     return copied;
 }
@@ -531,10 +529,11 @@ Tree* ReadTree (FILE* stream)
 
     char* infix_tree = (char *) calloc (MAX_TREE, sizeof(char));
 
-    fgets(infix_tree, MAX_TREE, stream);
-    infix_tree[strcspn(infix_tree, "\r\n")] = 0;
+    fread (infix_tree, MAX_TREE, sizeof (char), stream);
 
-    Tree* readen = ReadTree((const char *) infix_tree);
+    infix_tree[strcspn (infix_tree, "\r\n")] = 0;
+
+    Tree* readen = ReadTree ((const char *) infix_tree);
 
     free (infix_tree);
 
@@ -551,8 +550,7 @@ Tree* ReadTree (const char* infix_tree)
 
     Tree* tree = TreeCtor();
 
-    tree->root = ReadSubtree(infix_tree, tree, &offset);
-
+    tree->root = ReadSubtree (infix_tree, tree, &offset);
 
     return tree;
 }
@@ -562,8 +560,10 @@ Tree* ReadTree (const char* infix_tree)
 TreeNode* ReadSubtree (const char* infix_tree, const Tree* tree, int* offset)
 {
     assert (infix_tree);
+    assert (tree);
+    assert (offset);
 
-    SkipSpaces(infix_tree, offset);
+    SkipSpaces (infix_tree, offset);
 
     if (infix_tree[*offset] == '*')
     {
@@ -574,12 +574,12 @@ TreeNode* ReadSubtree (const char* infix_tree, const Tree* tree, int* offset)
 
     if (infix_tree[*offset] != '(')
     {
-        fprintf(stderr, "ReadSubTree: unknown action symbol %c (%d)\n", infix_tree[*offset], infix_tree[*offset]);
+        fprintf (stderr, "ReadSubTree: unknown action symbol %c (%d)\n", infix_tree[*offset], infix_tree[*offset]);
 
-        ABORT(); // !
+        ABORT(); // ! DONT FORGET TO DELETE THIS ABORT
     }
 
-    TreeNode* node = TreeNodeCtor(0, INT_LITERAL, NULL, NULL, NULL, NULL);
+    TreeNode* node = TreeNodeCtor (0, INT_LITERAL, NULL, NULL, NULL);
 
     *offset += 1; // skip (
 
@@ -603,7 +603,7 @@ TreeNode* ReadSubtree (const char* infix_tree, const Tree* tree, int* offset)
 
 // ============================================================================================
 
-NodeData ReadNodeData(const char* infix_tree, const Tree* tree, int* offset)
+NodeData ReadNodeData (const char* infix_tree, const Tree* tree, int* offset)
 {
     assert (infix_tree);
     assert (tree);
@@ -621,13 +621,22 @@ NodeData ReadNodeData(const char* infix_tree, const Tree* tree, int* offset)
 
     *offset += addition;
 
-    if (ReadAssignDouble (&data, word) == READ_ASSIGN_DBL_SUCCESS)
+    if (ReadAssignNumber (&data, word) == READ_ASSIGN_NUM_SUCCESS)
+        return data;
+
+    if (ReadAssignDeclarator (&data, word) == READ_ASSIGN_DECLR_SUCCESS)
+        return data;
+
+    if (ReadAssignKeyword (&data, word) == READ_ASSIGN_KW_SUCCESS)
+        return data;
+
+    if (ReadAssignSeparator (&data, word) == READ_ASSIGN_SEP_SUCCESS)
         return data;
 
     if (ReadAssignOperator (&data, word) == READ_ASSIGN_OP_SUCCESS)
         return data;
 
-    if (ReadAssignVariable (&data, word, tree) == READ_ASSIGN_VAR_SUCCESS)
+    if (ReadAssignIdentifier (&data, word, tree) == READ_ASSIGN_ID_SUCCESS)
         return data;
 
     return data; // error NodeType by default
@@ -635,22 +644,91 @@ NodeData ReadNodeData(const char* infix_tree, const Tree* tree, int* offset)
 
 // ============================================================================================
 
-ReadAssignDoubleRes ReadAssignDouble (NodeData* data, char* word)
+ReadAssignNumberRes ReadAssignNumber (NodeData* data, char* word)
 {
     assert (data);
     assert (word);
-    if (!data) RET_ERROR (READ_ASSIGN_DBL_ERR_PARAMS, "data null pointer");
-    if (!word) RET_ERROR (READ_ASSIGN_DBL_ERR_PARAMS, "word null pointer");
+    if (!data) RET_ERROR (READ_ASSIGN_NUM_ERR_PARAMS, "data null pointer");
+    if (!word) RET_ERROR (READ_ASSIGN_NUM_ERR_PARAMS, "word null pointer");
 
-    if (IsDouble(word)) // ! may be unsafe, see function code
+    if (atoi (word) != 0 || word[0] == '0') // ! may be unsafe
     {
         data->type = INT_LITERAL;
-        data->val  = atof (word);
+        data->val  = atoi (word);
 
-        return READ_ASSIGN_DBL_SUCCESS; // assigned double to data
+        return READ_ASSIGN_NUM_SUCCESS; // assigned num to data
     }
 
-    return READ_ASSIGN_DBL_ERR; // didnt assign double to data
+    return READ_ASSIGN_NUM_ERR; // didnt assign num to data
+}
+
+// ============================================================================================
+
+ReadAssignDeclaratorRes ReadAssignDeclarator (NodeData* data, char* word)
+{
+    assert (data);
+    assert (word);
+    if (!data) RET_ERROR (READ_ASSIGN_DECLR_ERR_PARAMS, "data null pointer");
+    if (!word) RET_ERROR (READ_ASSIGN_DECLR_ERR_PARAMS, "word null pointer");
+
+    for (size_t i = 0; i < N_DECLARATORS; i++)
+    {
+        if (streq (word, DECLARATORS[i].name))
+        {
+            data->type = DECLARATOR;
+            data->val  = DECLARATORS[i].dclr_code;
+
+            return READ_ASSIGN_DECLR_SUCCESS;
+        }
+    }
+
+    return READ_ASSIGN_DECLR_ERR_NOT_FOUND;
+}
+
+// ============================================================================================
+
+ReadAssignKeywordRes ReadAssignKeyword (NodeData* data, char* word)
+{
+    assert (data);
+    assert (word);
+    if (!data) RET_ERROR (READ_ASSIGN_KW_ERR_PARAMS, "data null pointer");
+    if (!word) RET_ERROR (READ_ASSIGN_KW_ERR_PARAMS, "word null pointer");
+
+    for (size_t i = 0; i < N_KEYWORDS; i++)
+    {
+        if (streq (word, KEYWORDS[i].name))
+        {
+            data->type = KEYWORD;
+            data->val  = KEYWORDS[i].kw_code;
+
+            return READ_ASSIGN_KW_SUCCESS;
+        }
+    }
+
+    return READ_ASSIGN_KW_ERR_NOT_FOUND;
+}
+
+// ============================================================================================
+
+ReadAssignSeparatorRes ReadAssignSeparator (NodeData* data, char* word)
+{
+    assert (data);
+    assert (word);
+    if (!data) RET_ERROR (READ_ASSIGN_SEP_ERR_PARAMS, "data null pointer");
+    if (!word) RET_ERROR (READ_ASSIGN_SEP_ERR_PARAMS, "word null pointer");
+
+    for (size_t i = 0; i < N_SEPARATORS; i++)
+    {
+        if (streq (word, SEPARATORS[i].name))
+        {
+            data->type = SEPARATOR;
+            data->val  = SEPARATORS[i].sep_code;
+
+            return READ_ASSIGN_SEP_SUCCESS;
+        }
+    }
+
+    return READ_ASSIGN_SEP_ERR_NOT_FOUND;
 }
 
 // ============================================================================================
@@ -678,26 +756,24 @@ ReadAssignOperatorRes ReadAssignOperator (NodeData* data, char* word)
 
 // ============================================================================================
 
-ReadAssignVariableRes ReadAssignVariable (NodeData* data, char* var_name, const Tree* tree)
+ReadAssignIdentifierRes ReadAssignIdentifier (NodeData* data, char* id_name, const Tree* tree)
 {
     assert (data);
-    assert (var_name);
+    assert (id_name);
 
-    if (!data) RET_ERROR (READ_ASSIGN_VAR_ERR_PARAMS, "data null pointer");
-    if (!var_name) RET_ERROR (READ_ASSIGN_VAR_ERR_PARAMS, "var_name null pointer");
-    if (IsVarNameCorrect((const char *) var_name))
-        RET_ERROR (READ_ASSIGN_VAR_ERR, "Incorrect variable name \"%s\"\n", var_name);
+    if (!data) RET_ERROR (READ_ASSIGN_ID_ERR_PARAMS, "data null pointer");
+    if (!id_name) RET_ERROR (READ_ASSIGN_ID_ERR_PARAMS, "var_name null pointer");
 
-    int var_id = FindInNametable (var_name, tree->nametable);
+    int var_id = FindInNametable (id_name, tree->nametable);
 
     if (var_id == -1) // not found in nametable
-        var_id = UpdNameTable (var_name, tree->nametable);
+        var_id = UpdNameTable (id_name, tree->nametable);
 
 
     data->type = IDENTIFIER;
     data->val  = var_id;
 
-    return READ_ASSIGN_VAR_SUCCESS;
+    return READ_ASSIGN_ID_SUCCESS;
 }
 
 // ============================================================================================
@@ -709,9 +785,9 @@ WriteTreeRes WriteTree(FILE* stream, const Tree* tree)
     if (!stream) RET_ERROR (WRT_TREE_ERR_PARAMS, "Stream null pointer");
     if (!tree)   RET_ERROR (WRT_TREE_ERR_PARAMS, "Tree null pointer");
 
-    WriteTreeRes ret_val = WriteSubtree(stream, tree->root, tree);
+    WriteTreeRes ret_val = WriteSubtree (stream, tree->root, tree);
 
-    fprintf(stream, "\n");
+    fprintf (stream, "\n");
 
     return ret_val;
 }
@@ -732,9 +808,9 @@ WriteTreeRes WriteSubtree(FILE* stream, const TreeNode* node, const Tree* tree)
 
     fprintf(stream, "( ");
 
-    WriteSubtree(stream, node->left, tree);
-    WriteTreeRes ret_val = WriteNodeData(stream, node->data, tree->nametable);
-    WriteSubtree(stream, node->right, tree);
+    WriteSubtree (stream, node->left, tree);
+    WriteTreeRes ret_val = WriteNodeData (stream, node->data, tree->nametable);
+    WriteSubtree (stream, node->right, tree);
 
     fprintf(stream, ") ");
 
@@ -750,29 +826,71 @@ WriteTreeRes WriteNodeData (FILE* stream, NodeData data, const NameTable* nameta
     if (!nametable) RET_ERROR (WRT_TREE_ERR_PARAMS, "Nametable null pointer");
     if (!stream)    RET_ERROR (WRT_TREE_ERR_PARAMS, "Word null pointer");
 
-    int opnum = -1;
-
-    if (data.type == INT_LITERAL)
+    switch (data.type)
     {
-        fprintf(stream, "%d ", data.val);
+        case IDENTIFIER:
+        {
+            fprintf (stream, "%s ", nametable->names[data.val]);
 
-        return WRT_TREE_SUCCESS;
+            return WRT_TREE_SUCCESS;
+        }
+
+        case DECLARATOR:
+        {
+            int declr_index = FindDeclarator (data.val);
+            if (declr_index != ILL_OPNUM)
+                fprintf (stream, "%s ", DECLARATORS[declr_index].name);
+            else
+                fprintf (stream, "UNKNOWN DECLARATOR");
+
+            return WRT_TREE_SUCCESS;
+        }
+
+        case KEYWORD:
+        {
+            int kw_index = FindKeyword (data.val);
+            if (kw_index != ILL_OPNUM)
+                fprintf (stream, "%s ", KEYWORDS[kw_index].name);
+            else
+                fprintf (stream, "UNKNOWN KEYWORD");
+
+            return WRT_TREE_SUCCESS;
+        }
+
+        case SEPARATOR:
+        {
+            int sep_index = FindSeparator (data.val);
+            if (sep_index != ILL_OPNUM)
+                fprintf(stream, "%s ", SEPARATORS[sep_index].name);
+            else
+                fprintf(stream, "UNKNOWN SEPARATOR");
+
+            return WRT_TREE_SUCCESS;
+        }
+
+        case OPERATOR:
+        {
+            int op_index = FindOperator (data.val);
+            if (op_index != ILL_OPNUM)
+                fprintf(stream, "%s ", OPERATORS[op_index].name);
+            else
+                fprintf(stream, "UNKNOWN OPERATOR");
+
+            return WRT_TREE_SUCCESS;
+        }
+
+        case INT_LITERAL:
+        {
+            fprintf(stream, "%d ", data.val);
+
+            return WRT_TREE_SUCCESS;
+        }
+
+        default:
+            return WRT_TREE_ERR;
     }
 
-    if (data.type == IDENTIFIER)
-    {
-        fprintf(stream, "%s ", nametable->names[(int) data.val]);
-    }
-    else if (data.type == OPERATOR)
-    {
-        opnum = FindOperation((int) data.val);
-        if (opnum != ILL_OPNUM)
-            fprintf(stream, "%s ", OPERATORS[opnum].name);
-        else
-            fprintf(stream, "UNKNOWN OPERATOR");
-    }
-
-    return WRT_TREE_SUCCESS;
+    return WRT_TREE_ERR;
 }
 
 // ============================================================================================
@@ -830,10 +948,43 @@ int IsVarNameCorrect (const char* word)
 
 // ============================================================================================
 
-int FindOperation (int opcode)
+int FindOperator (int op_code)
 {
     for (int i = 0; i < N_OPERATORS; i++)
-        if (opcode == OPERATORS[i].op_code)
+        if (op_code == OPERATORS[i].op_code)
+            return i;
+
+    return ILL_OPNUM;
+}
+
+// ============================================================================================
+
+int FindKeyword (int kw_code)
+{
+    for (int i = 0; i < N_OPERATORS; i++)
+        if (kw_code == KEYWORDS[i].kw_code)
+            return i;
+
+    return ILL_OPNUM;
+}
+
+// ============================================================================================
+
+int FindDeclarator (int declr_code)
+{
+    for (int i = 0; i < N_OPERATORS; i++)
+        if (declr_code == DECLARATORS[i].dclr_code)
+            return i;
+
+    return ILL_OPNUM;
+}
+
+// ============================================================================================
+
+int FindSeparator  (int sep_code)
+{
+    for (int i = 0; i < N_OPERATORS; i++)
+        if (sep_code == SEPARATORS[i].sep_code)
             return i;
 
     return ILL_OPNUM;
@@ -849,7 +1000,7 @@ int IsDouble (char* word)
     assert (word);
     if (!word) RET_ERROR (0, "Word null pointer");
 
-    if (dbleq( atof(word), 0) && *word != '0' && *word != '.')
+    if (dbleq ( atof(word), 0) && *word != '0' && *word != '.')
         return 0;
 
     return 1;
@@ -864,7 +1015,7 @@ SkipSpacesRes SkipSpaces (const char* string, int* offset)
     if (!string) RET_ERROR (SKIP_SPACES_ERR_PARAMS, "string null pointer");
     if (!offset) RET_ERROR (SKIP_SPACES_ERR_PARAMS, "offset null pointer");
 
-    while (isspace(string[*offset]))
+    while (isspace (string[*offset]))
         (*offset)++;
 
     return SKIP_SPACES_SUCCESS;

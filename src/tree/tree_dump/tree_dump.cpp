@@ -197,7 +197,7 @@ DotTreePrintRes DotSubtreePrint (FILE* dot_file, const TreeNode* node, const Tre
 
     int opnum = 0;
 
-    switch (TYPE(node))
+    switch (TYPE (node))
     {
     case ERROR:
         color = GRAPH_ERRCLR;
@@ -244,13 +244,9 @@ DotTreePrintRes DotSubtreePrint (FILE* dot_file, const TreeNode* node, const Tre
     fprintf (dot_file, "\tnode_%d [style = \"filled, rounded\", shape = rectangle, label = \"%s\", fillcolor = \"%s\", fontcolor = \"%s\"];\n", *node_id, node_data, color, GRAPH_TEXTCLR);
 
     int left_subtree_id  = 0;
-    int mid_subtree_id   = 0;
     int right_subtree_id = 0;
 
     if (DotSubtreePrint (dot_file, (const TreeNode *) node->left, tree, &left_subtree_id) != DOT_PRINT_SUCCESS)
-        RET_ERROR (DOT_PRINT_ERR, "Previous function returned error code");
-
-    if (DotSubtreePrint (dot_file, (const TreeNode *) node->mid, tree, &mid_subtree_id) != DOT_PRINT_SUCCESS)
         RET_ERROR (DOT_PRINT_ERR, "Previous function returned error code");
 
     if (DotSubtreePrint (dot_file, (const TreeNode *) node->right, tree, &right_subtree_id) != DOT_PRINT_SUCCESS)
@@ -258,9 +254,6 @@ DotTreePrintRes DotSubtreePrint (FILE* dot_file, const TreeNode* node, const Tre
 
     if (left_subtree_id != 0)
         fprintf (dot_file, "\tnode_%d -> node_%d;\n", *node_id, left_subtree_id);
-
-    if (mid_subtree_id != 0)
-        fprintf (dot_file, "\tnode_%d -> node_%d;\n", *node_id, mid_subtree_id);
 
     if (right_subtree_id != 0)
         fprintf (dot_file, "\tnode_%d -> node_%d;\n", *node_id, right_subtree_id);
@@ -350,17 +343,12 @@ DotTreePrintRes DotSubtreeDetailedPrint (FILE* dot_file, const TreeNode* node, c
     if (DotSubtreeDetailedPrint (dot_file, (const TreeNode *) node->left, tree, &left_subtree_id) != DOT_PRINT_SUCCESS)
         RET_ERROR (DOT_PRINT_ERR, "Previous function returned error code");
 
-    if (DotSubtreeDetailedPrint (dot_file, (const TreeNode *) node->mid, tree, &mid_subtree_id) != DOT_PRINT_SUCCESS)
-        RET_ERROR (DOT_PRINT_ERR, "Previous function returned error code");
-
     if (DotSubtreeDetailedPrint (dot_file, (const TreeNode *) node->right, tree, &right_subtree_id) != DOT_PRINT_SUCCESS)
         RET_ERROR (DOT_PRINT_ERR, "Previous function returned error code");
 
     if (left_subtree_id != 0)
         fprintf (dot_file, "\tdetailed_node_%d -> detailed_node_%d;\n", *node_id, left_subtree_id);
 
-    if (mid_subtree_id != 0)
-        fprintf (dot_file, "\tdetailed_node_%d -> detailed_node_%d;\n", *node_id, mid_subtree_id);
     if (right_subtree_id != 0)
         fprintf (dot_file, "\tdetailed_node_%d -> detailed_node_%d;\n", *node_id, right_subtree_id);
 

@@ -50,98 +50,67 @@
 
 #include "frontend.h"
 
-int main(int argc, char* argv[])
+int main (int argc, char* argv[])
 {
-    const char* math_code =
-                        FOREIGN_AGENT
-                        DEC_VAR " x я_так_чувствую aboba228 ^ 11 сомнительно_но_окей";
+    if (argc < 2)
+        RET_ERROR (1, "No program file specified");
 
-    const char* double_assign_code =
-                        FOREIGN_AGENT
-                        "олег_не_торопись\n"
-                        DEC_VAR " x я_так_чувствую 11 сомнительно_но_окей\n"
-                        DEC_VAR " y я_так_чувствую 12 сомнительно_но_окей\n"
-                        "я_олигарх_мне_заебись\n";
+    char* prog_name = argv[1]; // todo check if ends at .tnkff
 
-    const char* doif_code =
-                        FOREIGN_AGENT
-                        "я_ссыкло_или_я_не_ссыкло "
-                            "x я_так_чувствую 11 сомнительно_но_окей "
-                        "какая_разница aboba228 > 11 ?";
-
-    const char* while_code =
-                        FOREIGN_AGENT
-                        "ну_сколько_можно x > 11 ^ aboba228 ?\n"
-                            "x я_так_чувствую x + 1 сомнительно_но_окей\n";
-
-    const char* if_else_code =
-                        FOREIGN_AGENT
-                        "какая_разница aboba_18 > 666 / 2 ? "
-                            "x я_так_чувствую 333 + 0 сомнительно_но_окей "
-                        "я_могу_ошибаться "
-                            "x я_так_чувствую 11 сомнительно_но_окей ";
-
-    const char* if_code =
-                        FOREIGN_AGENT
-                        DEC_VAR " aboba_18 я_так_чувствую 228 сомнительно_но_окей "
-                        DEC_VAR " x        я_так_чувствую 48  сомнительно_но_окей "
-                        "какая_разница aboba_18 > 666 / 2 ? "
-                            "x я_так_чувствую 333 + 0 сомнительно_но_окей ";
-
-    const char* new_lexer_code =
-                        FOREIGN_AGENT
-                        DEC_VAR " x я_так_чувствую 11 сомнительно_но_окей "
-                        "x я_так_чувствую 12 сомнительно_но_окей "
-                        "никто_никогда_не_вернет год_2007 сомнительно_но_окей"
-                        ;
-
-    const char* func_lexer_code =
-                        FOREIGN_AGENT
-
-                        // DEC_VAR " платно я_так_чувствую 0 сомнительно_но_окей \n"
-                        "россии_нужен ЦАРЬ за почти_без_переплат "
-                        "олег_не_торопись \n"
-                            DEC_VAR " платно я_так_чувствую 10 сомнительно_но_окей "
-                            "никто_никогда_не_вернет платно сомнительно_но_окей "
-                        "я_олигарх_мне_заебись \n"
-
-                        "россии_нужен ТинькоффПлатинум за платно десять почти_без_переплат "
-                        "олег_не_торопись \n"
-                            "платно я_так_чувствую 0 сомнительно_но_окей\n"
-                            "олег_не_торопись\n"
-                                "платно я_так_чувствую 666 сомнительно_но_окей\n"
-                            "я_олигарх_мне_заебись\n"
-                        "я_олигарх_мне_заебись\n";
-
-    char* prog_name = argv[1];
-
-    FILE* prog_file = fopen (prog_name, "rb");
-    int prog_size = GetProgSize (prog_file);
-
-    char* raw_prog_text = (char*) calloc (prog_size, sizeof (char));
-    fread ((char*) raw_prog_text, sizeof (char), prog_size, prog_file); // check syscall
-
-    ProgText* prog_text = ProgTextCtor (raw_prog_text, prog_size);
-    free (raw_prog_text);
-    fclose (prog_file);
-
-    ProgCode* prog_code = LexicalAnalysisTokenize (prog_text);
+    ProgText* prog_text = GetProgText (prog_name);
+    ProgCode* prog_code = LexerTokenize (prog_text);
     ProgTextDtor (prog_text);
+    if (!prog_code)
+        RET_ERROR (1, "Error during syntax analysis");
 
-    if (!prog_code) return 1;
-
-    SHOW_PROG_CODE; // debug
+    // SHOW_PROG_CODE; // debug
 
     Tree* ast = BuildAST (prog_code);
+    ProgCodeDtor (prog_code);
 
     TreeDotDump ("dump.html", ast);
 
-    ProgCodeDtor (prog_code);
+    WriteAST (ast, prog_name);
+
     TreeDtor (ast);
 
     PRINTF_DEBUG ("done");
 
     return 0;
+}
+
+// ============================================================================================
+
+ProgText* GetProgText (const char* prog_name)
+{
+    assert (prog_name);
+
+    FILE* prog_file = fopen (prog_name, "rb");
+    int prog_size   = GetProgSize (prog_file);
+
+    char* raw_prog_text = (char*) calloc (prog_size, sizeof (char));
+    fread ((char*) raw_prog_text, sizeof (char), prog_size, prog_file); // todo check syscall
+
+    ProgText* prog_text = ProgTextCtor (raw_prog_text, prog_size);
+    free (raw_prog_text);
+    fclose (prog_file);
+
+    return prog_text;
+}
+
+// ============================================================================================
+
+WriteTreeRes WriteAST (const Tree* ast, const char* prog_fname)
+{
+    assert (ast);
+    assert (prog_fname);
+
+    WriteTreeRes wrt_res = WRT_TREE_SUCCESS;
+    FILE* ast_file = fopen ("ast.ast", "wb");
+    wrt_res = WriteTree (ast_file, ast);
+    fclose (ast_file);
+
+    return wrt_res;
 }
 
 // ============================================================================================
@@ -157,7 +126,7 @@ Tree* BuildAST (ProgCode* prog_code)
 
     PushScope (sts); // global scope
 
-    ast->root = GetG (prog_code, sts);
+    ast->root = GetAST (prog_code, sts);
 
     ScopeTableStackDtor (sts);
 
@@ -166,7 +135,7 @@ Tree* BuildAST (ProgCode* prog_code)
 
 // ============================================================================================
 
-TreeNode* GetG (ProgCode* prog_code, ScopeTableStack* sts)
+TreeNode* GetAST (ProgCode* prog_code, ScopeTableStack* sts)
 {
     assert (prog_code);
     assert (sts);
@@ -183,7 +152,7 @@ TreeNode* GetG (ProgCode* prog_code, ScopeTableStack* sts)
 
         if (new_statement)
             code_block = TreeNodeCtor (END_STATEMENT, SEPARATOR, NULL,
-                        code_block, NULL, new_statement);
+                        code_block, new_statement);
 
     } while (new_statement && HAS_TOKENS_LEFT);
 
@@ -232,7 +201,7 @@ TreeNode* GetFunctionDeclaration (ProgCode* prog_code, ScopeTableStack* sts)
             DECLARE (new_identifier);
 
             params_block = TreeNodeCtor (END_STATEMENT, SEPARATOR,
-                                         NULL, params_block, NULL, new_identifier);
+                                         NULL, params_block, new_identifier);
 
         }
     } while (new_identifier);
@@ -249,8 +218,10 @@ TreeNode* GetFunctionDeclaration (ProgCode* prog_code, ScopeTableStack* sts)
 
     CLOSE_SCOPE;
 
+    TreeNodeDtor (func_id);
+
     return TreeNodeCtor (FUNC_DECLARATOR, DECLARATOR,
-                         NULL, func_body, params_block, func_id);
+                         NULL, func_body, params_block);
 }
 
 // ============================================================================================
@@ -296,7 +267,7 @@ TreeNode* GetStatementBlock (ProgCode* prog_code, ScopeTableStack* sts)
 
         if (new_statement)
             statement_block = TreeNodeCtor (END_STATEMENT, SEPARATOR,
-                                            NULL, statement_block, NULL, new_statement);
+                                            NULL, statement_block, new_statement);
     } while (new_statement);
 
     SYNTAX_ASSERT (TOKEN_IS (SEPARATOR, ENCLOSE_STATEMENT_END),
@@ -389,7 +360,7 @@ TreeNode* GetWhile (ProgCode* prog_code, ScopeTableStack* sts)
     TreeNode* wrapped_statement = GetCompoundStatement (prog_code, sts);
     SYNTAX_ASSERT (wrapped_statement != NULL, "No wrapped statement given in while");
 
-    return TreeNodeCtor (KW_WHILE, KEYWORD, NULL, wrapped_statement, condition, NULL);
+    return TreeNodeCtor (KW_WHILE, KEYWORD, NULL, wrapped_statement, condition);
 }
 
 // ============================================================================================
@@ -407,7 +378,6 @@ TreeNode* GetIfElse (ProgCode* prog_code, ScopeTableStack* sts)
     TreeNode* condition = GetMathExprRes (prog_code, sts);
     SYNTAX_ASSERT (condition != NULL, "condition error");
 
-    PRINTF_DEBUG ("t %d v %d", TYPE (CURR_TOKEN), VAL (CURR_TOKEN));
     SYNTAX_ASSERT (TOKEN_IS (SEPARATOR, END_CONDITION), "\"?\" expected in the end of condition");
     OFFSET++; // skip "?"
 
@@ -415,14 +385,16 @@ TreeNode* GetIfElse (ProgCode* prog_code, ScopeTableStack* sts)
     SYNTAX_ASSERT (if_statement != NULL, "No wrapped statement given in while");
 
     if (!HAS_TOKENS_LEFT || TOKEN_IS_NOT (KEYWORD, KW_ELSE))
-        return TreeNodeCtor (KW_IF, KEYWORD, NULL, if_statement, condition, NULL);
+        return TreeNodeCtor (KW_IF, KEYWORD, NULL, if_statement, condition);
 
     OFFSET++; // skip "else"
 
     TreeNode* else_statement = GetCompoundStatement (prog_code, sts);
     SYNTAX_ASSERT (else_statement != NULL, "\"else\" statement expected");
 
-    return TreeNodeCtor (KW_IF, KEYWORD, NULL, if_statement, condition, else_statement);
+    TreeNode* condition_and_else = TreeNodeCtor (KW_IF, KEYWORD, NULL, condition, else_statement);
+
+    return TreeNodeCtor (KW_IF, KEYWORD, NULL, if_statement, condition_and_else);
 }
 
 // ============================================================================================
@@ -451,7 +423,9 @@ TreeNode* GetDoIf (ProgCode* prog_code, ScopeTableStack* sts)
 
     OFFSET++; // skip "?"
 
-    return TreeNodeCtor (KW_DO, KEYWORD, NULL, wrapped_statement, condition, NULL);
+    TreeNodeDtor (condition);
+
+    return TreeNodeCtor (KW_DO, KEYWORD, NULL, wrapped_statement, NULL);
 }
 
 // ============================================================================================
@@ -517,10 +491,10 @@ TreeNode* GetAssign (ProgCode* prog_code, ScopeTableStack* sts)
 
     SYNTAX_ASSERT (rvalue != NULL, "Rvalue (nil) error");
 
-    TreeNode* assign_node = TreeNodeCtor (ASSIGN, OPERATOR, NULL, lvalue, NULL, rvalue);
+    TreeNode* assign_node = TreeNodeCtor (ASSIGN, OPERATOR, NULL, lvalue, rvalue);
 
     if (var_is_being_declared)
-        return TreeNodeCtor (VAR_DECLARATOR, DECLARATOR, NULL, assign_node, NULL, NULL);
+        return TreeNodeCtor (VAR_DECLARATOR, DECLARATOR, NULL, assign_node, NULL);
 
     return assign_node;
 }
@@ -539,12 +513,12 @@ TreeNode* GetReturn (ProgCode* prog_code, ScopeTableStack* sts)
 
     TreeNode* return_value = GetNumber (prog_code, sts);
     if (return_value)
-        return TreeNodeCtor (KW_RETURN, KEYWORD, NULL, return_value, NULL, NULL);
+        return TreeNodeCtor (KW_RETURN, KEYWORD, NULL, return_value, NULL);
 
     return_value = GetRvalue (prog_code, sts);
     SYNTAX_ASSERT (return_value != NULL, "Return value expected after return");
 
-    return TreeNodeCtor (KW_RETURN, KEYWORD, NULL, return_value, NULL, NULL);
+    return TreeNodeCtor (KW_RETURN, KEYWORD, NULL, return_value, NULL);
 }
 
 // ============================================================================================
@@ -573,7 +547,7 @@ TreeNode* GetMathExprRes (ProgCode* prog_code, ScopeTableStack* sts)
 {
     assert (prog_code);
     assert (sts);
-PRINTF_DEBUG ("enter");
+
     int init_offset = OFFSET;
 
     TreeNode* math_expr_res = GetAddSubRes (prog_code, sts);
@@ -604,27 +578,27 @@ PRINTF_DEBUG ("enter");
     switch (op_cmp)
     {
     case LESS:
-        math_expr_res = TreeNodeCtor (LESS, OPERATOR, NULL, math_expr_res, NULL, curr_add_sub_res);
+        math_expr_res = TreeNodeCtor (LESS, OPERATOR, NULL, math_expr_res, curr_add_sub_res);
         break;
 
     case LESS_EQ:
-        math_expr_res = TreeNodeCtor (LESS_EQ, OPERATOR, NULL, math_expr_res, NULL, curr_add_sub_res);
+        math_expr_res = TreeNodeCtor (LESS_EQ, OPERATOR, NULL, math_expr_res, curr_add_sub_res);
         break;
 
     case EQUAL:
-        math_expr_res = TreeNodeCtor (EQUAL, OPERATOR, NULL, math_expr_res, NULL, curr_add_sub_res);
+        math_expr_res = TreeNodeCtor (EQUAL, OPERATOR, NULL, math_expr_res, curr_add_sub_res);
         break;
 
     case MORE_EQ:
-        math_expr_res = TreeNodeCtor (MORE_EQ, OPERATOR, NULL, math_expr_res, NULL, curr_add_sub_res);
+        math_expr_res = TreeNodeCtor (MORE_EQ, OPERATOR, NULL, math_expr_res, curr_add_sub_res);
         break;
 
     case MORE:
-        math_expr_res = TreeNodeCtor (MORE, OPERATOR, NULL, math_expr_res, NULL, curr_add_sub_res);
+        math_expr_res = TreeNodeCtor (MORE, OPERATOR, NULL, math_expr_res, curr_add_sub_res);
         break;
 
     case UNEQUAL:
-        math_expr_res = TreeNodeCtor (UNEQUAL, OPERATOR, NULL, math_expr_res, NULL, curr_add_sub_res);
+        math_expr_res = TreeNodeCtor (UNEQUAL, OPERATOR, NULL, math_expr_res, curr_add_sub_res);
         break;
 
     default:
@@ -676,11 +650,11 @@ TreeNode* GetAddSubRes (ProgCode* prog_code, ScopeTableStack* sts)
         switch (op_add_sub)
         {
         case ADD:
-            add_sub_res = TreeNodeCtor (ADD, OPERATOR, NULL, add_sub_res, NULL, curr_mul_div_res);
+            add_sub_res = TreeNodeCtor (ADD, OPERATOR, NULL, add_sub_res, curr_mul_div_res);
             break;
 
         case SUB:
-            add_sub_res = TreeNodeCtor (SUB, OPERATOR, NULL, add_sub_res, NULL, curr_mul_div_res);
+            add_sub_res = TreeNodeCtor (SUB, OPERATOR, NULL, add_sub_res, curr_mul_div_res);
             break;
 
         default:
@@ -733,11 +707,11 @@ TreeNode* GetMulDivRes (ProgCode* prog_code, ScopeTableStack* sts)
         switch (op_mul_div)
         {
         case MUL:
-            mul_div_res = TreeNodeCtor (MUL, OPERATOR, NULL, mul_div_res, NULL, curr_pow_res);
+            mul_div_res = TreeNodeCtor (MUL, OPERATOR, NULL, mul_div_res, curr_pow_res);
             break;
 
         case DIV:
-            mul_div_res = TreeNodeCtor (DIV, OPERATOR, NULL, mul_div_res, NULL, curr_pow_res);
+            mul_div_res = TreeNodeCtor (DIV, OPERATOR, NULL, mul_div_res, curr_pow_res);
             break;
 
         default:
@@ -775,7 +749,7 @@ TreeNode* GetPowRes (ProgCode* prog_code, ScopeTableStack* sts)
     TreeNode* operand_2 = GetOperand (prog_code, sts);
     SYNTAX_ASSERT (operand_2 != NULL, "in power right operand nil");
 
-    pow_res = TreeNodeCtor (POW, OPERATOR, NULL, pow_res, NULL, operand_2);
+    pow_res = TreeNodeCtor (POW, OPERATOR, NULL, pow_res, operand_2);
 
     return pow_res;
 }
@@ -832,7 +806,7 @@ TreeNode* GetFunctionCall (ProgCode* prog_code, ScopeTableStack* sts)
     if (TYPE (CURR_TOKEN) != IDENTIFIER)
         return NULL;
 
-    TreeNode* identifier = TreeNodeCtor (VAL (CURR_TOKEN), TYPE (CURR_TOKEN), NULL, NULL, NULL, NULL); // something is wrong
+    TreeNode* identifier = TreeNodeCtor (VAL (CURR_TOKEN), TYPE (CURR_TOKEN), NULL, NULL, NULL); // something is wrong
 
     OFFSET++; // skip func name
 
@@ -862,7 +836,7 @@ TreeNode* GetFunctionCall (ProgCode* prog_code, ScopeTableStack* sts)
             n_params++;
 
             parameters = TreeNodeCtor (END_STATEMENT, SEPARATOR,
-                                       NULL, parameters, NULL, new_parameter);
+                                       NULL, parameters, new_parameter);
         }
     } while (new_parameter && HAS_TOKENS_LEFT);
 
@@ -889,7 +863,7 @@ TreeNode* GetIdentifier (ProgCode* prog_code, ScopeTableStack* sts)
     if (TYPE (CURR_TOKEN) != IDENTIFIER)
         return NULL;
 
-    TreeNode* ret_val = TreeNodeCtor (VAL (CURR_TOKEN), TYPE (CURR_TOKEN), NULL, NULL, NULL, NULL);
+    TreeNode* ret_val = TreeNodeCtor (VAL (CURR_TOKEN), TYPE (CURR_TOKEN), NULL, NULL, NULL);
 
     OFFSET++; // skip identifier
 
@@ -906,7 +880,7 @@ TreeNode* GetNumber (ProgCode* prog_code, ScopeTableStack* sts)
     if (TYPE (CURR_TOKEN) != INT_LITERAL)
         return NULL;
 
-    TreeNode* ret_val = TreeNodeCtor (VAL (CURR_TOKEN), TYPE (CURR_TOKEN), NULL, NULL, NULL, NULL);
+    TreeNode* ret_val = TreeNodeCtor (VAL (CURR_TOKEN), TYPE (CURR_TOKEN), NULL, NULL, NULL);
 
     OFFSET++; // skip number
 
@@ -916,7 +890,7 @@ TreeNode* GetNumber (ProgCode* prog_code, ScopeTableStack* sts)
 // ============================================================================================
 
 // func too big
-ProgCode* LexicalAnalysisTokenize (ProgText* text)
+ProgCode* LexerTokenize (ProgText* text)
 {
     assert (text);
 
@@ -952,11 +926,11 @@ ProgCode* LexicalAnalysisTokenize (ProgText* text)
             switch (DECLARATORS[dclr_index].dclr_code)
             {
             case VAR_DECLARATOR:
-                new_node = TreeNodeCtor (VAR_DECLARATOR, DECLARATOR, NULL, NULL, NULL, NULL);
+                new_node = TreeNodeCtor (VAR_DECLARATOR, DECLARATOR, NULL, NULL, NULL);
                 break;
 
             case FUNC_DECLARATOR:
-                new_node = TreeNodeCtor (FUNC_DECLARATOR, DECLARATOR, NULL, NULL, NULL, NULL);
+                new_node = TreeNodeCtor (FUNC_DECLARATOR, DECLARATOR, NULL, NULL, NULL);
                 break;
 
             default:
@@ -972,7 +946,7 @@ ProgCode* LexicalAnalysisTokenize (ProgText* text)
                 LEXER_ERR ("Unexpected error: keyword \"%s\" "
                            "index not found in keywords table", lexem);
 
-            new_node = TreeNodeCtor (kw_index, KEYWORD, NULL, NULL, NULL, NULL);
+            new_node = TreeNodeCtor (kw_index, KEYWORD, NULL, NULL, NULL);
         }
 
         else if (IsSeparator (lexem))
@@ -982,7 +956,7 @@ ProgCode* LexicalAnalysisTokenize (ProgText* text)
                 LEXER_ERR ("Unexpected error: separator \"%s\" "
                            "index not found in separators table", lexem);
 
-            new_node = TreeNodeCtor (sep_index, SEPARATOR, NULL, NULL, NULL, NULL);
+            new_node = TreeNodeCtor (sep_index, SEPARATOR, NULL, NULL, NULL);
         }
 
         else if (IsOperator (lexem))
@@ -992,7 +966,7 @@ ProgCode* LexicalAnalysisTokenize (ProgText* text)
                 LEXER_ERR ("Unexpected error: operator \"%s\" "
                            "index not found in operators table", lexem);
 
-            new_node = TreeNodeCtor (op_index, OPERATOR, NULL, NULL, NULL, NULL);
+            new_node = TreeNodeCtor (op_index, OPERATOR, NULL, NULL, NULL);
         }
 
         else if (IsIdentifier (lexem))
@@ -1005,12 +979,12 @@ ProgCode* LexicalAnalysisTokenize (ProgText* text)
 
             if (IsMainFunction (lexem)) prog_code->nametable->main_index = id_index;
 
-            new_node = TreeNodeCtor (id_index, IDENTIFIER, NULL, NULL, NULL, NULL);
+            new_node = TreeNodeCtor (id_index, IDENTIFIER, NULL, NULL, NULL);
         }
 
         else if (IsIntLiteral (lexem))
         {
-            new_node = TreeNodeCtor (atoi (lexem), INT_LITERAL, NULL, NULL, NULL, NULL);
+            new_node = TreeNodeCtor (atoi (lexem), INT_LITERAL, NULL, NULL, NULL);
         }
 
         else
@@ -1156,13 +1130,13 @@ int IsMainFunction (const char* lexem)
 
 // ============================================================================================
 
-int GetDeclaratorIndex (const char* keyword)
+int GetDeclaratorIndex (const char* declarator)
 {
-    assert (keyword);
+    assert (declarator);
 
     for (int i = 0; i < N_DECLARATORS; i++)
     {
-        if (streq (keyword, DECLARATORS[i].name))
+        if (streq (declarator, DECLARATORS[i].name))
             return i;
     }
 
