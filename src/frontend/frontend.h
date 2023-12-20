@@ -63,7 +63,7 @@ char FOREIGN_AGENT_BANNER[] = "ДАННОЕ СООБЩЕНИЕ (МАТЕРИАЛ
                               "А ТАКЖЕ ФИНАНСИРУЕТСЯ ИЗ ФОНДА КОШЕК ЕДИНИЧКИ И УПОМИНАЕТ НЕКОГО ИНОАГЕНТА\n"
                               "♂♂♂♂ Oleg ♂ TinCock ♂♂♂♂ (КТО БЫ ЭТО МОГ БЫТЬ). КОЛЯ ЛОХ КСТА, WHEN DANIL???\n"
                               "ДЛЯ ПОЛУЧЕНИЯ ВЫИГРЫША НАЖМИТЕ ALT+F4.\n";
-const int FOREIGN_AGENT_BANNER_WORDS = 47; // i know i know
+const size_t FOREIGN_AGENT_BANNER_WORDS = 47; // i know i know
 
 char NO_FOREIGN_AGENT_BANNER_ERROR[] =
                     RED("祝大家好运和积极!!! ОЙОЙОЙ! МНОГО ПЛОХО! МНОГО СТЫД! XI НЕДОВОЛЕН!\n"
@@ -75,8 +75,8 @@ char NO_FOREIGN_AGENT_BANNER_ERROR[] =
                     "ХОТЕТЬ КОШКА ЖЕНА, ПОЛУЧАТЬ КОШКА ЖЕНА! ХОТЕТЬ МНОГА РИС, ПОЛУЧАТЬ\n"
                     "10 РИС, 11 СОЦИАЛЬНЫЙ КРЕДИТ!!! УДАР! 荣耀中国\n");
 
-const int MAX_LEXEM = 228;
-const int MAX_SCOPE_DEPTH = 10; // naming?
+const size_t MAX_LEXEM = 228;
+const size_t MAX_SCOPE_DEPTH = 10; // naming?
 
 struct ProgText
 {
@@ -87,10 +87,10 @@ struct ProgText
 
 struct ProgCode
 {
-    TreeNode**  tokens;
-    NameTable*  nametable;
-    int         offset;
-    int         size;
+    TreeNode** tokens;
+    NameTable* nametable;
+    int        offset;
+    int        size;
 };
 
 struct ScopeTableStack
@@ -139,7 +139,7 @@ ProgCode* LexerTokenize (ProgText* text);
 int HasForeignAgent (ProgText* text);
 
 int IsIdentifier   (const char* lexem);
-int IsDeclarator   (const char* lexem);
+int IsDeclarator   (const char* lexem);int   free_nametable_pos;
 int IsKeyword      (const char* lexem);
 int IsSeparator    (const char* lexem);
 int IsOperator     (const char* lexem);

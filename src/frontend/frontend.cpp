@@ -218,10 +218,11 @@ TreeNode* GetFunctionDeclaration (ProgCode* prog_code, ScopeTableStack* sts)
 
     CLOSE_SCOPE;
 
-    TreeNodeDtor (func_id);
+    TreeNode* func_info =
+        TreeNodeCtor (END_STATEMENT, SEPARATOR, NULL, params_block, func_id);
 
     return TreeNodeCtor (FUNC_DECLARATOR, DECLARATOR,
-                         NULL, func_body, params_block);
+                         NULL, func_body, func_info);
 }
 
 // ============================================================================================
@@ -277,7 +278,7 @@ TreeNode* GetStatementBlock (ProgCode* prog_code, ScopeTableStack* sts)
 
     CLOSE_SCOPE;
 
-    return statement_block;
+    return TreeNodeCtor (ENCLOSE_STATEMENT_BEGIN, SEPARATOR, NULL, statement_block, NULL);
 }
 
 // ============================================================================================
@@ -455,7 +456,6 @@ TreeNode* GetAssign (ProgCode* prog_code, ScopeTableStack* sts)
 
         SYNTAX_ASSERT (VAL (id_token) > -1,
                         "%s not found in nametable", ID_NAME (id_token)); // precaution
-
 
         DECLARE (id_token);
     }
@@ -995,8 +995,8 @@ ProgCode* LexerTokenize (ProgText* text)
         prog_code->tokens[prog_code->size++] = new_node;
     }
 
-    if (prog_code->nametable->main_index == -1)
-        LEXER_ERR ("No function \"%s\", no entry point", MAIN_FUNC_NAME);
+    // if (prog_code->nametable->main_index == -1)
+        // LEXER_ERR ("No function \"%s\", no entry point", MAIN_FUNC_NAME);
 
     return prog_code;
 }
