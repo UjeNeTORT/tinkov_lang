@@ -6,19 +6,20 @@ DEBUG = -Wshadow -Winit-self -Wredundant-decls -Wcast-align -Wundef -Wfloat-equa
 
 CPP = g++
 
-start: tree.o tree_dump.o frontend.o backend.o common.o
+start: stack.o onegin.o spu.o asm.o tree.o tree_dump.o frontend.o backend.o common.o compiler.o
 	$(CPP) tree.o tree_dump.o common.o frontend.o -o frontend $(DEBUG)
 	$(CPP) tree.o tree_dump.o common.o backend.o  -o backend  $(DEBUG)
 
+	$(CPP) onegin.o asm.o -o asm $(DEBUG)
+	$(CPP) my_hash.o stack.o spu.o -o spu $(DEBUG)
+
+	$(CPP) common.o compiler.o -o compiler
+
 run:
-	./frontend test_code/assign_back_test.tnkff
-	./backend ast.ast
+	./compiler test_code/factorial.tnkff
 
-frontend_run:
-	./frontend test_code/factorial.tnkff
-
-backend_run:
-	./backend ast.ast
+compiler.o: src/compiler/compiler.*
+	$(CPP) src/compiler/compiler.cpp -c
 
 tree.o : src/tree/tree.*
 	$(CPP) src/tree/tree.cpp -c
@@ -32,8 +33,25 @@ frontend.o : src/frontend/frontend.*
 backend.o : src/backend/backend.*
 	$(CPP) src/backend/backend.cpp -c
 
-common.o: src/common/common.cpp
+common.o: src/common/common.*
 	$(CPP) src/common/common.cpp -c
+
+processor.o: stack.o onegin.o spu.o asm.o disasm.o
+	$(CPP) onegin.o asm.o -o asm $(DEBUG)
+	$(CPP) my_hash.o stack.o spu.o -o spu $(DEBUG)
+
+stack.o : src/stack/stack.*
+	$(CPP) src/stack/stack.cpp -c -o stack.o
+	$(CPP) src/stack/my_hash.cpp -c -o my_hash.o
+
+onegin.o : src/processor/text_processing_lib/text_buf.*
+	$(CPP) src/processor/text_processing_lib/text_buf.cpp -c -o onegin.o
+
+spu.o : src/processor/processor/spu.*
+	$(CPP) src/processor/processor/spu.cpp -c -o spu.o
+
+asm.o : spu.o src/processor/assembler/asm.*
+	$(CPP) src/processor/assembler/asm.cpp -c -o asm.o
 
 clean:
 	rm -f *.out
