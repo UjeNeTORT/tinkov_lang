@@ -81,8 +81,7 @@ TranslateRes TranslateASTSubtree (const TreeNode* node, AsmText* asm_text, const
 
     ERROR ("Couldnt translate node:\n"
            "[type = %d]\n"
-           "[val  = %d]\n"
-           "%s", VAL (node), TYPE (node), asm_text->text);
+           "[val  = %d]\n", TYPE (node), VAL (node));
 
     return TRANSLATE_ERROR;
 }
@@ -113,10 +112,52 @@ TranslateRes TranslateDeclarator (const TreeNode* declr_node, AsmText* asm_text,
 TranslateRes TranslateKeyword (const TreeNode* kw_node, AsmText* asm_text, const Tree* ast)
 {
     ASSERT_BLOCK_FUNC_TRANSLATE;
+
     if (TYPE (kw_node) != KEYWORD)
         return TRANSLATE_TYPE_NOT_MATCH;
 
-    return TRANSLATE_ERROR;
+    switch (VAL (kw_node))
+    {
+    case KW_IF:
+    {
+        int written = 0;
+
+        // condition
+        TranslateASTSubtree (kw_node->right, asm_text, ast);
+        sprintf (TEXT, "push 0\n"
+                       "jne if_statement_%d\n"
+                       "jmp else_statement_%d\n%n",
+                asm_text->if_statements_count, asm_text->if_statements_count, &written);
+        asm_text->offset += written;
+
+        // if
+        sprintf (TEXT, "if_statement_%d:\n%n", asm_text->if_statements_count, &written);
+        asm_text->offset += written;
+
+        TranslateASTSubtree (kw_node->left->left, asm_text, ast);
+
+        sprintf (TEXT, "jmp end_if_statement_%d\n%n", asm_text->if_statements_count, &written);
+        asm_text->offset += written;
+
+        // else
+        sprintf (TEXT, "else_statement_%d:\n%n", asm_text->if_statements_count, &written);
+        asm_text->offset += written;
+
+        if (kw_node->left->right)
+            TranslateASTSubtree (kw_node->left->right, asm_text, ast);
+
+        sprintf (TEXT, "end_if_statement_%d:\n%n", asm_text->if_statements_count, &written);
+        asm_text->offset += written;
+
+        asm_text->if_statements_count++;
+        break;
+    }
+
+    default:
+        return TRANSLATE_ERROR;
+    }
+
+    return TRANSLATE_SUCCESS;
 }
 
 // ============================================================================================
@@ -209,6 +250,78 @@ TranslateRes TranslateOperator (const TreeNode* op_node, AsmText* asm_text, cons
         asm_text->offset += written;
     }
 
+    else if (VAL (op_node) == LESS)
+    {
+        TranslateASTSubtree (op_node->left, asm_text, ast);
+        TranslateASTSubtree (op_node->right, asm_text, ast);
+
+        int written = 0;
+        sprintf (TEXT, "jmp False           ; set rax to 0\n"
+                       "jb True             ; if jmp - set rax to 1\n"
+                       "push rax            ; get true or false\n%n", &written);
+        asm_text->offset += written;
+    }
+
+    else if (VAL (op_node) == LESS_EQ)
+    {
+        TranslateASTSubtree (op_node->left, asm_text, ast);
+        TranslateASTSubtree (op_node->right, asm_text, ast);
+
+        int written = 0;
+        sprintf (TEXT, "jmp False           ; set rax to 0\n"
+                       "jbe True            ; if jmp - set rax to 1\n"
+                       "push rax            ; get true or false\n%n", &written);
+        asm_text->offset += written;
+    }
+
+    else if (VAL (op_node) == EQUAL)
+    {
+        TranslateASTSubtree (op_node->left, asm_text, ast);
+        TranslateASTSubtree (op_node->right, asm_text, ast);
+
+        int written = 0;
+        sprintf (TEXT, "jmp False           ; set rax to 0\n"
+                       "je True             ; if jmp - set rax to 1\n"
+                       "push rax            ; get true or false\n%n", &written);
+        asm_text->offset += written;
+    }
+
+    else if (VAL (op_node) == MORE_EQ)
+    {
+        TranslateASTSubtree (op_node->left, asm_text, ast);
+        TranslateASTSubtree (op_node->right, asm_text, ast);
+
+        int written = 0;
+        sprintf (TEXT, "jmp False           ; set rax to 0\n"
+                       "jae True            ; if jmp - set rax to 1\n"
+                       "push rax            ; get true or false\n%n", &written);
+        asm_text->offset += written;
+    }
+
+    else if (VAL (op_node) == MORE)
+    {
+        TranslateASTSubtree (op_node->left, asm_text, ast);
+        TranslateASTSubtree (op_node->right, asm_text, ast);
+
+        int written = 0;
+        sprintf (TEXT, "jmp False           ; set rax to 0\n"
+                       "ja True             ; if jmp - set rax to 1\n"
+                       "push rax            ; get true or false\n%n", &written);
+        asm_text->offset += written;
+    }
+
+    else if (VAL (op_node) == UNEQUAL)
+    {
+        TranslateASTSubtree (op_node->left, asm_text, ast);
+        TranslateASTSubtree (op_node->right, asm_text, ast);
+
+        int written = 0;
+        sprintf (TEXT, "jmp False           ; set rax to 0\n"
+                       "jne True            ; if jmp - set rax to 1\n"
+                       "push rax            ; get true or false\n%n", &written);
+        asm_text->offset += written;
+    }
+
     else
     {
         ERROR ("Operator %d not supported, be smarter please", VAL (op_node));
@@ -289,6 +402,10 @@ AsmText* AsmTextCtor ()
         asm_text->ram_table.index_in_ram[i] = -1;
 
     asm_text->ram_table.free_ram_index = 0;
+
+    asm_text->if_statements_count    = 0;
+    asm_text->while_statements_count = 0;
+    asm_text->funcs_count            = 0;
 
     return asm_text;
 }

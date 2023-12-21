@@ -52,6 +52,9 @@ struct AsmText
     char* text;
     int   offset;
     RamTable ram_table; // table to specify location in ram where identifier values are stored
+    int if_statements_count;
+    int while_statements_count;
+    int funcs_count;
 };
 
 typedef enum
