@@ -11,6 +11,7 @@
 #define OPERATIONS_H
 
 const int ILL_OPNUM = __INT_MAX__;
+const size_t MAX_SCOPE_DEPTH = 10; // naming?
 
 typedef enum
 {
@@ -27,7 +28,7 @@ struct Declarator
 const Declarator DECLARATORS[] =
 {
     {"россии_нужен", FUNC_DECLARATOR},
-    {"але_здравствуйте_меня_зовут_ольга_звоню_вам_из_тинькок_банка_вам_удобно_сейчас_разговаривать",
+    {"але_вам_удобно_разговаривать",
                      VAR_DECLARATOR},
 };
 const int N_DECLARATORS = sizeof (DECLARATORS) / sizeof (DECLARATORS[0]);
