@@ -358,10 +358,10 @@ TreeNode* GetWhile (ProgCode* prog_code, ScopeTableStack* sts)
     SYNTAX_ASSERT (TOKEN_IS (SEPARATOR, END_CONDITION), "\"?\" expected in the end of condition");
     OFFSET++; // skip "?"
 
-    TreeNode* wrapped_statement = GetCompoundStatement (prog_code, sts);
-    SYNTAX_ASSERT (wrapped_statement != NULL, "No wrapped statement given in while");
+    TreeNode* while_statement = GetCompoundStatement (prog_code, sts);
+    SYNTAX_ASSERT (while_statement != NULL, "No wrapped statement given in while");
 
-    return TreeNodeCtor (KW_WHILE, KEYWORD, NULL, wrapped_statement, condition);
+    return TreeNodeCtor (KW_WHILE, KEYWORD, NULL, condition, while_statement);
 }
 
 // ============================================================================================
@@ -385,17 +385,19 @@ TreeNode* GetIfElse (ProgCode* prog_code, ScopeTableStack* sts)
     TreeNode* if_statement = GetCompoundStatement (prog_code, sts);
     SYNTAX_ASSERT (if_statement != NULL, "No wrapped statement given in while");
 
+    TreeNode* if_and_else_statements = TreeNodeCtor (KW_IF, KEYWORD, NULL, if_statement, NULL);
+
     if (!HAS_TOKENS_LEFT || TOKEN_IS_NOT (KEYWORD, KW_ELSE))
-        return TreeNodeCtor (KW_IF, KEYWORD, NULL, if_statement, condition);
+        return TreeNodeCtor (KW_IF, KEYWORD, NULL, if_and_else_statements, condition);
 
     OFFSET++; // skip "else"
 
     TreeNode* else_statement = GetCompoundStatement (prog_code, sts);
     SYNTAX_ASSERT (else_statement != NULL, "\"else\" statement expected");
 
-    TreeNode* condition_and_else = TreeNodeCtor (KW_IF, KEYWORD, NULL, condition, else_statement);
+    if_and_else_statements->right = else_statement;
 
-    return TreeNodeCtor (KW_IF, KEYWORD, NULL, if_statement, condition_and_else);
+    return TreeNodeCtor (KW_IF, KEYWORD, NULL, if_and_else_statements, condition);
 }
 
 // ============================================================================================
