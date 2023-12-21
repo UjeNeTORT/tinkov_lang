@@ -56,5 +56,7 @@ int PrintfWarning (const char* funcname, int line, const char* filename, const c
     { PrintfError (__FUNCTION__, __LINE__, __FILE__, format __VA_OPT__(,) __VA_ARGS__); \
       return ret_val;}
 
+int CheckExtension (char* filename);
+int DelExtension   (char* filename);
 
 #endif // TOOLS_H
