@@ -76,7 +76,6 @@ char NO_FOREIGN_AGENT_BANNER_ERROR[] =
                     "10 РИС, 11 СОЦИАЛЬНЫЙ КРЕДИТ!!! УДАР! 荣耀中国\n");
 
 const size_t MAX_LEXEM = 228;
-const size_t MAX_SCOPE_DEPTH = 10; // naming?
 
 struct ProgText
 {

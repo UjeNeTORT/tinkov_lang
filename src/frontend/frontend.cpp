@@ -359,9 +359,9 @@ TreeNode* GetWhile (ProgCode* prog_code, ScopeTableStack* sts)
     OFFSET++; // skip "?"
 
     TreeNode* while_statement = GetCompoundStatement (prog_code, sts);
-    SYNTAX_ASSERT (while_statement != NULL, "No wrapped statement given in while");
+    SYNTAX_ASSERT (while_statement != NULL, "No compound statement given in while");
 
-    return TreeNodeCtor (KW_WHILE, KEYWORD, NULL, condition, while_statement);
+    return TreeNodeCtor (KW_WHILE, KEYWORD, NULL, while_statement, condition);
 }
 
 // ============================================================================================
