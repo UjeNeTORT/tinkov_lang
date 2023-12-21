@@ -19,7 +19,7 @@ int PrintfDebug (const char * funcname, int line, const char * filename, const c
     assert (filename);
     assert (format);
 
-    fprintf (stderr, GREEN_CLR "[DEBUG | %s (%d) %s]\n<< ", funcname, line, filename);
+    fprintf (stderr, GREEN_CLR "[DEBUG | %s:%d %s]\n<< ", funcname, line, filename);
 
     va_list ptr;
 
@@ -40,7 +40,7 @@ int PrintfError (const char * funcname, int line, const char * filename, const c
     assert (filename);
     assert (format);
 
-    fprintf (stderr, RED_CLR "[%s (%d) %s]\nERROR! ", funcname, line, filename);
+    fprintf (stderr, RED_CLR "[%s:%d %s]\nERROR! ", funcname, line, filename);
 
     va_list ptr;
 
@@ -61,7 +61,7 @@ int PrintfWarning (const char * funcname, int line, const char * filename, const
     assert (filename);
     assert (format);
 
-    fprintf (stderr, CYAN_CLR "[%s (%d) %s]\nWARNING: ", funcname, line, filename);
+    fprintf (stderr, CYAN_CLR "[%s:%d %s]\nWARNING! ", funcname, line, filename);
 
     va_list ptr;
 
