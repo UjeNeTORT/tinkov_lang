@@ -64,6 +64,7 @@ struct AsmText
     int if_statements_count;
     int while_statements_count;
     int funcs_count;
+    int cond_count;
     char* tabs;
 };
 
@@ -91,5 +92,8 @@ int      AsmTextDtor (AsmText* asm_text);
 
 int AsmTextAddTab    (AsmText* asm_text);
 int AsmTextRemoveTab (AsmText* asm_text);
+
+int ConvertFuncNameToFuncId (char* func_name);
+
 
 #endif // TINKOV_BACKEND_H
