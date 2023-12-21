@@ -12,6 +12,7 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "../common/common.h"
 #include "../tree/tree.h"
@@ -31,6 +32,14 @@
 #define IN_RAM(node) asm_text->ram_table.index_in_ram[VAL (node)]
 
 #define TEXT (asm_text->text + asm_text->offset)
+#define TABS (asm_text->tabs)
+
+#define WRITE(format, ...)                   \
+    {                                        \
+        int written = 0;                     \
+        sprintf (TEXT, format, __VA_ARGS__); \
+        asm_text->offset += written;         \
+    }
 
 #define NODE_IS(type, val) \
     (TYPE (node) == (type) && VAL (node) == (val))
@@ -55,6 +64,7 @@ struct AsmText
     int if_statements_count;
     int while_statements_count;
     int funcs_count;
+    char* tabs;
 };
 
 typedef enum
@@ -78,5 +88,8 @@ int AddIdToRAM (int identifier_index, AsmText* ast);
 
 AsmText* AsmTextCtor ();
 int      AsmTextDtor (AsmText* asm_text);
+
+int AsmTextAddTab    (AsmText* asm_text);
+int AsmTextRemoveTab (AsmText* asm_text);
 
 #endif // TINKOV_BACKEND_H
