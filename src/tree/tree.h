@@ -150,12 +150,6 @@ typedef enum
 
 typedef enum
 {
-    SPECIFY_DX_SUCCESS        = 0,
-    SPECIFY_DX_QUIT_NOT_FIVEN = 1,
-} SpecifyDxRes;
-
-typedef enum
-{
     SKIP_SPACES_SUCCESS    = 0,
     SKIP_SPACES_ERR        = 1,
     SKIP_SPACES_ERR_PARAMS = 2,

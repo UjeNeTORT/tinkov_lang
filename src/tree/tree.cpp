@@ -773,6 +773,9 @@ ReadAssignIdentifierRes ReadAssignIdentifier (NodeData* data, char* id_name, con
     data->type = IDENTIFIER;
     data->val  = var_id;
 
+    if (streq (id_name, "ЦАРЬ"))
+        tree->nametable->main_index = data->val;
+
     return READ_ASSIGN_ID_SUCCESS;
 }
 
