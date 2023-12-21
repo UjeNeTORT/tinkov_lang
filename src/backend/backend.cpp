@@ -27,7 +27,9 @@ int main (int argc, char* argv[])
     AsmText* asm_text = TranslateAST (ast);
     TreeDtor (ast);
 
-    printf ("%s\n", asm_text->text);
+    FILE* output_file = fopen ("out.tinkov", "wb");
+    fprintf (output_file, "%s\n", asm_text->text);
+    fclose (output_file);
 
     AsmTextDtor (asm_text);
 
