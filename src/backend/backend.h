@@ -37,7 +37,7 @@
 #define WRITE(format, ...)                   \
     {                                        \
         int written = 0;                     \
-        sprintf (TEXT, format, __VA_ARGS__); \
+        sprintf (TEXT, format, __VA_ARGS__ __VA_OPT__ (,) &written); \
         asm_text->offset += written;         \
     }
 

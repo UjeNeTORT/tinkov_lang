@@ -49,7 +49,7 @@ AsmText* TranslateAST (const Tree* ast)
            "\tret\n\n"
            "True:\n"
            "\tpush 1\n"
-           "\tret\n\n%n", &written);
+           "\tret\n\n%n" );
 
     TranslateASTSubtree (ast->root, asm_text, ast);
 
@@ -131,25 +131,25 @@ TranslateRes TranslateKeyword (const TreeNode* kw_node, AsmText* asm_text, const
         // condition
         TranslateASTSubtree (kw_node->right, asm_text, ast);
         WRITE ("%spush 0\n"
-               "%sjne if_statement_%d\n"
-               "%sjmp else_statement_%d\n%n",
+               "%sjne if_%d\n"
+               "%sjmp else_%d\n%n",
                 TABS, TABS, asm_text->if_statements_count,
-                TABS, asm_text->if_statements_count, &written)
+                TABS, asm_text->if_statements_count )
 
         // if
-        WRITE ("%sif_statement_%d:\n%n", TABS, asm_text->if_statements_count, &written);
+        WRITE ("%sif_%d:\n%n", TABS, asm_text->if_statements_count );
 
         AsmTextAddTab (asm_text);
 
         TranslateASTSubtree (kw_node->left->left, asm_text, ast);
 
-        WRITE ("%sjmp end_if_statement_%d\n%n",
-            TABS, asm_text->if_statements_count, &written);
+        WRITE ("%sjmp end_if_%d\n%n",
+            TABS, asm_text->if_statements_count );
 
         AsmTextRemoveTab (asm_text);
 
         // else
-        WRITE ("%selse_statement_%d:\n%n", TABS, asm_text->if_statements_count, &written);
+        WRITE ("%selse_%d:\n%n", TABS, asm_text->if_statements_count );
 
         AsmTextAddTab (asm_text);
 
@@ -158,10 +158,29 @@ TranslateRes TranslateKeyword (const TreeNode* kw_node, AsmText* asm_text, const
 
         AsmTextRemoveTab (asm_text);
 
-        WRITE ("%send_if_statement_%d:\n%n", TABS, asm_text->if_statements_count, &written)
+        WRITE ("%send_if_%d:\n\n%n", TABS, asm_text->if_statements_count )
 
         asm_text->if_statements_count++;
         break;
+    }
+
+    case KW_WHILE:
+    {
+        WRITE ("%swhile_%d:\n%n", TABS, asm_text->while_statements_count );
+        AsmTextAddTab (asm_text);
+
+        TranslateASTSubtree (kw_node->right, asm_text, ast);
+        WRITE ("%s; CONDITION\n%n", TABS);
+        WRITE ("%spush 0\n%n", TABS);
+        WRITE ("%sje end_while_%d\n\n%n", TABS, asm_text->while_statements_count);
+
+        TranslateASTSubtree (kw_node->left, asm_text, ast);
+        WRITE ("%sjmp while_%d\n%n", TABS, asm_text->while_statements_count );
+
+        AsmTextRemoveTab (asm_text);
+        WRITE ("%send_while_%d:\n\n%n", TABS, asm_text->while_statements_count );
+
+        asm_text->while_statements_count++;
     }
 
     default:
@@ -216,9 +235,7 @@ TranslateRes TranslateOperator (const TreeNode* op_node, AsmText* asm_text, cons
 
         AddIdToRAM (VAL (op_node->left), asm_text);
 
-        int written = 0;
-        sprintf (TEXT, "%spop [%d] ; assign var_%d\n%n", TABS, IN_RAM (op_node->left), VAL (op_node->left), &written);
-        asm_text->offset += written;
+        WRITE ("%spop [%d] ; assign var_%d\n%n", TABS, IN_RAM (op_node->left), VAL (op_node->left));
     }
 
     else if (VAL (op_node) == ADD)
@@ -226,7 +243,7 @@ TranslateRes TranslateOperator (const TreeNode* op_node, AsmText* asm_text, cons
         TranslateASTSubtree (op_node->left, asm_text, ast);
         TranslateASTSubtree (op_node->right, asm_text, ast);
 
-        WRITE ("%sadd\n%n", TABS, &written)
+        WRITE ("%sadd\n%n", TABS )
     }
 
     else if (VAL (op_node) == SUB)
@@ -234,7 +251,7 @@ TranslateRes TranslateOperator (const TreeNode* op_node, AsmText* asm_text, cons
         TranslateASTSubtree (op_node->left, asm_text, ast);
         TranslateASTSubtree (op_node->right, asm_text, ast);
 
-        WRITE ("%ssub\n%n", TABS, &written)
+        WRITE ("%ssub\n%n", TABS )
     }
 
     else if (VAL (op_node) == MUL)
@@ -242,7 +259,7 @@ TranslateRes TranslateOperator (const TreeNode* op_node, AsmText* asm_text, cons
         TranslateASTSubtree (op_node->left, asm_text, ast);
         TranslateASTSubtree (op_node->right, asm_text, ast);
 
-        WRITE ("%smul\n%n", TABS, &written)
+        WRITE ("%smul\n%n", TABS )
     }
 
     else if (VAL (op_node) == DIV)
@@ -250,7 +267,7 @@ TranslateRes TranslateOperator (const TreeNode* op_node, AsmText* asm_text, cons
         TranslateASTSubtree (op_node->left, asm_text, ast);
         TranslateASTSubtree (op_node->right, asm_text, ast);
 
-        WRITE ("%sdiv\n%n", TABS, &written)
+        WRITE ("%sdiv\n%n", TABS )
     }
 
     else if (VAL (op_node) == LESS)
@@ -260,7 +277,7 @@ TranslateRes TranslateOperator (const TreeNode* op_node, AsmText* asm_text, cons
 
         WRITE ("%sjmp False           ; set rax to 0\n"
                "%sjb True             ; if jmp - set rax to 1\n"
-               "%spush rax            ; get true or false\n%n", TABS, TABS, TABS, &written)
+               "%spush rax            ; get true or false\n%n", TABS, TABS, TABS )
     }
 
     else if (VAL (op_node) == LESS_EQ)
@@ -270,7 +287,7 @@ TranslateRes TranslateOperator (const TreeNode* op_node, AsmText* asm_text, cons
 
         WRITE ("%sjmp False           ; set rax to 0\n"
                "%sjbe True            ; if jmp - set rax to 1\n"
-               "%spush rax            ; get true or false\n%n", TABS, TABS, TABS, &written)
+               "%spush rax            ; get true or false\n%n", TABS, TABS, TABS )
     }
 
     else if (VAL (op_node) == EQUAL)
@@ -280,7 +297,7 @@ TranslateRes TranslateOperator (const TreeNode* op_node, AsmText* asm_text, cons
 
         WRITE ("%sjmp False           ; set rax to 0\n"
                "%sje True             ; if jmp - set rax to 1\n"
-               "%spush rax            ; get true or false\n%n", TABS, TABS, TABS, &written)
+               "%spush rax            ; get true or false\n%n", TABS, TABS, TABS )
     }
 
     else if (VAL (op_node) == MORE_EQ)
@@ -290,7 +307,7 @@ TranslateRes TranslateOperator (const TreeNode* op_node, AsmText* asm_text, cons
 
         WRITE ("%sjmp False           ; set rax to 0\n"
                "%sjae True            ; if jmp - set rax to 1\n"
-               "%spush rax            ; get true or false\n%n", TABS, TABS, TABS, &written)
+               "%spush rax            ; get true or false\n%n", TABS, TABS, TABS )
     }
 
     else if (VAL (op_node) == MORE)
@@ -300,7 +317,7 @@ TranslateRes TranslateOperator (const TreeNode* op_node, AsmText* asm_text, cons
 
         WRITE ("%sjmp False           ; set rax to 0\n"
                "%sja True             ; if jmp - set rax to 1\n"
-               "%spush rax            ; get true or false\n%n", TABS, TABS, TABS, &written)
+               "%spush rax            ; get true or false\n%n", TABS, TABS, TABS )
     }
 
     else if (VAL (op_node) == UNEQUAL)
@@ -310,7 +327,7 @@ TranslateRes TranslateOperator (const TreeNode* op_node, AsmText* asm_text, cons
 
         WRITE ("%sjmp False           ; set rax to 0\n"
                "%sjne True             ; if jmp - set rax to 1\n"
-               "%spush rax            ; get true or false\n%n", TABS, TABS, TABS, &written)
+               "%spush rax            ; get true or false\n%n", TABS, TABS, TABS )
     }
 
     else
@@ -320,9 +337,7 @@ TranslateRes TranslateOperator (const TreeNode* op_node, AsmText* asm_text, cons
         return TRANSLATE_ERROR;
     }
 
-    int written = 0;
-    sprintf (TEXT, "\n%n", &written);
-    asm_text->offset += written;
+    WRITE ("\n%n");
 
     return TRANSLATE_SUCCESS;
 }
@@ -338,7 +353,7 @@ TranslateRes TranslateIdentifier (const TreeNode* id_node, AsmText* asm_text, co
     if (IN_RAM (id_node) == -1)
         AddIdToRAM (VAL (id_node), asm_text);
 
-    WRITE ("%spush [%d] ; get value of var_%d\n%n", TABS, IN_RAM (id_node), VAL (id_node), &written);
+    WRITE ("%spush [%d] ; get value of var_%d\n%n", TABS, IN_RAM (id_node), VAL (id_node) );
 
     return TRANSLATE_SUCCESS;
 }
@@ -351,7 +366,7 @@ TranslateRes TranslateNumber (const TreeNode* num_node, AsmText* asm_text, const
     if (TYPE (num_node) != INT_LITERAL)
         return TRANSLATE_TYPE_NOT_MATCH;
 
-    WRITE ("%spush %d\n%n", TABS, VAL (num_node), &written);
+    WRITE ("%spush %d\n%n", TABS, VAL (num_node) );
 
     return TRANSLATE_SUCCESS;
 }
