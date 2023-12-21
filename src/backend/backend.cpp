@@ -126,65 +126,74 @@ TranslateRes TranslateKeyword (const TreeNode* kw_node, AsmText* asm_text, const
 
     switch (VAL (kw_node))
     {
-    case KW_IF:
-    {
-        // condition
-        TranslateASTSubtree (kw_node->right, asm_text, ast);
-        WRITE ("%spush 0\n"
-               "%sjne if_%d\n"
-               "%sjmp else_%d\n%n",
-                TABS, TABS, asm_text->if_statements_count,
-                TABS, asm_text->if_statements_count )
+        case KW_RETURN:
+        {
+            WRITE ("%spush [%d]\n"
+                   "%sret\n\n%n", TABS, IN_RAM (kw_node->left), TABS);
+            break;
+        }
 
-        // if
-        WRITE ("%sif_%d:\n%n", TABS, asm_text->if_statements_count );
+        case KW_IF:
+        {
+            // condition
+            TranslateASTSubtree (kw_node->right, asm_text, ast);
+            WRITE ("%spush 0\n"
+                   "%sjne if_%d\n"
+                   "%sjmp else_%d\n%n",
+                    TABS, TABS, asm_text->if_statements_count,
+                    TABS, asm_text->if_statements_count )
 
-        AsmTextAddTab (asm_text);
+            // if
+            WRITE ("%sif_%d:\n%n", TABS, asm_text->if_statements_count );
 
-        TranslateASTSubtree (kw_node->left->left, asm_text, ast);
+            AsmTextAddTab (asm_text);
 
-        WRITE ("%sjmp end_if_%d\n%n",
-            TABS, asm_text->if_statements_count );
+            TranslateASTSubtree (kw_node->left->left, asm_text, ast);
 
-        AsmTextRemoveTab (asm_text);
+            WRITE ("%sjmp end_if_%d\n%n",
+                TABS, asm_text->if_statements_count );
 
-        // else
-        WRITE ("%selse_%d:\n%n", TABS, asm_text->if_statements_count );
+            AsmTextRemoveTab (asm_text);
 
-        AsmTextAddTab (asm_text);
+            // else
+            WRITE ("%selse_%d:\n%n", TABS, asm_text->if_statements_count );
 
-        if (kw_node->left->right)
-            TranslateASTSubtree (kw_node->left->right, asm_text, ast);
+            AsmTextAddTab (asm_text);
 
-        AsmTextRemoveTab (asm_text);
+            if (kw_node->left->right)
+                TranslateASTSubtree (kw_node->left->right, asm_text, ast);
 
-        WRITE ("%send_if_%d:\n\n%n", TABS, asm_text->if_statements_count )
+            AsmTextRemoveTab (asm_text);
 
-        asm_text->if_statements_count++;
-        break;
-    }
+            WRITE ("%send_if_%d:\n\n%n", TABS, asm_text->if_statements_count )
 
-    case KW_WHILE:
-    {
-        WRITE ("%swhile_%d:\n%n", TABS, asm_text->while_statements_count );
-        AsmTextAddTab (asm_text);
+            asm_text->if_statements_count++;
+            break;
+        }
 
-        TranslateASTSubtree (kw_node->right, asm_text, ast);
-        WRITE ("%s; CONDITION\n%n", TABS);
-        WRITE ("%spush 0\n%n", TABS);
-        WRITE ("%sje end_while_%d\n\n%n", TABS, asm_text->while_statements_count);
+        case KW_WHILE:
+        {
+            WRITE ("%swhile_%d:\n%n", TABS, asm_text->while_statements_count );
+            AsmTextAddTab (asm_text);
 
-        TranslateASTSubtree (kw_node->left, asm_text, ast);
-        WRITE ("%sjmp while_%d\n%n", TABS, asm_text->while_statements_count );
+            TranslateASTSubtree (kw_node->right, asm_text, ast);
+            WRITE ("%s; CONDITION\n%n", TABS);
+            WRITE ("%spush 0\n%n", TABS);
+            WRITE ("%sje end_while_%d\n\n%n", TABS, asm_text->while_statements_count);
 
-        AsmTextRemoveTab (asm_text);
-        WRITE ("%send_while_%d:\n\n%n", TABS, asm_text->while_statements_count );
+            TranslateASTSubtree (kw_node->left, asm_text, ast);
+            WRITE ("%sjmp while_%d\n%n", TABS, asm_text->while_statements_count );
 
-        asm_text->while_statements_count++;
-    }
+            AsmTextRemoveTab (asm_text);
+            WRITE ("%send_while_%d:\n\n%n", TABS, asm_text->while_statements_count );
 
-    default:
-        return TRANSLATE_ERROR;
+            asm_text->while_statements_count++;
+
+            break;
+        }
+
+        default:
+            return TRANSLATE_ERROR;
     }
 
     return TRANSLATE_SUCCESS;
@@ -229,112 +238,129 @@ TranslateRes TranslateOperator (const TreeNode* op_node, AsmText* asm_text, cons
     if (TYPE (op_node) != OPERATOR)
         return TRANSLATE_TYPE_NOT_MATCH;
 
-    if (VAL (op_node) == ASSIGN)
+    switch (VAL (op_node))
     {
-        TranslateASTSubtree (op_node->right, asm_text, ast);
+        case ASSIGN:
+        {
+            TranslateASTSubtree (op_node->right, asm_text, ast);
 
-        AddIdToRAM (VAL (op_node->left), asm_text);
+            AddIdToRAM (VAL (op_node->left), asm_text);
 
-        WRITE ("%spop [%d] ; assign var_%d\n%n", TABS, IN_RAM (op_node->left), VAL (op_node->left));
-    }
+            WRITE ("%spop [%d] ; assign var_%d\n%n", TABS, IN_RAM (op_node->left), VAL (op_node->left));
+            break;
+        }
+        case ADD:
+        {
+            TranslateASTSubtree (op_node->left, asm_text, ast);
+            TranslateASTSubtree (op_node->right, asm_text, ast);
 
-    else if (VAL (op_node) == ADD)
-    {
-        TranslateASTSubtree (op_node->left, asm_text, ast);
-        TranslateASTSubtree (op_node->right, asm_text, ast);
+            WRITE ("%sadd\n%n", TABS);
 
-        WRITE ("%sadd\n%n", TABS )
-    }
+            break;
+        }
 
-    else if (VAL (op_node) == SUB)
-    {
-        TranslateASTSubtree (op_node->left, asm_text, ast);
-        TranslateASTSubtree (op_node->right, asm_text, ast);
+        case SUB:
+        {
+            TranslateASTSubtree (op_node->left, asm_text, ast);
+            TranslateASTSubtree (op_node->right, asm_text, ast);
 
-        WRITE ("%ssub\n%n", TABS )
-    }
+            WRITE ("%ssub\n%n", TABS);
 
-    else if (VAL (op_node) == MUL)
-    {
-        TranslateASTSubtree (op_node->left, asm_text, ast);
-        TranslateASTSubtree (op_node->right, asm_text, ast);
+            break;
+        }
 
-        WRITE ("%smul\n%n", TABS )
-    }
+        case MUL:
+        {
+            TranslateASTSubtree (op_node->left, asm_text, ast);
+            TranslateASTSubtree (op_node->right, asm_text, ast);
 
-    else if (VAL (op_node) == DIV)
-    {
-        TranslateASTSubtree (op_node->left, asm_text, ast);
-        TranslateASTSubtree (op_node->right, asm_text, ast);
+            WRITE ("%smul\n%n", TABS);
 
-        WRITE ("%sdiv\n%n", TABS )
-    }
+            break;
+        }
 
-    else if (VAL (op_node) == LESS)
-    {
-        TranslateASTSubtree (op_node->left, asm_text, ast);
-        TranslateASTSubtree (op_node->right, asm_text, ast);
+        case DIV:
+        {
+            TranslateASTSubtree (op_node->left, asm_text, ast);
+            TranslateASTSubtree (op_node->right, asm_text, ast);
 
-        WRITE ("%sjmp False           ; set rax to 0\n"
-               "%sjb True             ; if jmp - set rax to 1\n"
-               "%spush rax            ; get true or false\n%n", TABS, TABS, TABS )
-    }
+            WRITE ("%sdiv\n%n", TABS);
 
-    else if (VAL (op_node) == LESS_EQ)
-    {
-        TranslateASTSubtree (op_node->left, asm_text, ast);
-        TranslateASTSubtree (op_node->right, asm_text, ast);
+            break;
+        }
 
-        WRITE ("%sjmp False           ; set rax to 0\n"
-               "%sjbe True            ; if jmp - set rax to 1\n"
-               "%spush rax            ; get true or false\n%n", TABS, TABS, TABS )
-    }
+        case LESS:
+        {
+            TranslateASTSubtree (op_node->left, asm_text, ast);
+            TranslateASTSubtree (op_node->right, asm_text, ast);
 
-    else if (VAL (op_node) == EQUAL)
-    {
-        TranslateASTSubtree (op_node->left, asm_text, ast);
-        TranslateASTSubtree (op_node->right, asm_text, ast);
+            WRITE ("%sjmp False           ; set rax to 0\n"
+                   "%sjb True             ; if jmp - set rax to 1\n"
+                   "%spush rax            ; get true or false\n%n", TABS, TABS, TABS);
+            break;
+        }
 
-        WRITE ("%sjmp False           ; set rax to 0\n"
-               "%sje True             ; if jmp - set rax to 1\n"
-               "%spush rax            ; get true or false\n%n", TABS, TABS, TABS )
-    }
+        case LESS_EQ:
+        {
+            TranslateASTSubtree (op_node->left, asm_text, ast);
+            TranslateASTSubtree (op_node->right, asm_text, ast);
 
-    else if (VAL (op_node) == MORE_EQ)
-    {
-        TranslateASTSubtree (op_node->left, asm_text, ast);
-        TranslateASTSubtree (op_node->right, asm_text, ast);
+            WRITE ("%sjmp False           ; set rax to 0\n"
+                   "%sjbe True            ; if jmp - set rax to 1\n"
+                   "%spush rax            ; get true or false\n%n", TABS, TABS, TABS);
+            break;
+        }
 
-        WRITE ("%sjmp False           ; set rax to 0\n"
-               "%sjae True            ; if jmp - set rax to 1\n"
-               "%spush rax            ; get true or false\n%n", TABS, TABS, TABS )
-    }
+        case EQUAL:
+        {
+            TranslateASTSubtree (op_node->left, asm_text, ast);
+            TranslateASTSubtree (op_node->right, asm_text, ast);
 
-    else if (VAL (op_node) == MORE)
-    {
-        TranslateASTSubtree (op_node->left, asm_text, ast);
-        TranslateASTSubtree (op_node->right, asm_text, ast);
+            WRITE ("%sjmp False           ; set rax to 0\n"
+                   "%sje True             ; if jmp - set rax to 1\n"
+                   "%spush rax            ; get true or false\n%n", TABS, TABS, TABS);
+            break;
+        }
 
-        WRITE ("%sjmp False           ; set rax to 0\n"
-               "%sja True             ; if jmp - set rax to 1\n"
-               "%spush rax            ; get true or false\n%n", TABS, TABS, TABS )
-    }
+        case MORE_EQ:
+        {
+            TranslateASTSubtree (op_node->left, asm_text, ast);
+            TranslateASTSubtree (op_node->right, asm_text, ast);
 
-    else if (VAL (op_node) == UNEQUAL)
-    {
-        TranslateASTSubtree (op_node->left, asm_text, ast);
-        TranslateASTSubtree (op_node->right, asm_text, ast);
+            WRITE ("%sjmp False           ; set rax to 0\n"
+                   "%sjae True            ; if jmp - set rax to 1\n"
+                   "%spush rax            ; get true or false\n%n", TABS, TABS, TABS);
+            break;
+        }
 
-        WRITE ("%sjmp False           ; set rax to 0\n"
-               "%sjne True             ; if jmp - set rax to 1\n"
-               "%spush rax            ; get true or false\n%n", TABS, TABS, TABS )
-    }
+        case MORE:
+        {
+            TranslateASTSubtree (op_node->left, asm_text, ast);
+            TranslateASTSubtree (op_node->right, asm_text, ast);
 
-    else
-    {
-        ERROR ("Operator %d not supported, be smarter please", VAL (op_node));
+            WRITE ("%sjmp False           ; set rax to 0\n"
+                   "%sja True             ; if jmp - set rax to 1\n"
+                   "%spush rax            ; get true or false\n%n", TABS, TABS, TABS);
+            break;
+        }
 
-        return TRANSLATE_ERROR;
+        case UNEQUAL:
+        {
+            TranslateASTSubtree (op_node->left, asm_text, ast);
+            TranslateASTSubtree (op_node->right, asm_text, ast);
+
+            WRITE ("%sjmp False           ; set rax to 0\n"
+                   "%sjne True             ; if jmp - set rax to 1\n"
+                   "%spush rax            ; get true or false\n%n", TABS, TABS, TABS);
+            break;
+        }
+
+        default:
+        {
+            ERROR ("Operator %d not supported, be smarter please", VAL (op_node));
+
+            return TRANSLATE_ERROR;
+        }
     }
 
     WRITE ("\n%n");
@@ -353,7 +379,7 @@ TranslateRes TranslateIdentifier (const TreeNode* id_node, AsmText* asm_text, co
     if (IN_RAM (id_node) == -1)
         AddIdToRAM (VAL (id_node), asm_text);
 
-    WRITE ("%spush [%d] ; get value of var_%d\n%n", TABS, IN_RAM (id_node), VAL (id_node) );
+    WRITE ("%spush [%d] ; get value of var_%d\n%n", TABS, IN_RAM (id_node), VAL (id_node));
 
     return TRANSLATE_SUCCESS;
 }
