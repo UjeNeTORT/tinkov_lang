@@ -6,25 +6,45 @@ DEBUG = -Wshadow -Winit-self -Wredundant-decls -Wcast-align -Wundef -Wfloat-equa
 
 CPP = g++
 
-start: tree.o tree_dump.o frontend.o common.o
+start: tree.o tree_dump.o frontend.o backend.o common.o
 	$(CPP) tree.o tree_dump.o common.o frontend.o -o frontend $(DEBUG)
-	./frontend
+	$(CPP) tree.o tree_dump.o common.o backend.o  -o backend  $(DEBUG)
 
-tree.o : src/tree/tree.cpp
+run:
+	./frontend test_code/assign_back_test.tnkff
+	./backend ast.ast
+
+frontend_run:
+	./frontend test_code/factorial.tnkff
+
+backend_run:
+	./backend ast.ast
+
+tree.o : src/tree/tree.*
 	$(CPP) src/tree/tree.cpp -c
 
-tree_dump.o : src/tree/tree_dump/tree_dump.cpp
+tree_dump.o : src/tree/tree_dump/tree_dump.*
 	$(CPP) src/tree/tree_dump/tree_dump.cpp -c
 
-frontend.o : src/frontend/frontend.cpp
+frontend.o : src/frontend/frontend.*
 	$(CPP) src/frontend/frontend.cpp -c
+
+backend.o : src/backend/backend.*
+	$(CPP) src/backend/backend.cpp -c
 
 common.o: src/common/common.cpp
 	$(CPP) src/common/common.cpp -c
 
 clean:
-	rm -f $(TARGET)
+	rm -f *.out
+	rm -f *.exe
 	rm -f *.o
+
+clean_all:
+	rm -f *.o
+	rm -f *.ast
+	rm -f *.tree
+	rm -f *.log
 	rm -f src/tree/tree_dump/dumps/png/*.*
 	rm -f src/tree/tree_dump/dumps/dot/*.*
 	rm -f src/tree/tree_dump/dumps/dumps/*.*
