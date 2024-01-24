@@ -22,14 +22,7 @@
 
 // =========================== DSL ===========================
 
-#define ASSERT_BLOCK_FUNC_TRANSLATE \
-    assert (asm_text);              \
-    assert (asm_text->text);        \
-    assert (ast);                   \
-    assert (ast->root);             \
-    assert (ast->nametable);
-
-#define IN_RAM(node) asm_text->ram_table.index_in_ram[VAL (node)]
+#define INDEX_IN_RAM(node) asm_text->ram_table.index_in_ram[VAL (node)]
 
 #define TEXT (asm_text->text + asm_text->offset)
 #define TABS (asm_text->tabs)
@@ -95,5 +88,6 @@ int AsmTextRemoveTab (AsmText* asm_text);
 
 int ConvertFuncNameToFuncId (char* func_name);
 
+int WriteCondition (const TreeNode* op_node, AsmText* asm_text, const Tree* ast, const char* comparator);
 
 #endif // TINKOV_BACKEND_H
