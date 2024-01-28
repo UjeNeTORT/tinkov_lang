@@ -17,7 +17,7 @@
 
 #include "tree.h"
 
-// ============================================================================================
+// ================================================================================================
 
 TreeEvalRes TreeEval (const Tree* tree, int* result)
 {
@@ -29,7 +29,7 @@ TreeEvalRes TreeEval (const Tree* tree, int* result)
     return SubtreeEval (tree->root, tree, result);
 }
 
-// ============================================================================================
+// ================================================================================================
 
 TreeEvalRes SubtreeEval (const TreeNode* node, const Tree* tree, int* result)
 {
@@ -75,7 +75,7 @@ TreeEvalRes SubtreeEval (const TreeNode* node, const Tree* tree, int* result)
     return ret_val;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 TreeEvalRes SubtreeEvalBiOp (const TreeNode* node, int left, int right, int* result)
 {
@@ -114,7 +114,7 @@ TreeEvalRes SubtreeEvalBiOp (const TreeNode* node, int left, int right, int* res
     return TREE_EVAL_SUCCESS;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 TreeSimplifyRes TreeSimplify (Tree* tree)
 {
@@ -124,7 +124,7 @@ TreeSimplifyRes TreeSimplify (Tree* tree)
     return SubtreeSimplify(tree->root);
 }
 
-// ============================================================================================
+// ================================================================================================
 
 TreeSimplifyRes SubtreeSimplify (TreeNode* node)
 {
@@ -149,7 +149,7 @@ TreeSimplifyRes SubtreeSimplify (TreeNode* node)
     return ret_val;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 TreeSimplifyRes SubtreeSimplifyConstants (TreeNode* node, int* tree_changed_flag)
 {
@@ -191,7 +191,7 @@ TreeSimplifyRes SubtreeSimplifyConstants (TreeNode* node, int* tree_changed_flag
     return TREE_SIMPLIFY_SUCCESS;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 TreeSimplifyRes SubtreeSimplifyNeutrals  (TreeNode* node, int* tree_changed_flag)
 {
@@ -315,7 +315,7 @@ TreeSimplifyRes SubtreeSimplifyNeutrals  (TreeNode* node, int* tree_changed_flag
     return ret_val;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 TreeNode* TreeNodeCtor (int val, NodeType type, TreeNode* prev, TreeNode* left, TreeNode* right)
 {
@@ -329,7 +329,7 @@ TreeNode* TreeNodeCtor (int val, NodeType type, TreeNode* prev, TreeNode* left, 
     return new_node;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 int TreeNodeDtor (TreeNode* node)
 {
@@ -338,7 +338,7 @@ int TreeNodeDtor (TreeNode* node)
     return 0; // return value in most cases is ignored
 }
 
-// ============================================================================================
+// ================================================================================================
 
 int SubtreeDtor (TreeNode* node)
 {
@@ -352,7 +352,7 @@ int SubtreeDtor (TreeNode* node)
     return 0; // return value in most cases is ignored
 }
 
-// ============================================================================================
+// ================================================================================================
 
 Tree* TreeCtor ()
 {
@@ -369,7 +369,7 @@ Tree* TreeCtor ()
     return tree;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 TreeDtorRes TreeDtor (Tree* tree)
 {
@@ -385,7 +385,7 @@ TreeDtorRes TreeDtor (Tree* tree)
     return TREE_DTOR_SUCCESS;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 NameTable* NameTableCtor ()
 {
@@ -397,6 +397,7 @@ NameTable* NameTableCtor ()
         nametable->names[i] = (char *) calloc (MAX_OP, sizeof(char));
         if (!nametable->names[i]) RET_ERROR (NULL, "names[%d] allocation error", i);
 
+        nametable->params[i]   = NULL;
         nametable->n_params[i] = -1;
     }
 
@@ -406,7 +407,7 @@ NameTable* NameTableCtor ()
     return nametable;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 NameTableDtorRes NameTableDtor (NameTable* nametable)
 {
@@ -414,14 +415,70 @@ NameTableDtorRes NameTableDtor (NameTable* nametable)
     if (!nametable) RET_ERROR (NAMETABLE_DTOR_ERR_PARAMS, "Nametable null pointer");
 
     for(size_t i = 0; i < NAMETABLE_CAPACITY; i++)
+    {
         free (nametable->names[i]);
+        free (nametable->params[i]);
+    }
 
     free (nametable);
 
     return NAMETABLE_DTOR_SUCCESS;
 }
 
-// ============================================================================================
+// ================================================================================================
+
+int NameTableUpdFuncParams (const TreeNode* node, NameTable* nametable)
+{
+    assert (nametable);
+
+    if (!node) return 0;
+
+    if (TYPE (node) == DECLARATOR && VAL (node) == FUNC_DECLARATOR)
+    {
+        int n_params = CountFuncParams (node);
+
+        nametable->n_params[VAL (node->right->right)] = n_params;
+
+        nametable->params[VAL (node->right->right)] = (int *) calloc (n_params, sizeof (int));
+
+        const TreeNode* curr_param = node->right->left;
+
+        for (int i = 0; i < n_params; i++)
+        {
+            // params are inverted so in nametable they are in correct order
+            nametable->params[VAL (node->right->right)][n_params - 1 - i] = VAL (curr_param->right);
+            curr_param = curr_param->left;
+        }
+
+        return 0;
+    }
+
+    NameTableUpdFuncParams (node->left, nametable);
+    NameTableUpdFuncParams (node->right, nametable);
+
+    return 0;
+}
+
+// ================================================================================================
+
+int CountFuncParams (const TreeNode* func_declr_node)
+{
+    assert (func_declr_node);
+
+    int n_params = 0;
+
+    TreeNode* curr_param = func_declr_node->right->left;
+
+    while (curr_param)
+    {
+        n_params++;
+        curr_param = curr_param->left;
+    }
+
+    return n_params;
+}
+
+// ================================================================================================
 
 Tree* TreeCopyOf (const Tree* tree)
 {
@@ -441,7 +498,7 @@ Tree* TreeCopyOf (const Tree* tree)
     return copied;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 TreeNode* SubtreeCopyOf (const TreeNode* node)
 {
@@ -453,7 +510,7 @@ TreeNode* SubtreeCopyOf (const TreeNode* node)
     return copied;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 NameTableCopyRes NameTableCopy (NameTable* dst, const NameTable* src)
 {
@@ -472,7 +529,7 @@ NameTableCopyRes NameTableCopy (NameTable* dst, const NameTable* src)
     return NAMETABLE_COPY_SUCCESS;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 LiftChildToParentRes LiftChildToParent (TreeNode* node, NodeLocation child_location)
 {
@@ -502,7 +559,7 @@ LiftChildToParentRes LiftChildToParent (TreeNode* node, NodeLocation child_locat
     return LIFT_CHILD_TO_PARENT_SUCCESS;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 SubtreeToNumRes SubtreeToNum (TreeNode* node, int val)
 {
@@ -521,7 +578,7 @@ SubtreeToNumRes SubtreeToNum (TreeNode* node, int val)
     return SUBTR_TO_NUM_SUCCESS;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 Tree* ReadTree (FILE* stream)
 {
@@ -540,7 +597,7 @@ Tree* ReadTree (FILE* stream)
     return readen;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 Tree* ReadTree (const char* infix_tree)
 {
@@ -552,10 +609,12 @@ Tree* ReadTree (const char* infix_tree)
 
     tree->root = ReadSubtree (infix_tree, tree, &offset);
 
+    NameTableUpdFuncParams (tree->root, tree->nametable);
+
     return tree;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 TreeNode* ReadSubtree (const char* infix_tree, const Tree* tree, int* offset)
 {
@@ -576,7 +635,7 @@ TreeNode* ReadSubtree (const char* infix_tree, const Tree* tree, int* offset)
     {
         fprintf (stderr, "ReadSubTree: unknown action symbol %c (%d)\n", infix_tree[*offset], infix_tree[*offset]);
 
-        ABORT(); // ! DONT FORGET TO DELETE THIS ABORT
+        return NULL;
     }
 
     TreeNode* node = TreeNodeCtor (0, INT_LITERAL, NULL, NULL, NULL);
@@ -601,7 +660,7 @@ TreeNode* ReadSubtree (const char* infix_tree, const Tree* tree, int* offset)
     return node;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 NodeData ReadNodeData (const char* infix_tree, const Tree* tree, int* offset)
 {
@@ -642,7 +701,7 @@ NodeData ReadNodeData (const char* infix_tree, const Tree* tree, int* offset)
     return data; // error NodeType by default
 }
 
-// ============================================================================================
+// ================================================================================================
 
 ReadAssignNumberRes ReadAssignNumber (NodeData* data, char* word)
 {
@@ -662,7 +721,7 @@ ReadAssignNumberRes ReadAssignNumber (NodeData* data, char* word)
     return READ_ASSIGN_NUM_ERR; // didnt assign num to data
 }
 
-// ============================================================================================
+// ================================================================================================
 
 ReadAssignDeclaratorRes ReadAssignDeclarator (NodeData* data, char* word)
 {
@@ -685,7 +744,7 @@ ReadAssignDeclaratorRes ReadAssignDeclarator (NodeData* data, char* word)
     return READ_ASSIGN_DECLR_ERR_NOT_FOUND;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 ReadAssignKeywordRes ReadAssignKeyword (NodeData* data, char* word)
 {
@@ -708,7 +767,7 @@ ReadAssignKeywordRes ReadAssignKeyword (NodeData* data, char* word)
     return READ_ASSIGN_KW_ERR_NOT_FOUND;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 ReadAssignSeparatorRes ReadAssignSeparator (NodeData* data, char* word)
 {
@@ -731,7 +790,7 @@ ReadAssignSeparatorRes ReadAssignSeparator (NodeData* data, char* word)
     return READ_ASSIGN_SEP_ERR_NOT_FOUND;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 ReadAssignOperatorRes ReadAssignOperator (NodeData* data, char* word)
 {
@@ -754,7 +813,7 @@ ReadAssignOperatorRes ReadAssignOperator (NodeData* data, char* word)
     return READ_ASSIGN_OP_ERR_NOT_FOUND;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 ReadAssignIdentifierRes ReadAssignIdentifier (NodeData* data, char* id_name, const Tree* tree)
 {
@@ -769,7 +828,6 @@ ReadAssignIdentifierRes ReadAssignIdentifier (NodeData* data, char* id_name, con
     if (var_id == -1) // not found in nametable
         var_id = UpdNameTable (id_name, tree->nametable);
 
-
     data->type = IDENTIFIER;
     data->val  = var_id;
 
@@ -779,7 +837,7 @@ ReadAssignIdentifierRes ReadAssignIdentifier (NodeData* data, char* id_name, con
     return READ_ASSIGN_ID_SUCCESS;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 WriteTreeRes WriteTree(FILE* stream, const Tree* tree)
 {
@@ -795,7 +853,7 @@ WriteTreeRes WriteTree(FILE* stream, const Tree* tree)
     return ret_val;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 WriteTreeRes WriteSubtree(FILE* stream, const TreeNode* node, const Tree* tree)
 {
@@ -820,7 +878,7 @@ WriteTreeRes WriteSubtree(FILE* stream, const TreeNode* node, const Tree* tree)
     return ret_val;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 WriteTreeRes WriteNodeData (FILE* stream, NodeData data, const NameTable* nametable)
 {
@@ -896,7 +954,7 @@ WriteTreeRes WriteNodeData (FILE* stream, NodeData data, const NameTable* nameta
     return WRT_TREE_ERR;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 int FindInNametable (const char* word, const NameTable* nametable)
 {
@@ -914,7 +972,7 @@ int FindInNametable (const char* word, const NameTable* nametable)
     return -1; // no duplicates
 }
 
-// ============================================================================================
+// ================================================================================================
 
 int UpdNameTable (const char* word, NameTable* nametable)
 {
@@ -923,24 +981,23 @@ int UpdNameTable (const char* word, NameTable* nametable)
     if (!nametable) RET_ERROR (-1, "Nametable null pointer");
     if (!word)      RET_ERROR (-1, "Word null pointer");
 
-    strcpy(nametable->names[nametable->free], word);
+    strcpy (nametable->names[nametable->free], word);
 
     return nametable->free++;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 int IsVarNameCorrect (const char* word)
 {
     assert (word);
 
-    if (!isalpha(*word++))
+    if (!isalpha (*word++))
         return 1;
-
 
     while (*word)
     {
-        if (!isalnum(*word) && *word != '_')
+        if (!isalnum (*word) && *word != '_')
             return 1;
 
         word++;
@@ -949,7 +1006,7 @@ int IsVarNameCorrect (const char* word)
     return 0;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 int FindOperator (int op_code)
 {
@@ -960,7 +1017,7 @@ int FindOperator (int op_code)
     return ILL_OPNUM;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 int FindKeyword (int kw_code)
 {
@@ -971,7 +1028,7 @@ int FindKeyword (int kw_code)
     return ILL_OPNUM;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 int FindDeclarator (int declr_code)
 {
@@ -982,7 +1039,7 @@ int FindDeclarator (int declr_code)
     return ILL_OPNUM;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 int FindSeparator  (int sep_code)
 {
@@ -993,7 +1050,7 @@ int FindSeparator  (int sep_code)
     return ILL_OPNUM;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 int IsDouble (char* word)
 {
@@ -1009,7 +1066,7 @@ int IsDouble (char* word)
     return 1;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 SkipSpacesRes SkipSpaces (const char* string, int* offset)
 {

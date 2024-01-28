@@ -8,25 +8,6 @@
  *************************************************************************/
 
 /**
-    ДАННОЕ СООБЩЕНИЕ (МАТЕРИАЛ) СОЗДАНО И (ИЛИ) РАСПРОСТРАНЕНО ИНОСТРАННЫМ
-    И РОССИЙСКИМ ЮРИДИЧЕСКИМ ЛИЦОМ, ВЫПОЛНЯЮЩИМ ФУНКЦИИ ИНОСТРАННОГО КОМПИЛЯТОРА
-    А ТАКЖЕ ФИНАНСИРУЕТСЯ ИЗ ФОНДА КОШЕК ЕДИНИЧКИ И УПОМИНАЕТ НЕКОГО ИНОАГЕНТА
-    ♂♂♂♂ Oleg ♂ TinCock ♂♂♂♂ (КТО БЫ ЭТО МОГ БЫТЬ). КОЛЯ ЛОХ КСТА, WHEN DANIL???
-    ДЛЯ ПОЛУЧЕНИЯ ВЫИГРЫША НАЖМИТЕ ALT+F4.
-*/
-
-#define FOREIGN_AGENT "ДАННОЕ СООБЩЕНИЕ (МАТЕРИАЛ) СОЗДАНО И (ИЛИ) РАСПРОСТРАНЕНО ИНОСТРАННЫМ\n" \
-                      "И РОССИЙСКИМ ЮРИДИЧЕСКИМ ЛИЦОМ, ВЫПОЛНЯЮЩИМ ФУНКЦИИ ИНОСТРАННОГО КОМПИЛЯТОРА\n" \
-                      "А ТАКЖЕ ФИНАНСИРУЕТСЯ ИЗ ФОНДА КОШЕК ЕДИНИЧКИ И УПОМИНАЕТ НЕКОГО ИНОАГЕНТА\n" \
-                      "♂♂♂♂ Oleg ♂ TinCock ♂♂♂♂ (КТО БЫ ЭТО МОГ БЫТЬ). КОЛЯ ЛОХ КСТА, WHEN DANIL???\n" \
-                      "ДЛЯ ПОЛУЧЕНИЯ ВЫИГРЫША НАЖМИТЕ ALT+F4.\n"
-
-#define DEC_VAR "але_здравствуйте_меня_зовут_ольга_звоню_вам_из_тинькок_банка_вам_удобно_сейчас_разговаривать"
-
-#define SHOW_PROG_CODE for (int i = 0; i < prog_code->size; i++) printf ("%2d | t %d | v %5d |\n", i, TYPE(prog_code->tokens[i]), VAL(prog_code->tokens[i]));
-
-
-/**
  * BUGS: - lexer thinks that "131aboba" is a number 131
  *       - lexer thinks that "_aboba228_ is unknown lexem"
  *       x lexer does not take \n as a space between tokens (I THINK THE PROBLEM IS NOT IN THIS, NOT A BUG)
@@ -55,15 +36,13 @@ int main (int argc, char* argv[])
     if (argc < 2)
         RET_ERROR (1, "No program file specified");
 
-    char* prog_name = argv[1]; // todo check if ends at .tnkff
+    char* prog_name = argv[1];
 
     ProgText* prog_text = GetProgText (prog_name);
     ProgCode* prog_code = LexerTokenize (prog_text);
     ProgTextDtor (prog_text);
     if (!prog_code)
         RET_ERROR (1, "Error during syntax analysis");
-
-    // SHOW_PROG_CODE; // debug
 
     Tree* ast = BuildAST (prog_code);
     ProgCodeDtor (prog_code);
@@ -74,12 +53,12 @@ int main (int argc, char* argv[])
 
     TreeDtor (ast);
 
-    PRINTF_DEBUG ("done");
+    PRINTF_DEBUG ("FRONTEND ok");
 
     return 0;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 ProgText* GetProgText (const char* prog_name)
 {
@@ -98,7 +77,7 @@ ProgText* GetProgText (const char* prog_name)
     return prog_text;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 WriteTreeRes WriteAST (const Tree* ast, const char* prog_fname)
 {
@@ -113,7 +92,7 @@ WriteTreeRes WriteAST (const Tree* ast, const char* prog_fname)
     return wrt_res;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 Tree* BuildAST (ProgCode* prog_code)
 {
@@ -133,7 +112,7 @@ Tree* BuildAST (ProgCode* prog_code)
     return ast;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 TreeNode* GetAST (ProgCode* prog_code, ScopeTableStack* sts)
 {
@@ -161,7 +140,7 @@ TreeNode* GetAST (ProgCode* prog_code, ScopeTableStack* sts)
     return code_block;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 TreeNode* GetFunctionDeclaration (ProgCode* prog_code, ScopeTableStack* sts)
 {
@@ -178,8 +157,6 @@ TreeNode* GetFunctionDeclaration (ProgCode* prog_code, ScopeTableStack* sts)
     TreeNode* func_id = GetIdentifier (prog_code, sts);
     SYNTAX_ASSERT (func_id != NULL, "Identifier expected after function declarator");
 
-    DECLARE (func_id);
-
     SYNTAX_ASSERT (TOKEN_IS (SEPARATOR, BEGIN_FUNC_PARAMS),
                     "separator begin function params expected");
 
@@ -192,7 +169,7 @@ TreeNode* GetFunctionDeclaration (ProgCode* prog_code, ScopeTableStack* sts)
 
     do
     {
-        new_identifier = GetIdentifier (prog_code, sts);
+        new_identifier = GetParameter (prog_code, sts);
 
         if (new_identifier)
         {
@@ -202,7 +179,6 @@ TreeNode* GetFunctionDeclaration (ProgCode* prog_code, ScopeTableStack* sts)
 
             params_block = TreeNodeCtor (END_STATEMENT, SEPARATOR,
                                          NULL, params_block, new_identifier);
-
         }
     } while (new_identifier);
 
@@ -225,7 +201,7 @@ TreeNode* GetFunctionDeclaration (ProgCode* prog_code, ScopeTableStack* sts)
                          NULL, func_body, func_info);
 }
 
-// ============================================================================================
+// ================================================================================================
 
 TreeNode* GetCompoundStatement (ProgCode* prog_code, ScopeTableStack* sts)
 {
@@ -245,7 +221,7 @@ TreeNode* GetCompoundStatement (ProgCode* prog_code, ScopeTableStack* sts)
     return wrapped_statement;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 TreeNode* GetStatementBlock (ProgCode* prog_code, ScopeTableStack* sts)
 {
@@ -281,7 +257,7 @@ TreeNode* GetStatementBlock (ProgCode* prog_code, ScopeTableStack* sts)
     return TreeNodeCtor (ENCLOSE_STATEMENT_BEGIN, SEPARATOR, NULL, statement_block, NULL);
 }
 
-// ============================================================================================
+// ================================================================================================
 
 TreeNode* GetSingleStatement (ProgCode* prog_code, ScopeTableStack* sts)
 {
@@ -323,6 +299,19 @@ TreeNode* GetSingleStatement (ProgCode* prog_code, ScopeTableStack* sts)
 
     OFFSET = init_offset;
 
+    single_statement = GetPrint (prog_code, sts);
+    if (single_statement)
+    {
+        SYNTAX_ASSERT (TOKEN_IS (SEPARATOR, END_STATEMENT),
+               "\"сомнительно_но_окей\" expected in the end of statement");
+
+        OFFSET++; // skip ";"
+
+        return single_statement;
+    }
+
+    OFFSET = init_offset;
+
     single_statement = GetAssign (prog_code, sts);
     if (!single_statement)
     {
@@ -339,7 +328,7 @@ TreeNode* GetSingleStatement (ProgCode* prog_code, ScopeTableStack* sts)
     return single_statement;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 TreeNode* GetWhile (ProgCode* prog_code, ScopeTableStack* sts)
 {
@@ -364,7 +353,7 @@ TreeNode* GetWhile (ProgCode* prog_code, ScopeTableStack* sts)
     return TreeNodeCtor (KW_WHILE, KEYWORD, NULL, while_statement, condition);
 }
 
-// ============================================================================================
+// ================================================================================================
 
 TreeNode* GetIfElse (ProgCode* prog_code, ScopeTableStack* sts)
 {
@@ -400,7 +389,7 @@ TreeNode* GetIfElse (ProgCode* prog_code, ScopeTableStack* sts)
     return TreeNodeCtor (KW_IF, KEYWORD, NULL, if_and_else_statements, condition);
 }
 
-// ============================================================================================
+// ================================================================================================
 
 TreeNode* GetDoIf (ProgCode* prog_code, ScopeTableStack* sts)
 {
@@ -431,7 +420,7 @@ TreeNode* GetDoIf (ProgCode* prog_code, ScopeTableStack* sts)
     return TreeNodeCtor (KW_DO, KEYWORD, NULL, wrapped_statement, NULL);
 }
 
-// ============================================================================================
+// ================================================================================================
 
 TreeNode* GetAssign (ProgCode* prog_code, ScopeTableStack* sts)
 {
@@ -445,7 +434,7 @@ TreeNode* GetAssign (ProgCode* prog_code, ScopeTableStack* sts)
     if (TOKEN_IS (DECLARATOR, VAR_DECLARATOR))
     {
         var_is_being_declared = 1;
-        OFFSET++; // skip "let" - declarator TODOTODO TODO TODO
+        OFFSET++; // skip "let"
     }
 
     TreeNode* id_token = CURR_TOKEN;
@@ -455,7 +444,6 @@ TreeNode* GetAssign (ProgCode* prog_code, ScopeTableStack* sts)
     if (var_is_being_declared)
     {
         SYNTAX_ASSERT (lvalue != NULL, "Identifier expected after veriable declarator");
-
         SYNTAX_ASSERT (VAL (id_token) > -1,
                         "%s not found in nametable", ID_NAME (id_token)); // precaution
 
@@ -501,7 +489,7 @@ TreeNode* GetAssign (ProgCode* prog_code, ScopeTableStack* sts)
     return assign_node;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 TreeNode* GetReturn (ProgCode* prog_code, ScopeTableStack* sts)
 {
@@ -523,7 +511,25 @@ TreeNode* GetReturn (ProgCode* prog_code, ScopeTableStack* sts)
     return TreeNodeCtor (KW_RETURN, KEYWORD, NULL, return_value, NULL);
 }
 
-// ============================================================================================
+// ================================================================================================
+
+TreeNode* GetPrint (ProgCode* prog_code, ScopeTableStack* sts)
+{
+    assert (prog_code);
+    assert (sts);
+
+    if (TOKEN_IS_NOT (KEYWORD, KW_PRINT))
+        return NULL;
+
+    OFFSET++; // skip "print"
+
+    TreeNode* print_value  = GetRvalue (prog_code, sts);
+    SYNTAX_ASSERT (print_value != NULL, "Print value (nil)");
+
+    return TreeNodeCtor (KW_PRINT, KEYWORD, NULL, print_value, NULL);
+}
+
+// ================================================================================================
 
 TreeNode* GetRvalue (ProgCode* prog_code, ScopeTableStack* sts)
 {
@@ -533,7 +539,7 @@ TreeNode* GetRvalue (ProgCode* prog_code, ScopeTableStack* sts)
     return GetMathExprRes (prog_code, sts);
 }
 
-// ============================================================================================
+// ================================================================================================
 
 TreeNode* GetLvalue (ProgCode* prog_code, ScopeTableStack* sts)
 {
@@ -543,7 +549,7 @@ TreeNode* GetLvalue (ProgCode* prog_code, ScopeTableStack* sts)
     return GetIdentifier (prog_code, sts);
 }
 
-// ============================================================================================
+// ================================================================================================
 
 TreeNode* GetMathExprRes (ProgCode* prog_code, ScopeTableStack* sts)
 {
@@ -611,7 +617,7 @@ TreeNode* GetMathExprRes (ProgCode* prog_code, ScopeTableStack* sts)
     return math_expr_res;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 TreeNode* GetAddSubRes (ProgCode* prog_code, ScopeTableStack* sts)
 {
@@ -668,7 +674,7 @@ TreeNode* GetAddSubRes (ProgCode* prog_code, ScopeTableStack* sts)
     return add_sub_res;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 TreeNode* GetMulDivRes (ProgCode* prog_code, ScopeTableStack* sts)
 {
@@ -726,7 +732,7 @@ TreeNode* GetMulDivRes (ProgCode* prog_code, ScopeTableStack* sts)
     return mul_div_res;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 TreeNode* GetPowRes (ProgCode* prog_code, ScopeTableStack* sts)
 {
@@ -756,29 +762,29 @@ TreeNode* GetPowRes (ProgCode* prog_code, ScopeTableStack* sts)
     return pow_res;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 TreeNode* GetOperand (ProgCode* prog_code, ScopeTableStack* sts)
 {
     assert (prog_code);
     assert (sts);
 
-    if (TOKEN_IS_NOT (SEPARATOR, ENCLOSE_MATH_EXPR))
+    if (TOKEN_IS_NOT (SEPARATOR, ENCLOSE_MATH_EXPR_L))
         return GetSimpleOperand (prog_code, sts);
 
-    OFFSET++; // skip $
+    OFFSET++; // skip (
 
     TreeNode* math_expr = GetMathExprRes (prog_code, sts);
     SYNTAX_ASSERT (math_expr != NULL, "error inside brackets");
 
-    SYNTAX_ASSERT (TOKEN_IS (SEPARATOR, ENCLOSE_MATH_EXPR), "Missing separator \"$\"");
+    SYNTAX_ASSERT (TOKEN_IS (SEPARATOR, ENCLOSE_MATH_EXPR_R), "Missing separator \")\"");
 
-    OFFSET++; // skip $
+    OFFSET++; // skip )
 
     return math_expr;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 TreeNode* GetSimpleOperand (ProgCode* prog_code, ScopeTableStack* sts)
 {
@@ -796,7 +802,7 @@ TreeNode* GetSimpleOperand (ProgCode* prog_code, ScopeTableStack* sts)
     return ret_val;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 TreeNode* GetFunctionCall (ProgCode* prog_code, ScopeTableStack* sts)
 {
@@ -812,10 +818,10 @@ TreeNode* GetFunctionCall (ProgCode* prog_code, ScopeTableStack* sts)
 
     OFFSET++; // skip func name
 
-    if (TOKEN_IS_NOT (SEPARATOR, ENCLOSE_MATH_EXPR))
+    if (TOKEN_IS_NOT (SEPARATOR, ENCLOSE_MATH_EXPR_L))
     {
         OFFSET = init_offset;
-        free (identifier);
+        TreeNodeDtor (identifier);
 
         return NULL;
     }
@@ -829,7 +835,7 @@ TreeNode* GetFunctionCall (ProgCode* prog_code, ScopeTableStack* sts)
 
     do
     {
-        new_parameter = GetIdentifier (prog_code, sts);
+        new_parameter = GetSimpleOperand (prog_code, sts);
 
         if (new_parameter)
         {
@@ -842,7 +848,7 @@ TreeNode* GetFunctionCall (ProgCode* prog_code, ScopeTableStack* sts)
         }
     } while (new_parameter && HAS_TOKENS_LEFT);
 
-    SYNTAX_ASSERT (TOKEN_IS (SEPARATOR, ENCLOSE_MATH_EXPR), "Missing closing brackets");
+    SYNTAX_ASSERT (TOKEN_IS (SEPARATOR, ENCLOSE_MATH_EXPR_R), "Missing closing brackets");
 
     OFFSET++; // skip ")"
 
@@ -855,7 +861,7 @@ TreeNode* GetFunctionCall (ProgCode* prog_code, ScopeTableStack* sts)
     return identifier;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 TreeNode* GetIdentifier (ProgCode* prog_code, ScopeTableStack* sts)
 {
@@ -865,14 +871,43 @@ TreeNode* GetIdentifier (ProgCode* prog_code, ScopeTableStack* sts)
     if (TYPE (CURR_TOKEN) != IDENTIFIER)
         return NULL;
 
-    TreeNode* ret_val = TreeNodeCtor (VAL (CURR_TOKEN), TYPE (CURR_TOKEN), NULL, NULL, NULL);
+    if (TYPE (prog_code->tokens[OFFSET - 1]) == DECLARATOR)
+    {
+        SYNTAX_ASSERT (IsIdDeclared (sts, VAL (CURR_TOKEN)) == 0,
+            "Redeclaration of \"%s\"", prog_code->nametable->names[VAL (CURR_TOKEN)]);
+        DECLARE (CURR_TOKEN);
+    }
 
+    TreeNode* ret_val = TreeNodeCtor (VAL (CURR_TOKEN), TYPE (CURR_TOKEN), NULL, NULL, NULL);
+    SYNTAX_ASSERT (IsIdDeclared (sts, VAL (ret_val)),
+                "Undefined reference to %s", ID_NAME (ret_val));
     OFFSET++; // skip identifier
 
     return ret_val;
 }
 
-// ============================================================================================
+// ================================================================================================
+
+TreeNode* GetParameter (ProgCode* prog_code, ScopeTableStack* sts)
+{
+    assert (prog_code);
+    assert (sts);
+
+    if (TYPE (CURR_TOKEN) != IDENTIFIER)
+        return NULL;
+
+    SYNTAX_ASSERT (IsIdDeclared (sts, VAL (CURR_TOKEN)) == 0, "Redeclaration of parameter");
+    DECLARE (CURR_TOKEN);
+
+    TreeNode* ret_val = TreeNodeCtor (VAL (CURR_TOKEN), TYPE (CURR_TOKEN), NULL, NULL, NULL);
+    SYNTAX_ASSERT (IsIdDeclared (sts, VAL (ret_val)),
+                "Undefined reference to %s", ID_NAME (ret_val));
+    OFFSET++; // skip identifier
+
+    return ret_val;
+}
+
+// ================================================================================================
 
 TreeNode* GetNumber (ProgCode* prog_code, ScopeTableStack* sts)
 {
@@ -889,7 +924,7 @@ TreeNode* GetNumber (ProgCode* prog_code, ScopeTableStack* sts)
     return ret_val;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 // func too big
 ProgCode* LexerTokenize (ProgText* text)
@@ -997,13 +1032,13 @@ ProgCode* LexerTokenize (ProgText* text)
         prog_code->tokens[prog_code->size++] = new_node;
     }
 
-    // if (prog_code->nametable->main_index == -1)
-        // LEXER_ERR ("No function \"%s\", no entry point", MAIN_FUNC_NAME);
+    if (prog_code->nametable->main_index == -1)
+        LEXER_ERR ("No function \"%s\", no entry point", MAIN_FUNC_NAME);
 
     return prog_code;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 int HasForeignAgent (ProgText* text)
 {
@@ -1034,7 +1069,7 @@ int HasForeignAgent (ProgText* text)
     return 1;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 int IsIdentifier (const char* lexem)
 {
@@ -1048,7 +1083,7 @@ int IsIdentifier (const char* lexem)
     return 1;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 int IsDeclarator (const char* lexem)
 {
@@ -1063,7 +1098,7 @@ int IsDeclarator (const char* lexem)
     return 0;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 int IsKeyword (const char* lexem)
 {
@@ -1078,7 +1113,7 @@ int IsKeyword (const char* lexem)
     return 0;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 int IsSeparator  (const char* lexem)
 {
@@ -1093,7 +1128,7 @@ int IsSeparator  (const char* lexem)
     return 0;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 int IsOperator (const char* lexem)
 {
@@ -1106,7 +1141,7 @@ int IsOperator (const char* lexem)
     return 0;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 int IsIntLiteral (const char* lexem)
 {
@@ -1121,7 +1156,7 @@ int IsIntLiteral (const char* lexem)
     return 0;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 int IsMainFunction (const char* lexem)
 {
@@ -1130,7 +1165,7 @@ int IsMainFunction (const char* lexem)
     return streq (lexem, MAIN_FUNC_NAME);
 }
 
-// ============================================================================================
+// ================================================================================================
 
 int GetDeclaratorIndex (const char* declarator)
 {
@@ -1145,7 +1180,7 @@ int GetDeclaratorIndex (const char* declarator)
     return -1; // this is unlikely to happen, but if this happens it is not handled
 }
 
-// ============================================================================================
+// ================================================================================================
 
 int GetKeywordIndex (const char* keyword)
 {
@@ -1160,7 +1195,7 @@ int GetKeywordIndex (const char* keyword)
     return -1; // this is unlikely to happen, but if this happens it is not handled
 }
 
-// ============================================================================================
+// ================================================================================================
 
 int GetSeparatorIndex  (const char* separator)
 {
@@ -1175,7 +1210,7 @@ int GetSeparatorIndex  (const char* separator)
     return -1; // this is unlikely to happen, but if this happens it is not handled
 }
 
-// ============================================================================================
+// ================================================================================================
 
 int GetOperatorIndex (const char* operator_)
 {
@@ -1190,7 +1225,7 @@ int GetOperatorIndex (const char* operator_)
     return -1; // this is unlikely to happen, but if this happens it is not handled
 }
 
-// ============================================================================================
+// ================================================================================================
 
 ScopeTableStack* ScopeTableStackCtor ()
 {
@@ -1209,7 +1244,7 @@ ScopeTableStack* ScopeTableStackCtor ()
     return sts;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 int ScopeTableStackDtor (ScopeTableStack* sts)
 {
@@ -1227,7 +1262,7 @@ int ScopeTableStackDtor (ScopeTableStack* sts)
     return 0;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 int PushScope (ScopeTableStack* sts)
 {
@@ -1243,7 +1278,7 @@ int PushScope (ScopeTableStack* sts)
     return 0; // success
 }
 
-// ============================================================================================
+// ================================================================================================
 
 int DelScope (ScopeTableStack* sts)
 {
@@ -1259,7 +1294,7 @@ int DelScope (ScopeTableStack* sts)
     return 0;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 int IsIdDeclared (const ScopeTableStack* sts, const int id_index)
 {
@@ -1271,7 +1306,7 @@ int IsIdDeclared (const ScopeTableStack* sts, const int id_index)
     return 0;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 int DeclareId (ScopeTableStack* sts, const int id_index)
 {
@@ -1285,7 +1320,7 @@ int DeclareId (ScopeTableStack* sts, const int id_index)
     return 0; // success
 }
 
-// ============================================================================================
+// ================================================================================================
 
 ProgCode* ProgCodeCtor ()
 {
@@ -1300,7 +1335,7 @@ ProgCode* ProgCodeCtor ()
     return prog_code;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 int ProgCodeDtor (ProgCode* prog_code)
 {
@@ -1317,7 +1352,7 @@ int ProgCodeDtor (ProgCode* prog_code)
     return 0;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 
 ProgText* ProgTextCtor (const char* text, int text_len)
@@ -1337,7 +1372,7 @@ ProgText* ProgTextCtor (const char* text, int text_len)
     return prog_text;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 int ProgTextDtor (ProgText* prog_text)
 {
@@ -1353,7 +1388,7 @@ int ProgTextDtor (ProgText* prog_text)
     return 0;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 int GetProgSize (FILE* prog_file)
 {
@@ -1366,7 +1401,7 @@ int GetProgSize (FILE* prog_file)
     return size;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 int StripLexem (char* lexem)
 {
@@ -1377,7 +1412,7 @@ int StripLexem (char* lexem)
     return 0;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 int SyntaxAssert (int line, int has_tokens_left, int condition, ProgCode* prog_code, const char* format, ...)
 {
@@ -1405,4 +1440,22 @@ int SyntaxAssert (int line, int has_tokens_left, int condition, ProgCode* prog_c
     }
 
     return 0;
+}
+
+// ================================================================================================
+
+int CheckVarsDeclared (TreeNode* node, ScopeTableStack* sts)
+{
+    assert (sts);
+    if (!node)
+        return 1;
+
+    int ret_val = 1;
+
+    if (TYPE (node) == IDENTIFIER && IsIdDeclared (sts, VAL (node)) == 0)
+        return 0;
+
+    ret_val *= CheckVarsDeclared (node->left, sts) * CheckVarsDeclared (node->right, sts);
+
+    return ret_val;
 }

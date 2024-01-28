@@ -16,9 +16,9 @@
 #include "../common/colors.h"
 #include "operations.h"
 
-const int MAX_N_NODES = 5000;  // max number of nodes in AST
-const int MAX_TREE    = 50000; // max len of a string-written tree in a file
-const int MAX_OP      = 200;   // max len of an operator
+const int MAX_N_NODES = 50000;  // max number of nodes in AST
+const int MAX_TREE    = 500000; // max len of a string-written tree in a file
+const int MAX_OP      = 200;    // max len of an operator
 
 const int NAMETABLE_CAPACITY = 100;
 
@@ -29,6 +29,8 @@ const double PI       = 3.141592654;
 
 #define TYPE(node) (node)->data.type
 #define VAL(node)  (node)->data.val
+
+#define NAME(node) (nametable->names[VAL (node)])
 
 #define CHECK_VAL(node, val) (TYPE(node) == INT_LITERAL && VAL(node) == val)
 // ===============================================
@@ -158,6 +160,7 @@ typedef enum
 struct NameTable
 {
     char* names    [NAMETABLE_CAPACITY];
+    int*  params   [NAMETABLE_CAPACITY];
     int   n_params [NAMETABLE_CAPACITY];
     int   main_index;
     int   free;
@@ -193,8 +196,8 @@ TreeEvalRes SubtreeEval     (const TreeNode* node, const Tree* tree, int* result
 TreeEvalRes SubtreeEvalUnOp (const TreeNode* node, int right, int* result);
 TreeEvalRes SubtreeEvalBiOp (const TreeNode* node, int left, int right, int* result);
 
-TreeSimplifyRes TreeSimplify    (Tree* tree);
-TreeSimplifyRes SubtreeSimplify (TreeNode* node);
+TreeSimplifyRes TreeSimplify             (Tree* tree);
+TreeSimplifyRes SubtreeSimplify          (TreeNode* node);
 TreeSimplifyRes SubtreeSimplifyConstants (TreeNode* node, int* tree_changed_flag);
 TreeSimplifyRes SubtreeSimplifyNeutrals  (TreeNode* node, int* tree_changed_flag);
 
@@ -205,8 +208,11 @@ int       SubtreeDtor  (TreeNode* node);
 Tree*       TreeCtor   ();
 TreeDtorRes TreeDtor   (Tree* tree);
 
-NameTable*       NameTableCtor ();
-NameTableDtorRes NameTableDtor (NameTable* nametable);
+NameTable*       NameTableCtor          ();
+NameTableDtorRes NameTableDtor          (NameTable* nametable);
+int              NameTableUpdFuncParams (const TreeNode* node, NameTable* nametable);
+
+int              CountFuncParams        (const TreeNode* func_declr_node);
 
 Tree*            TreeCopyOf    (const Tree* tree);
 TreeNode*        SubtreeCopyOf (const TreeNode* node);

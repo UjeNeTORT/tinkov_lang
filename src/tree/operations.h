@@ -40,6 +40,7 @@ typedef enum
     KW_ELSE   = 2,
     KW_WHILE  = 3,
     KW_RETURN = 4,
+    KW_PRINT  = 5,
 } KeywordCode;
 
 struct Keyword
@@ -55,6 +56,7 @@ const Keyword KEYWORDS[] =
     {"я_могу_ошибаться",         KW_ELSE},
     {"ну_сколько_можно",         KW_WHILE},
     {"никто_никогда_не_вернет",  KW_RETURN},
+    {"там_кто_то_мне_пишет",     KW_PRINT},
 };
 const int N_KEYWORDS = sizeof(KEYWORDS) / sizeof(KEYWORDS[0]);
 
@@ -63,10 +65,11 @@ typedef enum
     END_STATEMENT           = 0,
     ENCLOSE_STATEMENT_BEGIN = 1,
     ENCLOSE_STATEMENT_END   = 2,
-    ENCLOSE_MATH_EXPR       = 3,
-    END_CONDITION           = 4,
-    BEGIN_FUNC_PARAMS       = 5,
-    END_FUNC_PARAMS         = 6,
+    ENCLOSE_MATH_EXPR_L     = 3,
+    ENCLOSE_MATH_EXPR_R     = 4,
+    END_CONDITION           = 5,
+    BEGIN_FUNC_PARAMS       = 6,
+    END_FUNC_PARAMS         = 7,
 } SeparatorCode;
 
 struct Separator
@@ -80,12 +83,13 @@ const Separator SEPARATORS[] =
     {"сомнительно_но_окей",   END_STATEMENT},
     {"олег_не_торопись",      ENCLOSE_STATEMENT_BEGIN},
     {"я_олигарх_мне_заебись", ENCLOSE_STATEMENT_END},
-    {"$",                     ENCLOSE_MATH_EXPR},
+    {"(",                     ENCLOSE_MATH_EXPR_L},
+    {")",                     ENCLOSE_MATH_EXPR_R},
     {"?",                     END_CONDITION},
     {"за",                    BEGIN_FUNC_PARAMS},
     {"почти_без_переплат",    END_FUNC_PARAMS},
 };
-const int N_SEPARATORS = sizeof(SEPARATORS) / sizeof(SEPARATORS[0]);
+const int N_SEPARATORS = sizeof (SEPARATORS) / sizeof (SEPARATORS[0]);
 
 typedef enum
 {

@@ -38,8 +38,6 @@
 
 #define DECLARE(token) \
     {                                                                   \
-        SYNTAX_ASSERT (IsIdDeclared (sts, VAL (token)) == 0,            \
-                   "Redeclaration of \"%s\"", ID_NAME (token));         \
         SYNTAX_ASSERT (DeclareId (sts, VAL (token)) == 0, "Unexpected \"%s\" declaration error", ID_NAME (token)); \
     }
 
@@ -50,6 +48,8 @@
 
 #define TOKEN_IS_NOT(type, val) \
     (TYPE (CURR_TOKEN) != (type) || VAL (CURR_TOKEN) != (val))
+
+#define SHOW_PROG_CODE for (int i = 0; i < prog_code->size; i++) printf ("%2d | t %d | v %5d |\n", i, TYPE(prog_code->tokens[i]), VAL(prog_code->tokens[i]));
 
 // ===========================================================
 
@@ -109,6 +109,7 @@ int SyntaxAssert (int line, int has_tokens_left, int condition, ProgCode* prog_c
     if (SyntaxAssert(__LINE__, HAS_TOKENS_LEFT, (condition), prog_code, (format) __VA_OPT__(,) __VA_ARGS__)) \
         assert (0);
 
+// recursive descent
 Tree*     BuildAST               (ProgCode* prog_code);
 TreeNode* GetAST                 (ProgCode* prog_code, ScopeTableStack* sts);
 TreeNode* GetFunctionDeclaration (ProgCode* prog_code, ScopeTableStack* sts);
@@ -120,6 +121,7 @@ TreeNode* GetIfElse              (ProgCode* prog_code, ScopeTableStack* sts);
 TreeNode* GetDoIf                (ProgCode* prog_code, ScopeTableStack* sts);
 TreeNode* GetAssign              (ProgCode* prog_code, ScopeTableStack* sts);
 TreeNode* GetReturn              (ProgCode* prog_code, ScopeTableStack* sts);
+TreeNode* GetPrint               (ProgCode* prog_code, ScopeTableStack* sts);
 TreeNode* GetLvalue              (ProgCode* prog_code, ScopeTableStack* sts);
 TreeNode* GetRvalue              (ProgCode* prog_code, ScopeTableStack* sts);
 TreeNode* GetMathExprRes         (ProgCode* prog_code, ScopeTableStack* sts);
@@ -130,6 +132,7 @@ TreeNode* GetOperand             (ProgCode* prog_code, ScopeTableStack* sts);
 TreeNode* GetSimpleOperand       (ProgCode* prog_code, ScopeTableStack* sts);
 TreeNode* GetFunctionCall        (ProgCode* prog_code, ScopeTableStack* sts);
 TreeNode* GetIdentifier          (ProgCode* prog_code, ScopeTableStack* sts);
+TreeNode* GetParameter           (ProgCode* prog_code, ScopeTableStack* sts);
 TreeNode* GetNumber              (ProgCode* prog_code, ScopeTableStack* sts);
 
 // lexical analysis
@@ -138,7 +141,7 @@ ProgCode* LexerTokenize (ProgText* text);
 int HasForeignAgent (ProgText* text);
 
 int IsIdentifier   (const char* lexem);
-int IsDeclarator   (const char* lexem);int   free_nametable_pos;
+int IsDeclarator   (const char* lexem);
 int IsKeyword      (const char* lexem);
 int IsSeparator    (const char* lexem);
 int IsOperator     (const char* lexem);
@@ -168,6 +171,8 @@ int       ProgTextDtor (ProgText* prog_text);
 int GetProgSize (FILE* prog_file);
 
 int StripLexem (char* lexem);
+
+int CheckVarsDeclared (TreeNode* node, ScopeTableStack* sts);
 
 #endif // TINKOV_FRONTEND_H
 

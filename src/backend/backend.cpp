@@ -38,7 +38,7 @@ int main (int argc, char* argv[])
     return 0;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 AsmText* TranslateAST (const Tree* ast)
 {
@@ -54,20 +54,18 @@ AsmText* TranslateAST (const Tree* ast)
     WRITE ("out\n%n");
     WRITE ("hlt\n\n\n%n");
 
-    TranslateASTSubtree (ast->root, asm_text, ast);
+    TranslateASTSubtree (ast->root, asm_text, ast->nametable);
 
     return asm_text;
 }
 
-// ============================================================================================
+// ================================================================================================
 
-TranslateRes TranslateASTSubtree (const TreeNode* node, AsmText* asm_text, const Tree* ast)
+TranslateRes TranslateASTSubtree (const TreeNode* node, AsmText* asm_text, const NameTable* nametable)
 {
     assert (asm_text);
     assert (asm_text->text);
-    assert (ast);
-    assert (ast->root);
-    assert (ast->nametable);
+    assert (nametable);
 
     if (!node)
     {
@@ -76,22 +74,22 @@ TranslateRes TranslateASTSubtree (const TreeNode* node, AsmText* asm_text, const
         return TRANSLATE_SUCCESS;
     }
 
-    if (TranslateDeclarator (node, asm_text, ast) == TRANSLATE_SUCCESS)
+    if (TranslateDeclarator (node, asm_text, nametable) == TRANSLATE_SUCCESS)
         return TRANSLATE_SUCCESS;
 
-    if (TranslateKeyword (node, asm_text, ast) == TRANSLATE_SUCCESS)
+    if (TranslateKeyword (node, asm_text, nametable) == TRANSLATE_SUCCESS)
         return TRANSLATE_SUCCESS;
 
-    if (TranslateSeparator (node, asm_text, ast) == TRANSLATE_SUCCESS)
+    if (TranslateSeparator (node, asm_text, nametable) == TRANSLATE_SUCCESS)
         return TRANSLATE_SUCCESS;
 
-    if (TranslateOperator (node, asm_text, ast) == TRANSLATE_SUCCESS)
+    if (TranslateOperator (node, asm_text, nametable) == TRANSLATE_SUCCESS)
         return TRANSLATE_SUCCESS;
 
-    if (TranslateIdentifier (node, asm_text, ast) == TRANSLATE_SUCCESS)
+    if (TranslateIdentifier (node, asm_text, nametable) == TRANSLATE_SUCCESS)
         return TRANSLATE_SUCCESS;
 
-    if (TranslateNumber (node, asm_text, ast) == TRANSLATE_SUCCESS)
+    if (TranslateNumber (node, asm_text, nametable) == TRANSLATE_SUCCESS)
         return TRANSLATE_SUCCESS;
 
     ERROR ("Couldnt translate node:\n"
@@ -101,69 +99,64 @@ TranslateRes TranslateASTSubtree (const TreeNode* node, AsmText* asm_text, const
     return TRANSLATE_ERROR;
 }
 
-// ============================================================================================
+// ================================================================================================
 
-TranslateRes TranslateDeclarator (const TreeNode* declr_node, AsmText* asm_text, const Tree* ast)
+TranslateRes TranslateDeclarator (const TreeNode* declr_node, AsmText* asm_text, const NameTable* nametable)
 {
     assert (asm_text);
     assert (asm_text->text);
-    assert (ast);
-    assert (ast->root);
-    assert (ast->nametable);
+    assert (nametable);
 
     if (TYPE (declr_node) != DECLARATOR)
         return TRANSLATE_TYPE_NOT_MATCH;
 
-    switch (VAL (declr_node))
+    if (VAL (declr_node) == VAR_DECLARATOR)
     {
-        case VAR_DECLARATOR:
-        {
-            if (!declr_node->left && !declr_node->right)
-                RET_ERROR (TRANSLATE_ERROR, "Declarator node has no children");
+        const TreeNode* var_id_node = declr_node->left->left;
 
-            return TranslateASTSubtree (declr_node->left, asm_text, ast);
+        OffsetTableAddVariable (OFFSET_TABLE, VAL (var_id_node));
+
+        TranslateASTSubtree (declr_node->left, asm_text, nametable);
+
+        return TRANSLATE_SUCCESS;
+    }
+    else if (VAL (declr_node) == FUNC_DECLARATOR)
+    {
+        const TreeNode* func_id_node = declr_node->right->right;
+        WRITE ("%sfunction_%d: ; \"%s\"\n%n", TABS, VAL (func_id_node), NAME (func_id_node));
+
+        AsmTextAddTab (asm_text);
+
+        int n_params = nametable->n_params[VAL (func_id_node)];
+
+        WRITE ("%s; parameters[%d]\n%n", TABS, n_params);
+        for (int i = 0; i < n_params; i++)
+        {
+            WRITE ("%s; parameter \"%s\" (%d)\n%n", TABS,
+                nametable->names[nametable->params[VAL (func_id_node)][i]],
+                nametable->params[VAL (func_id_node)][i]);
         }
 
-        case FUNC_DECLARATOR:
-        {
-            if (!declr_node->left || !declr_node->right)
-                RET_ERROR (TRANSLATE_ERROR, "Func declarator node has no children");
+        WRITE ("%s\n; BODY\n%n", TABS);
 
-            WRITE ("%sfunction_%d:\n%n", TABS, VAL (declr_node->right->right));
+        TranslateASTSubtree (declr_node->left, asm_text, nametable);
 
-            AsmTextAddTab (asm_text);
+        WRITE ("%sret\n\n%n", TABS);
+        AsmTextRemoveTab (asm_text);
 
-            WRITE ("%s; parameter\n%n", TABS);
-
-            AddIdToRAM (VAL (declr_node->right->left->right), asm_text);
-
-            WRITE ("%spop [%d]\n\n%n", TABS,
-                            INDEX_IN_RAM (declr_node->right->left->right));
-
-            WRITE ("%s; body\n%n", TABS);
-            TranslateRes ret_val = TranslateASTSubtree (declr_node->left, asm_text, ast);
-
-            AsmTextRemoveTab (asm_text);
-
-            return ret_val;
-        }
-
-        default:
-            return TRANSLATE_ERROR;
+        return TRANSLATE_SUCCESS;
     }
 
     return TRANSLATE_ERROR;
 }
 
-// ============================================================================================
+// ================================================================================================
 
-TranslateRes TranslateKeyword (const TreeNode* kw_node, AsmText* asm_text, const Tree* ast)
+TranslateRes TranslateKeyword (const TreeNode* kw_node, AsmText* asm_text, const NameTable* nametable)
 {
     assert (asm_text);
     assert (asm_text->text);
-    assert (ast);
-    assert (ast->root);
-    assert (ast->nametable);
+    assert (nametable);
 
     if (TYPE (kw_node) != KEYWORD)
         return TRANSLATE_TYPE_NOT_MATCH;
@@ -209,7 +202,7 @@ TranslateRes TranslateKeyword (const TreeNode* kw_node, AsmText* asm_text, const
             int curr_if = asm_text->if_statements_count++;
 
             // condition
-            TranslateASTSubtree (kw_node->right, asm_text, ast);
+            TranslateASTSubtree (kw_node->right, asm_text, nametable);
 
             WRITE ("%spush 0\n"
                    "%sjne if_%d\n"
@@ -222,7 +215,7 @@ TranslateRes TranslateKeyword (const TreeNode* kw_node, AsmText* asm_text, const
 
             AsmTextAddTab (asm_text);
 
-            TranslateASTSubtree (kw_node->left->left, asm_text, ast);
+            TranslateASTSubtree (kw_node->left->left, asm_text, nametable);
 
             WRITE ("%sjmp end_if_%d\n%n",
                     TABS, curr_if);
@@ -235,7 +228,7 @@ TranslateRes TranslateKeyword (const TreeNode* kw_node, AsmText* asm_text, const
             AsmTextAddTab (asm_text);
 
             if (kw_node->left->right)
-                TranslateASTSubtree (kw_node->left->right, asm_text, ast);
+                TranslateASTSubtree (kw_node->left->right, asm_text, nametable);
 
             AsmTextRemoveTab (asm_text);
 
@@ -251,12 +244,12 @@ TranslateRes TranslateKeyword (const TreeNode* kw_node, AsmText* asm_text, const
             WRITE ("%swhile_%d:\n%n", TABS, curr_while);
             AsmTextAddTab (asm_text);
 
-            TranslateASTSubtree (kw_node->right, asm_text, ast);
+            TranslateASTSubtree (kw_node->right, asm_text, nametable);
             WRITE ("%s; CONDITION\n%n", TABS);
             WRITE ("%spush 0\n%n", TABS);
             WRITE ("%sje end_while_%d\n\n%n", TABS, curr_while);
 
-            TranslateASTSubtree (kw_node->left, asm_text, ast);
+            TranslateASTSubtree (kw_node->left, asm_text, nametable);
             WRITE ("%sjmp while_%d\n%n", TABS, curr_while);
 
             AsmTextRemoveTab (asm_text);
@@ -272,15 +265,13 @@ TranslateRes TranslateKeyword (const TreeNode* kw_node, AsmText* asm_text, const
     return TRANSLATE_SUCCESS;
 }
 
-// ============================================================================================
+// ================================================================================================
 
-TranslateRes TranslateSeparator (const TreeNode* sep_node, AsmText* asm_text, const Tree* ast)
+TranslateRes TranslateSeparator (const TreeNode* sep_node, AsmText* asm_text, const NameTable* nametable)
 {
     assert (asm_text);
     assert (asm_text->text);
-    assert (ast);
-    assert (ast->root);
-    assert (ast->nametable);
+    assert (nametable);
 
     if (TYPE (sep_node) != SEPARATOR)
         return TRANSLATE_TYPE_NOT_MATCH;
@@ -288,11 +279,11 @@ TranslateRes TranslateSeparator (const TreeNode* sep_node, AsmText* asm_text, co
     if (VAL (sep_node) == END_STATEMENT)
     {
         if (sep_node->left)
-            if (TranslateASTSubtree (sep_node->left, asm_text, ast) != TRANSLATE_SUCCESS)
+            if (TranslateASTSubtree (sep_node->left, asm_text, nametable) != TRANSLATE_SUCCESS)
                 return TRANSLATE_ERROR;
 
         if (sep_node->right)
-            return TranslateASTSubtree (sep_node->right, asm_text, ast);
+            return TranslateASTSubtree (sep_node->right, asm_text, nametable);
 
         return TRANSLATE_ERROR;
     }
@@ -300,7 +291,7 @@ TranslateRes TranslateSeparator (const TreeNode* sep_node, AsmText* asm_text, co
     else if (VAL (sep_node) == ENCLOSE_STATEMENT_BEGIN)
     {
         if (sep_node->left)
-            return TranslateASTSubtree (sep_node->left, asm_text, ast);
+            return TranslateASTSubtree (sep_node->left, asm_text, nametable);
 
         return TRANSLATE_ERROR;
     }
@@ -308,15 +299,13 @@ TranslateRes TranslateSeparator (const TreeNode* sep_node, AsmText* asm_text, co
     return TRANSLATE_ERROR;
 }
 
-// ============================================================================================
+// ================================================================================================
 
-TranslateRes TranslateOperator (const TreeNode* op_node, AsmText* asm_text, const Tree* ast)
+TranslateRes TranslateOperator (const TreeNode* op_node, AsmText* asm_text, const NameTable* nametable)
 {
     assert (asm_text);
     assert (asm_text->text);
-    assert (ast);
-    assert (ast->root);
-    assert (ast->nametable);
+    assert (nametable);
 
     if (TYPE (op_node) != OPERATOR)
         return TRANSLATE_TYPE_NOT_MATCH;
@@ -325,19 +314,17 @@ TranslateRes TranslateOperator (const TreeNode* op_node, AsmText* asm_text, cons
     {
         case ASSIGN:
         {
-            TranslateASTSubtree (op_node->right, asm_text, ast);
+            TranslateASTSubtree (op_node->right, asm_text, nametable);
 
-            AddIdToRAM (VAL (op_node->left), asm_text);
-
-            WRITE ("%spop [%d]             ; assign var_%d\n%n", TABS, INDEX_IN_RAM (op_node->left), VAL (op_node->left));
+            WRITE ("%spop [rpx + %d] ; assign var \"%s\"\n%n", TABS, OffsetTableGetVarOffset (OFFSET_TABLE, VAL (op_node->left)), NAME (op_node->left));
 
             break;
         }
 
         case ADD:
         {
-            TranslateASTSubtree (op_node->left, asm_text, ast);
-            TranslateASTSubtree (op_node->right, asm_text, ast);
+            TranslateASTSubtree (op_node->left, asm_text, nametable);
+            TranslateASTSubtree (op_node->right, asm_text, nametable);
 
             WRITE ("%sadd\n%n", TABS);
 
@@ -346,8 +333,8 @@ TranslateRes TranslateOperator (const TreeNode* op_node, AsmText* asm_text, cons
 
         case SUB:
         {
-            TranslateASTSubtree (op_node->left, asm_text, ast);
-            TranslateASTSubtree (op_node->right, asm_text, ast);
+            TranslateASTSubtree (op_node->left, asm_text, nametable);
+            TranslateASTSubtree (op_node->right, asm_text, nametable);
 
             WRITE ("%ssub\n%n", TABS);
 
@@ -356,8 +343,8 @@ TranslateRes TranslateOperator (const TreeNode* op_node, AsmText* asm_text, cons
 
         case MUL:
         {
-            TranslateASTSubtree (op_node->left, asm_text, ast);
-            TranslateASTSubtree (op_node->right, asm_text, ast);
+            TranslateASTSubtree (op_node->left, asm_text, nametable);
+            TranslateASTSubtree (op_node->right, asm_text, nametable);
 
             WRITE ("%smul\n%n", TABS);
 
@@ -366,8 +353,8 @@ TranslateRes TranslateOperator (const TreeNode* op_node, AsmText* asm_text, cons
 
         case DIV:
         {
-            TranslateASTSubtree (op_node->left, asm_text, ast);
-            TranslateASTSubtree (op_node->right, asm_text, ast);
+            TranslateASTSubtree (op_node->left, asm_text, nametable);
+            TranslateASTSubtree (op_node->right, asm_text, nametable);
 
             WRITE ("%sdiv\n%n", TABS);
 
@@ -376,7 +363,7 @@ TranslateRes TranslateOperator (const TreeNode* op_node, AsmText* asm_text, cons
 
         case POW:
         {
-            TranslateASTSubtree (op_node->left, asm_text, ast);
+            TranslateASTSubtree (op_node->left, asm_text, nametable);
             WRITE ("%ssqrt\n%n", TABS);
 
             break;
@@ -384,42 +371,42 @@ TranslateRes TranslateOperator (const TreeNode* op_node, AsmText* asm_text, cons
 
         case LESS:
         {
-            WriteCondition (op_node, asm_text, ast, "jbe");
+            WriteCondition (op_node, asm_text, nametable, "jbe");
 
             break;
         }
 
         case LESS_EQ:
         {
-            WriteCondition (op_node, asm_text, ast, "jb");
+            WriteCondition (op_node, asm_text, nametable, "jb");
 
             break;
         }
 
         case EQUAL:
         {
-            WriteCondition (op_node, asm_text, ast, "jne");
+            WriteCondition (op_node, asm_text, nametable, "jne");
 
             break;
         }
 
         case MORE_EQ:
         {
-            WriteCondition (op_node, asm_text, ast, "ja");
+            WriteCondition (op_node, asm_text, nametable, "ja");
 
             break;
         }
 
         case MORE:
         {
-            WriteCondition (op_node, asm_text, ast, "jae");
+            WriteCondition (op_node, asm_text, nametable, "jae");
 
             break;
         }
 
         case UNEQUAL:
         {
-            WriteCondition (op_node, asm_text, ast, "je");
+            WriteCondition (op_node, asm_text, nametable, "je");
 
             break;
         }
@@ -437,84 +424,165 @@ TranslateRes TranslateOperator (const TreeNode* op_node, AsmText* asm_text, cons
     return TRANSLATE_SUCCESS;
 }
 
-// ============================================================================================
+// ================================================================================================
 
-TranslateRes TranslateIdentifier (const TreeNode* id_node, AsmText* asm_text, const Tree* ast)
+TranslateRes TranslateIdentifier (const TreeNode* id_node, AsmText* asm_text, const NameTable* nametable)
 {
     assert (asm_text);
     assert (asm_text->text);
-    assert (ast);
-    assert (ast->root);
-    assert (ast->nametable);
+    assert (nametable);
 
     if (TYPE (id_node) != IDENTIFIER)
         return TRANSLATE_TYPE_NOT_MATCH;
 
-    if (!id_node->left)
+    if (IsFunction (id_node, nametable))
     {
-        if (INDEX_IN_RAM (id_node) == -1)
-            AddIdToRAM (VAL (id_node), asm_text);
+        // function call
+        WRITE ("%s\n; function call of \"%s\" (%d)\n%n", TABS, NAME (id_node), VAL (id_node));
 
-        WRITE ("%spush [%d]            ; get value of var_%d\n%n", TABS, INDEX_IN_RAM (id_node), VAL (id_node));
+        PutFuncParamsToRAM (id_node, asm_text, nametable);
+
+        WRITE ("%scall function_%d ; \"%s\"\n%n", TABS, VAL (id_node), NAME (id_node));
+
+        // after function call routine
+        OffsetTableDeleteFrame (OFFSET_TABLE);
+        WRITE ("%spop rpx ; recover previous rpx value\n\n%n", TABS);
+
+        return TRANSLATE_SUCCESS;
+    }
+    else
+    {
+        // variable
+        WRITE ("%spush [rpx + %d] ; \"%s\"\n%n", TABS,
+            OffsetTableGetVarOffset (OFFSET_TABLE, VAL (id_node)), NAME (id_node));
 
         return TRANSLATE_SUCCESS;
     }
 
-    // function call
-    WRITE ("%s; function call\n%n", TABS);
-    // for local vars handling
-    // WRITE ("%spush [0]\n%n", TABS);
-    // WRITE ("%spush [1]\n%n", TABS);
-    // the сall
-    WRITE ("%spush [%d]\n%n", TABS, INDEX_IN_RAM (id_node->left->right));
-    WRITE ("%scall function_%d\n\n%n", TABS, VAL (id_node));
-    // recover vars
-    // WRITE ("%spop rax\n%n", TABS);
-    // WRITE ("%spop [1]\n%n", TABS);
-    // WRITE ("%spop [0]\n%n", TABS);
-    // WRITE ("%spush rax\n%n", TABS);
-
-    return TRANSLATE_SUCCESS;
+    return TRANSLATE_ERROR;
 }
 
-// ============================================================================================
+// ================================================================================================
 
-TranslateRes TranslateNumber (const TreeNode* num_node, AsmText* asm_text, const Tree* ast)
+TranslateRes TranslateNumber (const TreeNode* num_node, AsmText* asm_text, const NameTable* nametable)
 {
     assert (asm_text);
     assert (asm_text->text);
-    assert (ast);
-    assert (ast->root);
-    assert (ast->nametable);
+    assert (nametable);
 
     if (TYPE (num_node) != INT_LITERAL)
         return TRANSLATE_TYPE_NOT_MATCH;
 
-    WRITE ("%spush %d\n%n", TABS, VAL (num_node) );
+    WRITE ("%spush %d\n%n", TABS, VAL (num_node));
 
     return TRANSLATE_SUCCESS;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 int AddIdToRAM (int identifier_index, AsmText* asm_text)
 {
-    /**
-     * | id_1 | id_2 | id_3 |
-     * ----------------------
-     * | rm_2 | rm_1 |  -1  |
-    */
 
-    assert (-1 < identifier_index);
-    assert (asm_text);
-
-    if (asm_text->ram_table.index_in_ram[identifier_index] == -1)
-        asm_text->ram_table.index_in_ram[identifier_index] = asm_text->ram_table.free_ram_index;
-
-    return asm_text->ram_table.free_ram_index++;
 }
 
-// ============================================================================================
+// ================================================================================================
+
+int PutFuncParamsToRAM (const TreeNode* func_id_node, AsmText* asm_text, const NameTable* nametable)
+{
+    assert (func_id_node);
+    assert (asm_text);
+    assert (nametable);
+
+    PushParamsToStack (func_id_node, asm_text, nametable);
+
+    WRITE ("%spush rpx\n%n", TABS);
+    WRITE ("%spush rpx\n%n", TABS);
+    WRITE ("%spush %d\n%n",  TABS, OffsetTableGetCurrFrameWidth (OFFSET_TABLE));
+    WRITE ("%sadd\n%n",      TABS);
+    WRITE ("%spop  rpx\n%n", TABS);
+
+    OffsetTableNewFrame      (OFFSET_TABLE);
+    OffsetTableAddFuncParams (OFFSET_TABLE, func_id_node, nametable);
+
+    PopParamsToRAM (func_id_node, asm_text, nametable);
+
+    return 0;
+}
+
+// ================================================================================================
+
+int PushParamsToStack (const TreeNode* func_id_node, AsmText* asm_text, const NameTable* nametable)
+{
+    /**
+     * pushing function parameters to stack happens before increase of rpx
+     *
+     * maybe i dont need all this shit, i can instead translate each parameter and it will be pushed this way
+    */
+
+    assert (func_id_node);
+    assert (asm_text);
+    assert (nametable);
+
+    // !!! error may occur if function was not declared yet -
+    // SOLUTION - create flag is_declared in nametable and fill it during backend
+
+    int n_params = nametable->n_params[VAL (func_id_node)];
+
+    WRITE ("%s; pushing %d parameters of function \"%s\" to stack\n%n", TABS, n_params, NAME (func_id_node));
+    // PRINTF_DEBUG ("; pushing %d parameters of function \"%s\" to stack\n", n_params, NAME (func_id_node));
+    if (n_params == 0)
+        return 0;
+
+    const TreeNode* curr_param = func_id_node->left;
+
+    // for (int i = 0; i < n_params; i++)
+    // {
+        // if (TYPE (curr_param->right) == IDENTIFIER)
+            // WRITE ("%spush [rpx + %d] ; \"%s\"\n%n", TABS,
+                // OffsetTableGetVarOffset (OFFSET_TABLE, VAL (curr_param->right)),
+                // NAME (curr_param->right));
+//
+        // curr_param = curr_param->left;
+    // }
+
+    for (int i = 0; i < n_params; i++)
+    {
+        WRITE ("%s; \"%s\"\n%n", TABS,
+            nametable->names[nametable->params[VAL (func_id_node)][n_params - 1 - i]]);
+
+        TranslateASTSubtree (curr_param->right, asm_text, nametable);
+
+        curr_param = curr_param->left;
+    }
+
+    return 0;
+}
+
+// ================================================================================================
+
+int PopParamsToRAM (const TreeNode* func_id_node, AsmText* asm_text, const NameTable* nametable)
+{
+    /**
+     * popping function parameters to RAM happens after increase of rpx
+    */
+
+    assert (func_id_node);
+    assert (asm_text);
+    assert (nametable);
+
+    int n_params = nametable->n_params[VAL (func_id_node)];
+
+    for (int i = 0; i < n_params; i++)
+    {
+        WRITE ("%spop [rpx + %d] ; put \"%s\"  to RAM\n%n", TABS,
+            OffsetTableGetVarOffset (OFFSET_TABLE, nametable->params[VAL (func_id_node)][i]),
+            nametable->names[nametable->params[VAL (func_id_node)][i]]);
+    }
+
+    return 0;
+}
+
+// ================================================================================================
 
 AsmText* AsmTextCtor ()
 {
@@ -528,6 +596,8 @@ AsmText* AsmTextCtor ()
 
     asm_text->ram_table.free_ram_index = 0;
 
+    asm_text->offset_table = OffsetTableCtor ();
+
     asm_text->if_statements_count    = 0;
     asm_text->while_statements_count = 0;
     asm_text->funcs_count            = 0;
@@ -537,11 +607,13 @@ AsmText* AsmTextCtor ()
     return asm_text;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 int AsmTextDtor (AsmText* asm_text)
 {
     assert (asm_text);
+
+    OffsetTableDtor (asm_text->offset_table);
 
     asm_text->offset = -1;
 
@@ -552,8 +624,8 @@ int AsmTextDtor (AsmText* asm_text)
     return 0;
 }
 
-// ============================================================================================
-// unsafe (buffer overflows)
+// ================================================================================================
+// unsafe (buffer overflow)
 int AsmTextAddTab (AsmText* asm_text)
 {
     assert (asm_text);
@@ -572,7 +644,7 @@ int AsmTextAddTab (AsmText* asm_text)
     return 0;
 }
 
-// ============================================================================================
+// ================================================================================================
 // unsafe (buffer overflow)
 int AsmTextRemoveTab (AsmText* asm_text)
 {
@@ -584,47 +656,147 @@ int AsmTextRemoveTab (AsmText* asm_text)
     return 0;
 }
 
-// ============================================================================================
+// ================================================================================================
 
-int ConvertFuncNameToFuncId (char* func_name)
+int IsFunction (const TreeNode* id_node, const NameTable* nametable)
 {
-    assert (func_name);
+    assert (id_node);
+    assert (nametable);
 
-    int res = 0;
+    if (nametable->n_params[VAL (id_node)] > -1)
+        return 1;
 
-    while (*func_name)
-        res += *func_name++;
-
-    return res;
+    return 0;
 }
 
-// ============================================================================================
+// ================================================================================================
 
-int WriteCondition (const TreeNode* op_node, AsmText* asm_text, const Tree* ast, const char* comparator)
+int WriteCondition (const TreeNode* op_node, AsmText* asm_text, const NameTable* nametable, const char* comparator)
 {
     assert (op_node);
     assert (asm_text);
-    assert (ast);
+    assert (nametable);
     assert (comparator);
 
-    TranslateASTSubtree (op_node->left, asm_text, ast);
-    TranslateASTSubtree (op_node->right, asm_text, ast);
-    WRITE ("%s; CONDITION_%d\n%n", TABS, asm_text->cond_count);
+    return 0;
+}
 
-    asm_text->cond_count++;
+// ================================================================================================
 
-    AsmTextAddTab (asm_text);
+OffsetTable* OffsetTableCtor ()
+{
+    OffsetTable* offset_table = (OffsetTable*) calloc (1, sizeof (OffsetTable));
+    offset_table->ram_tables  = (RamTable*)    calloc (MAX_SCOPE_DEPTH, sizeof (RamTable));
+    offset_table->curr_layer_index = 0;
 
-    WRITE ("%spush 0\n%n", TABS);
-    WRITE ("%spop rax\n%n", TABS);
-    WRITE ("%s%s end_condition_%d\n%n", TABS, comparator, asm_text->cond_count);
-    WRITE ("%spush 1\n%n", TABS);
-    WRITE ("%spop rax\n%n", TABS);
+    for (int i = 0; i < MAX_SCOPE_DEPTH; i++)
+    {
+        memset (offset_table->ram_tables[i].index_in_ram, -1, NAMETABLE_CAPACITY);
+    }
 
-    AsmTextRemoveTab (asm_text);
+    return offset_table;
+}
 
-    WRITE ("%send_condition_%d:\n%n", TABS, asm_text->cond_count);
-    WRITE ("%spush rax\n%n", TABS);
+// ================================================================================================
+
+int OffsetTableDtor (OffsetTable* offset_table)
+{
+    assert (offset_table);
+
+    offset_table->curr_layer_index = 0;
+    free (offset_table->ram_tables);
+    free (offset_table);
 
     return 0;
+}
+
+// ================================================================================================
+
+int OffsetTableNewFrame (OffsetTable* offset_table)
+{
+    assert (offset_table);
+
+    if (-1 < offset_table->curr_layer_index &&
+             offset_table->curr_layer_index < MAX_SCOPE_DEPTH)
+    {
+        offset_table->curr_layer_index++;
+
+        return 0; // return code - success
+    }
+
+    return 1; // return code - error
+}
+
+// ================================================================================================
+
+int OffsetTableDeleteFrame (OffsetTable* offset_table)
+{
+    assert (offset_table);
+
+    if (0 < offset_table->curr_layer_index &&
+            offset_table->curr_layer_index < MAX_SCOPE_DEPTH)
+    {
+        offset_table->curr_layer_index--;
+        memset(offset_table->ram_tables[offset_table->curr_layer_index].index_in_ram, -1, NAMETABLE_CAPACITY);
+
+        return 0; // return code - success
+    }
+
+    return 1; // return code - error
+}
+
+// ================================================================================================
+
+int OffsetTableAddVariable (OffsetTable* offset_table, int var_id)
+{
+    assert (offset_table);
+    assert (var_id > -1);
+
+    CURR_RAM_TABLE.index_in_ram[CURR_RAM_TABLE.free_ram_index] = var_id;
+    CURR_RAM_TABLE.free_ram_index++;
+
+    return 0; // return code - success
+}
+
+// ================================================================================================
+
+int OffsetTableGetVarOffset (OffsetTable* offset_table, int var_id)
+{
+    assert (offset_table);
+    assert (0 <= var_id && var_id < NAMETABLE_CAPACITY);
+
+    for (int i = 0; i < sizeof (CURR_RAM_TABLE.index_in_ram); i++)
+    {
+        if (CURR_RAM_TABLE.index_in_ram[i] == var_id)
+            return i;
+    }
+
+    return -1; // return code - not found
+}
+
+// ================================================================================================
+
+int OffsetTableAddFuncParams (OffsetTable* offset_table, const TreeNode* func_id_node, const NameTable* nametable)
+{
+    assert (offset_table);
+    assert (func_id_node);
+
+    for (int i = 0; i < nametable->n_params[VAL (func_id_node)]; i++)
+        OffsetTableAddVariable (offset_table, nametable->params[VAL (func_id_node)][i]);
+
+    return 0;
+}
+
+// ================================================================================================
+
+int OffsetTableGetCurrFrameWidth (OffsetTable* offset_table)
+{
+    assert (offset_table);
+
+    int frame_width = 0;
+
+    while (CURR_RAM_TABLE.index_in_ram[frame_width] != -1)
+        frame_width++;
+
+    return frame_width;
 }
