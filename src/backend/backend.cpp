@@ -139,9 +139,15 @@ TranslateRes TranslateDeclarator (const TreeNode* declr_node, AsmText* asm_text,
 
         WRITE ("%s\n; BODY\n%n", TABS);
 
+        OffsetTableNewFrame (OFFSET_TABLE);
+        OffsetTableAddFuncParams (OFFSET_TABLE, func_id_node, nametable);
+
         TranslateASTSubtree (declr_node->left, asm_text, nametable);
 
         WRITE ("%sret\n\n%n", TABS);
+
+        OffsetTableDeleteFrame (OFFSET_TABLE);
+
         AsmTextRemoveTab (asm_text);
 
         return TRANSLATE_SUCCESS;
@@ -174,7 +180,9 @@ TranslateRes TranslateKeyword (const TreeNode* kw_node, AsmText* asm_text, const
 
             else
             {
-                WRITE ("%spush [%d]\n%n", TABS, INDEX_IN_RAM (kw_node->left));
+                WRITE ("%spush [rpx + %d] ; printing \"%s\"\n%n", TABS,
+                    OffsetTableGetVarOffset (OFFSET_TABLE, VAL (kw_node->left)),
+                    NAME (kw_node->left));
             }
 
             WRITE ("%sout\n%n", TABS);
@@ -190,7 +198,9 @@ TranslateRes TranslateKeyword (const TreeNode* kw_node, AsmText* asm_text, const
             }
             else
             {
-                WRITE ("%spush [ %d]\n%n", TABS, INDEX_IN_RAM (kw_node->left));
+                WRITE ("%spush [rpx + %d] ; returning \"%s\"\n%n", TABS,
+                    OffsetTableGetVarOffset (OFFSET_TABLE, VAL (kw_node->left)),
+                    NAME (kw_node->left));
             }
 
             WRITE ("%sret\n\n%n", TABS);
@@ -262,6 +272,8 @@ TranslateRes TranslateKeyword (const TreeNode* kw_node, AsmText* asm_text, const
             return TRANSLATE_ERROR;
     }
 
+    WRITE ("%s\n%n", TABS);
+
     return TRANSLATE_SUCCESS;
 }
 
@@ -315,8 +327,7 @@ TranslateRes TranslateOperator (const TreeNode* op_node, AsmText* asm_text, cons
         case ASSIGN:
         {
             TranslateASTSubtree (op_node->right, asm_text, nametable);
-
-            WRITE ("%spop [rpx + %d] ; assign var \"%s\"\n%n", TABS, OffsetTableGetVarOffset (OFFSET_TABLE, VAL (op_node->left)), NAME (op_node->left));
+            WRITE ("%spop [rpx + %d] ; assign var \"%s\"\n\n%n", TABS, OffsetTableGetVarOffset (OFFSET_TABLE, VAL (op_node->left)), NAME (op_node->left));
 
             break;
         }
@@ -419,8 +430,6 @@ TranslateRes TranslateOperator (const TreeNode* op_node, AsmText* asm_text, cons
         }
     }
 
-    WRITE ("\n%n");
-
     return TRANSLATE_SUCCESS;
 }
 
@@ -453,7 +462,7 @@ TranslateRes TranslateIdentifier (const TreeNode* id_node, AsmText* asm_text, co
     else
     {
         // variable
-        WRITE ("%spush [rpx + %d] ; \"%s\"\n%n", TABS,
+        WRITE ("%spush [rpx + %d] ; get value of \"%s\"\n%n", TABS,
             OffsetTableGetVarOffset (OFFSET_TABLE, VAL (id_node)), NAME (id_node));
 
         return TRANSLATE_SUCCESS;
@@ -480,13 +489,6 @@ TranslateRes TranslateNumber (const TreeNode* num_node, AsmText* asm_text, const
 
 // ================================================================================================
 
-int AddIdToRAM (int identifier_index, AsmText* asm_text)
-{
-
-}
-
-// ================================================================================================
-
 int PutFuncParamsToRAM (const TreeNode* func_id_node, AsmText* asm_text, const NameTable* nametable)
 {
     assert (func_id_node);
@@ -503,6 +505,8 @@ int PutFuncParamsToRAM (const TreeNode* func_id_node, AsmText* asm_text, const N
 
     OffsetTableNewFrame      (OFFSET_TABLE);
     OffsetTableAddFuncParams (OFFSET_TABLE, func_id_node, nametable);
+
+    OffsetTableDump          (OFFSET_TABLE, nametable);
 
     PopParamsToRAM (func_id_node, asm_text, nametable);
 
@@ -529,21 +533,10 @@ int PushParamsToStack (const TreeNode* func_id_node, AsmText* asm_text, const Na
     int n_params = nametable->n_params[VAL (func_id_node)];
 
     WRITE ("%s; pushing %d parameters of function \"%s\" to stack\n%n", TABS, n_params, NAME (func_id_node));
-    // PRINTF_DEBUG ("; pushing %d parameters of function \"%s\" to stack\n", n_params, NAME (func_id_node));
     if (n_params == 0)
         return 0;
 
     const TreeNode* curr_param = func_id_node->left;
-
-    // for (int i = 0; i < n_params; i++)
-    // {
-        // if (TYPE (curr_param->right) == IDENTIFIER)
-            // WRITE ("%spush [rpx + %d] ; \"%s\"\n%n", TABS,
-                // OffsetTableGetVarOffset (OFFSET_TABLE, VAL (curr_param->right)),
-                // NAME (curr_param->right));
-//
-        // curr_param = curr_param->left;
-    // }
 
     for (int i = 0; i < n_params; i++)
     {
@@ -574,7 +567,7 @@ int PopParamsToRAM (const TreeNode* func_id_node, AsmText* asm_text, const NameT
 
     for (int i = 0; i < n_params; i++)
     {
-        WRITE ("%spop [rpx + %d] ; put \"%s\"  to RAM\n%n", TABS,
+        WRITE ("%spop [rpx + %d] ; put \"%s\" to RAM\n%n", TABS,
             OffsetTableGetVarOffset (OFFSET_TABLE, nametable->params[VAL (func_id_node)][i]),
             nametable->names[nametable->params[VAL (func_id_node)][i]]);
     }
@@ -590,11 +583,6 @@ AsmText* AsmTextCtor ()
 
     asm_text->text = (char*) calloc (MAX_ASM_PROGRAM_SIZE, sizeof (char));
     asm_text->offset = 0;
-
-    for (int i = 0; i < NAMETABLE_CAPACITY; i++)
-        asm_text->ram_table.index_in_ram[i] = -1;
-
-    asm_text->ram_table.free_ram_index = 0;
 
     asm_text->offset_table = OffsetTableCtor ();
 
@@ -678,6 +666,25 @@ int WriteCondition (const TreeNode* op_node, AsmText* asm_text, const NameTable*
     assert (nametable);
     assert (comparator);
 
+    WRITE ("%s; CONDITION_%d\n%n", TABS, asm_text->cond_count);
+    TranslateASTSubtree (op_node->left, asm_text, nametable);
+    TranslateASTSubtree (op_node->right, asm_text, nametable);
+
+    AsmTextAddTab (asm_text);
+
+    WRITE ("%spush 0\n%n", TABS);
+    WRITE ("%spop rax\n%n", TABS);
+    WRITE ("%s%s end_condition_%d\n%n", TABS, comparator, asm_text->cond_count);
+    WRITE ("%spush 1\n%n", TABS);
+    WRITE ("%spop rax\n%n", TABS);
+
+    AsmTextRemoveTab (asm_text);
+
+    WRITE ("%send_condition_%d:\n%n", TABS, asm_text->cond_count);
+    WRITE ("%spush rax\n%n", TABS);
+
+    asm_text->cond_count++;
+
     return 0;
 }
 
@@ -687,11 +694,16 @@ OffsetTable* OffsetTableCtor ()
 {
     OffsetTable* offset_table = (OffsetTable*) calloc (1, sizeof (OffsetTable));
     offset_table->ram_tables  = (RamTable*)    calloc (MAX_SCOPE_DEPTH, sizeof (RamTable));
-    offset_table->curr_layer_index = 0;
+    offset_table->curr_table_index = 0;
 
     for (int i = 0; i < MAX_SCOPE_DEPTH; i++)
     {
-        memset (offset_table->ram_tables[i].index_in_ram, -1, NAMETABLE_CAPACITY);
+        for (int j = 0; j < NAMETABLE_CAPACITY; j++)
+        {
+            offset_table->ram_tables[i].index_in_ram[j] = -1;
+        }
+
+        offset_table->ram_tables[i].free_ram_index = 0;
     }
 
     return offset_table;
@@ -703,7 +715,7 @@ int OffsetTableDtor (OffsetTable* offset_table)
 {
     assert (offset_table);
 
-    offset_table->curr_layer_index = 0;
+    offset_table->curr_table_index = 0;
     free (offset_table->ram_tables);
     free (offset_table);
 
@@ -716,10 +728,10 @@ int OffsetTableNewFrame (OffsetTable* offset_table)
 {
     assert (offset_table);
 
-    if (-1 < offset_table->curr_layer_index &&
-             offset_table->curr_layer_index < MAX_SCOPE_DEPTH)
+    if (-1 < offset_table->curr_table_index &&
+             offset_table->curr_table_index < MAX_SCOPE_DEPTH)
     {
-        offset_table->curr_layer_index++;
+        offset_table->curr_table_index++;
 
         return 0; // return code - success
     }
@@ -733,11 +745,15 @@ int OffsetTableDeleteFrame (OffsetTable* offset_table)
 {
     assert (offset_table);
 
-    if (0 < offset_table->curr_layer_index &&
-            offset_table->curr_layer_index < MAX_SCOPE_DEPTH)
+    if (0 < offset_table->curr_table_index &&
+            offset_table->curr_table_index < MAX_SCOPE_DEPTH)
     {
-        offset_table->curr_layer_index--;
-        memset(offset_table->ram_tables[offset_table->curr_layer_index].index_in_ram, -1, NAMETABLE_CAPACITY);
+        for (int j = 0; j < NAMETABLE_CAPACITY; j++)
+        {
+            offset_table->ram_tables[offset_table->curr_table_index].index_in_ram[j] = -1;
+        }
+
+        offset_table->curr_table_index--;
 
         return 0; // return code - success
     }
@@ -800,3 +816,35 @@ int OffsetTableGetCurrFrameWidth (OffsetTable* offset_table)
 
     return frame_width;
 }
+
+// ================================================================================================
+
+int OffsetTableDump (const OffsetTable* offset_table, const NameTable* nametable)
+{
+    assert (offset_table);
+
+    for (int curr_table_id = 0; curr_table_id < offset_table->curr_table_index + 1; curr_table_id++)
+    {
+        printf ("============================================ table %d ============================================\n", curr_table_id);
+
+        for (int i = 0; i < NAMETABLE_CAPACITY; i++)
+            printf ("%6d ", i);
+
+        printf ("\n");
+
+        for (int i = 0; i < NAMETABLE_CAPACITY; i++)
+            printf ("%6d ", offset_table->ram_tables[curr_table_id].index_in_ram[i]);
+
+        printf ("\n");
+
+        if (nametable)
+            for (int i = 0; i < NAMETABLE_CAPACITY; i++)
+                if (offset_table->ram_tables[curr_table_id].index_in_ram[i] != -1)
+                    printf ("%6.6s ", nametable->names[offset_table->ram_tables[curr_table_id].index_in_ram[i]]);
+
+        printf ("\n\n");
+    }
+
+    return 0;
+}
+

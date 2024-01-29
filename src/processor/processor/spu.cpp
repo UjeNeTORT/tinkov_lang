@@ -239,7 +239,7 @@ Elem_t GetPushArg (const cmd_code_t * prog_code, size_t ip, Elem_t gp_regs[], El
 
     if (cmd & ARG_MEMRY_VAL)
     {
-        res = RAM[res / STK_PRECISION];         // no precision operations as in ram all values are already multiplied by precision
+        res = RAM[res / STK_PRECISION]; // no precision operations as in ram all values are already multiplied by precision
     }
 
     return res;
@@ -310,11 +310,10 @@ static int CmdCodeIsValid (cmd_code_t cmd)
 {
     if ((cmd & OPCODE_MSK) == CMD_POP)
     {
-        if ((cmd & ARG_IMMED_VAL) && (cmd & ARG_REGTR_VAL))
+        if ((cmd & ARG_IMMED_VAL) && (cmd & ARG_REGTR_VAL) && !(cmd & ARG_MEMRY_VAL))
         {
             return 0;
         }
-
     }
 
     return 1;

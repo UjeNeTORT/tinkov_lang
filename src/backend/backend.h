@@ -22,9 +22,7 @@
 
 // =========================== DSL ===========================
 
-#define INDEX_IN_RAM(node) asm_text->ram_table.index_in_ram[VAL (node)]
-
-#define CURR_RAM_TABLE offset_table->ram_tables[offset_table->curr_layer_index]
+#define CURR_RAM_TABLE offset_table->ram_tables[offset_table->curr_table_index]
 #define OFFSET_TABLE   asm_text->offset_table
 
 #define TEXT (asm_text->text + asm_text->offset)
@@ -55,14 +53,13 @@ struct RamTable
 struct OffsetTable
 {
     RamTable* ram_tables;
-    int curr_layer_index;
+    int curr_table_index;
 };
 
 struct AsmText
 {
     char* text;
     int   offset;
-    RamTable ram_table;        // table to specify location in ram where identifier values are stored
     OffsetTable* offset_table; // stack of RamTables to specify offset of each variable within its location in RAM
     int if_statements_count;
     int while_statements_count;
@@ -88,7 +85,6 @@ TranslateRes TranslateOperator            (const TreeNode* op_node,    AsmText* 
 TranslateRes TranslateIdentifier          (const TreeNode* id_node,    AsmText* asm_text, const NameTable* nametable);
 TranslateRes TranslateNumber              (const TreeNode* num_node,   AsmText* asm_text, const NameTable* nametable);
 
-int          AddIdToRAM                   (int identifier_index, AsmText* ast);
 int          PutFuncParamsToRAM           (const TreeNode* func_id_node, AsmText* asm_text, const NameTable* nametable);
 int          PushParamsToStack            (const TreeNode* func_id_node, AsmText* asm_text, const NameTable* nametable);
 int          PopParamsToRAM               (const TreeNode* func_id_node, AsmText* asm_text, const NameTable* nametable);
@@ -111,7 +107,7 @@ int          OffsetTableAddVariable       (OffsetTable* offset_table, int var_id
 int          OffsetTableGetVarOffset      (OffsetTable* offset_table, int var_id);
 int          OffsetTableAddFuncParams     (OffsetTable* offset_table, const TreeNode* func_id_node, const NameTable* nametable);
 int          OffsetTableGetCurrFrameWidth (OffsetTable* offset_table);
-
+int          OffsetTableDump              (const OffsetTable* offset_table, const NameTable* nametable);
 
 
 #endif // TINKOV_BACKEND_H

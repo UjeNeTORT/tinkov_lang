@@ -157,8 +157,8 @@ DEF_CMD (OUT, 4, "out", 0,
 SPU_CODE
     {
         pop_err = POP_NO_ERR;
-
-        fprintf(stdout, "\n<< %.2f\n", (float) POP() / STK_PRECISION);
+        double ret_val = (double) POP() / STK_PRECISION;
+        fprintf(stdout, "\n<< %lg\n", ret_val);
 
         INCR_IP(cmd);
     },

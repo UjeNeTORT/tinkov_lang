@@ -23,16 +23,16 @@ int CompileTinkovProgram (char* filename)
 
     char* command = (char*) calloc (MAX_COMMAND, sizeof (char));
     sprintf (command, "./frontend %s\n", filename);
-    system (command);
+    assert (system (command) == 0);
 
     sprintf (command, "./backend ast.ast\n");
-    system (command);
+    assert (system (command) == 0);
 
     sprintf (command, "./asm --finname out.tinkov\n");
-    system (command);
+    assert (system (command) == 0);
 
     sprintf (command, "./spu --finname translated.bin\n");
-    system (command);
+    assert (system (command) == 0);
 
     free (command);
 

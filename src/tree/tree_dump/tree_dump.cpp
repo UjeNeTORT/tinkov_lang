@@ -16,7 +16,7 @@
 
 #include "tree_dump.h"
 
-// ============================================================================================
+// ================================================================================================
 
 int TreeDotDump (const char* HTML_fname, const Tree* tree)
 {
@@ -47,7 +47,7 @@ int TreeDotDump (const char* HTML_fname, const Tree* tree)
     return dump_id;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 FILE* InitDotDump (const Tree* tree, char* dot_path, DotDumpType dump_type)
 {
@@ -81,7 +81,7 @@ FILE* InitDotDump (const Tree* tree, char* dot_path, DotDumpType dump_type)
     return dot_file;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 DotTreePrintRes DotTreePrint (FILE* dot_file, const Tree* tree)
 {
@@ -94,7 +94,7 @@ DotTreePrintRes DotTreePrint (FILE* dot_file, const Tree* tree)
     return DotSubtreePrint (dot_file, tree->root, tree, &node_id);
 }
 
-// ============================================================================================
+// ================================================================================================
 
 int CompileDot (char* dot_path, int dump_id, DotDumpType dump_type)
 {
@@ -112,7 +112,7 @@ int CompileDot (char* dot_path, int dump_id, DotDumpType dump_type)
     return 0;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 int WriteHTML (const char* HTML_fname, int dump_id)
 {
@@ -157,7 +157,7 @@ int WriteHTML (const char* HTML_fname, int dump_id)
     return 0;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 int ConcludeDotDump (FILE* dot_file)
 {
@@ -170,7 +170,7 @@ int ConcludeDotDump (FILE* dot_file)
     return 0;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 DotTreePrintRes DotSubtreePrint (FILE* dot_file, const TreeNode* node, const Tree* tree, int* node_id)
 {
@@ -265,7 +265,7 @@ DotTreePrintRes DotSubtreePrint (FILE* dot_file, const TreeNode* node, const Tre
     return DOT_PRINT_SUCCESS;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 DotTreePrintRes DotTreeDetailedPrint (FILE* dot_file, const Tree* tree)
 {
@@ -279,7 +279,7 @@ DotTreePrintRes DotTreeDetailedPrint (FILE* dot_file, const Tree* tree)
     return DotSubtreeDetailedPrint (dot_file, (const TreeNode *) tree->root, tree, &node_id);
 }
 
-// ============================================================================================
+// ================================================================================================
 
 DotTreePrintRes DotSubtreeDetailedPrint (FILE* dot_file, const TreeNode* node, const Tree* tree, int* node_id)
 {
@@ -363,7 +363,7 @@ DotTreePrintRes DotSubtreeDetailedPrint (FILE* dot_file, const TreeNode* node, c
     return DOT_PRINT_SUCCESS;
 }
 
-// ============================================================================================
+// ================================================================================================
 
 char* GetFilePath(const char* path, const char* fname)
 {

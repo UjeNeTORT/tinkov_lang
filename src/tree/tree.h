@@ -20,7 +20,7 @@ const int MAX_N_NODES = 50000;  // max number of nodes in AST
 const int MAX_TREE    = 500000; // max len of a string-written tree in a file
 const int MAX_OP      = 200;    // max len of an operator
 
-const int NAMETABLE_CAPACITY = 100;
+const int NAMETABLE_CAPACITY = 15;
 
 const double EXPONENT = 2.718281828;
 const double PI       = 3.141592654;
