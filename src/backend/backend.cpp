@@ -504,8 +504,6 @@ int PutFuncParamsToRAM (const TreeNode* func_id_node, AsmText* asm_text, const N
     OffsetTableNewFrame      (OFFSET_TABLE);
     OffsetTableAddFuncParams (OFFSET_TABLE, func_id_node, nametable);
 
-    OffsetTableDump          (OFFSET_TABLE, nametable);
-
     PopParamsToRAM (func_id_node, asm_text, nametable);
     WRITE ("%spush    rax ; recover previous rpx from rax\n%n", TABS);
 

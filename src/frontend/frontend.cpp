@@ -8,7 +8,7 @@
  *************************************************************************/
 
 /**
- * BUGS: - lexer thinks that "131aboba" is a number 131
+ * BUGS: x lexer thinks that "131aboba" is a number 131
  *       - lexer thinks that "_aboba228_ is unknown lexem"
  *       x lexer does not take \n as a space between tokens (I THINK THE PROBLEM IS NOT IN THIS, NOT A BUG)
  *       x syntaxer does not give an error if there is no ; in the end
@@ -1147,10 +1147,12 @@ int IsIntLiteral (const char* lexem)
 {
     assert (lexem);
 
-    if (atoi (lexem) != 0)
-        return 1;
+    while (isdigit (*lexem))
+    {
+        lexem++;
+    }
 
-    if (atoi (lexem) == 0 && lexem[0] == '0') // temporary, does not cover many cases
+    if (isspace (*lexem) || *lexem == 0)
         return 1;
 
     return 0;
