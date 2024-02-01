@@ -47,6 +47,6 @@
 <Operand>   ::= "(" <MathExpr> ")" | <SimpleOperand>
 
 <SimpleOperand> ::= <Number> | <FunctionCall> | <Identifier>
-<FunctionCall>  ::= <Identifier> "(" (<Identifier>)* ")"
+<FunctionCall>  ::= <Identifier> "(" (<MathExpr>)* ")"
 <Identifier>    ::= ([A-Z] | [А-Я] | [a-z] | [а-я] | "_") ([A-Z] | [А-Я] | [a-z] | [а-я] | "_" | [0-9])*
 <Number>        ::= ([0-9])+

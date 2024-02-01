@@ -94,7 +94,7 @@ SPU_CODE
             pop_err = POP_NO_ERR;
             *arg_ptr = POP();
 
-            printf_intermed_info("# (%s - %3ld) Pop number to %p\n", "proc", ip_init, arg_ptr);
+            printf_intermed_info("# (%s - %3ld) Pop number %d to %p\n", "proc", ip_init, *arg_ptr, arg_ptr);
 
             INCR_IP(cmd);
         }

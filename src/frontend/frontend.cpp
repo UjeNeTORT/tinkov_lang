@@ -835,11 +835,11 @@ TreeNode* GetFunctionCall (ProgCode* prog_code, ScopeTableStack* sts)
 
     do
     {
-        new_parameter = GetSimpleOperand (prog_code, sts);
+        new_parameter = GetMathExprRes (prog_code, sts);
 
         if (new_parameter)
         {
-            SYNTAX_ASSERT (IsIdDeclared (sts, VAL (new_parameter)), "Undeclared parameter");
+            SYNTAX_ASSERT (TYPE (new_parameter) != IDENTIFIER || IsIdDeclared (sts, VAL (new_parameter)), "Undeclared parameter");
 
             n_params++;
 

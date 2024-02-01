@@ -49,9 +49,11 @@ AsmText* TranslateAST (const Tree* ast)
 
     WRITE ("; this program was written in tinkov language, mne poxyi ya v americu\n\n%n");
 
+    WRITE ("push 3\n%n");
+    WRITE ("pop rpx\n%n");
     WRITE ("push 1 ; default main() parameter like argc\n"
            "call function_%d ; calling main function\n%n", ast->nametable->main_index);
-    WRITE ("out\n%n");
+    // WRITE ("out\n%n");
     WRITE ("hlt\n\n\n%n");
 
     TranslateASTSubtree (ast->root, asm_text, ast->nametable);
@@ -171,8 +173,6 @@ TranslateRes TranslateKeyword (const TreeNode* kw_node, AsmText* asm_text, const
     {
         case KW_PRINT:
         {
-            WRITE ("%s; PRINTING\n%n", TABS);
-
             if (TYPE (kw_node->left) == INT_LITERAL)
             {
                 WRITE ("%spush %d\n%n", TABS, VAL (kw_node->left));
@@ -180,7 +180,7 @@ TranslateRes TranslateKeyword (const TreeNode* kw_node, AsmText* asm_text, const
 
             else
             {
-                WRITE ("%spush [rpx + %d] ; printing \"%s\"\n%n", TABS,
+                WRITE ("%spush    [rpx + %d] ; printing \"%s\"\n%n", TABS,
                     OffsetTableGetVarOffset (OFFSET_TABLE, VAL (kw_node->left)),
                     NAME (kw_node->left));
             }
@@ -192,16 +192,12 @@ TranslateRes TranslateKeyword (const TreeNode* kw_node, AsmText* asm_text, const
 
         case KW_RETURN:
         {
-            if (TYPE (kw_node->left) == INT_LITERAL)
-            {
-                WRITE ("%spush %d\n%n", TABS, VAL (kw_node->left));
-            }
-            else
-            {
-                WRITE ("%spush [rpx + %d] ; returning \"%s\"\n%n", TABS,
-                    OffsetTableGetVarOffset (OFFSET_TABLE, VAL (kw_node->left)),
-                    NAME (kw_node->left));
-            }
+
+            WRITE ("%s; return statement \n%n", TABS);
+
+            TranslateASTSubtree (kw_node->left, asm_text, nametable);
+
+            WRITE ("%spop     rrx ; obligatory return value\n%n", TABS);
 
             WRITE ("%sret\n\n%n", TABS);
             break;
@@ -214,9 +210,9 @@ TranslateRes TranslateKeyword (const TreeNode* kw_node, AsmText* asm_text, const
             // condition
             TranslateASTSubtree (kw_node->right, asm_text, nametable);
 
-            WRITE ("%spush 0\n"
-                   "%sjne if_%d\n"
-                   "%sjmp else_%d\n%n",
+            WRITE ("%spush    0\n"
+                   "%sjne     if_%d\n"
+                   "%sjmp     else_%d\n%n",
                     TABS, TABS, curr_if,
                     TABS, curr_if)
 
@@ -227,7 +223,7 @@ TranslateRes TranslateKeyword (const TreeNode* kw_node, AsmText* asm_text, const
 
             TranslateASTSubtree (kw_node->left->left, asm_text, nametable);
 
-            WRITE ("%sjmp end_if_%d\n%n",
+            WRITE ("%sjmp     end_if_%d\n%n",
                     TABS, curr_if);
 
             AsmTextRemoveTab (asm_text);
@@ -256,11 +252,11 @@ TranslateRes TranslateKeyword (const TreeNode* kw_node, AsmText* asm_text, const
 
             TranslateASTSubtree (kw_node->right, asm_text, nametable);
             WRITE ("%s; CONDITION\n%n", TABS);
-            WRITE ("%spush 0\n%n", TABS);
-            WRITE ("%sje end_while_%d\n\n%n", TABS, curr_while);
+            WRITE ("%spush    0\n%n", TABS);
+            WRITE ("%sje      end_while_%d\n\n%n", TABS, curr_while);
 
             TranslateASTSubtree (kw_node->left, asm_text, nametable);
-            WRITE ("%sjmp while_%d\n%n", TABS, curr_while);
+            WRITE ("%sjmp     while_%d\n%n", TABS, curr_while);
 
             AsmTextRemoveTab (asm_text);
             WRITE ("%send_while_%d:\n\n%n", TABS, curr_while);
@@ -327,7 +323,7 @@ TranslateRes TranslateOperator (const TreeNode* op_node, AsmText* asm_text, cons
         case ASSIGN:
         {
             TranslateASTSubtree (op_node->right, asm_text, nametable);
-            WRITE ("%spop [rpx + %d] ; assign var \"%s\"\n\n%n", TABS, OffsetTableGetVarOffset (OFFSET_TABLE, VAL (op_node->left)), NAME (op_node->left));
+            WRITE ("%spop     [rpx + %d] ; assign var \"%s\"\n\n%n", TABS, OffsetTableGetVarOffset (OFFSET_TABLE, VAL (op_node->left)), NAME (op_node->left));
 
             break;
         }
@@ -451,18 +447,19 @@ TranslateRes TranslateIdentifier (const TreeNode* id_node, AsmText* asm_text, co
 
         PutFuncParamsToRAM (id_node, asm_text, nametable);
 
-        WRITE ("%scall function_%d ; \"%s\"\n%n", TABS, VAL (id_node), NAME (id_node));
+        WRITE ("%scall    function_%d ; \"%s\"\n%n", TABS, VAL (id_node), NAME (id_node));
 
         // after function call routine
         OffsetTableDeleteFrame (OFFSET_TABLE);
-        WRITE ("%spop rpx ; recover previous rpx value\n\n%n", TABS);
+        WRITE ("%spop     rpx ; recover previous rpx value\n\n%n", TABS);
+        WRITE ("%spush    rrx\n%n ; return value", TABS);
 
         return TRANSLATE_SUCCESS;
     }
     else
     {
         // variable
-        WRITE ("%spush [rpx + %d] ; get value of \"%s\"\n%n", TABS,
+        WRITE ("%spush    [rpx + %d] ; get value of \"%s\"\n%n", TABS,
             OffsetTableGetVarOffset (OFFSET_TABLE, VAL (id_node)), NAME (id_node));
 
         return TRANSLATE_SUCCESS;
@@ -482,7 +479,7 @@ TranslateRes TranslateNumber (const TreeNode* num_node, AsmText* asm_text, const
     if (TYPE (num_node) != INT_LITERAL)
         return TRANSLATE_TYPE_NOT_MATCH;
 
-    WRITE ("%spush %d\n%n", TABS, VAL (num_node));
+    WRITE ("%spush    %d\n%n", TABS, VAL (num_node));
 
     return TRANSLATE_SUCCESS;
 }
@@ -497,11 +494,12 @@ int PutFuncParamsToRAM (const TreeNode* func_id_node, AsmText* asm_text, const N
 
     PushParamsToStack (func_id_node, asm_text, nametable);
 
-    WRITE ("%spush rpx\n%n", TABS);
-    WRITE ("%spush rpx\n%n", TABS);
-    WRITE ("%spush %d\n%n",  TABS, OffsetTableGetCurrFrameWidth (OFFSET_TABLE));
-    WRITE ("%sadd\n%n",      TABS);
-    WRITE ("%spop  rpx\n%n", TABS);
+    WRITE ("%spush    rpx\n%n", TABS);
+    WRITE ("%spush    rpx\n%n", TABS);
+    WRITE ("%spush    %d\n%n",  TABS, OffsetTableGetCurrFrameWidth (OFFSET_TABLE));
+    WRITE ("%sadd\n%n",         TABS);
+    WRITE ("%spop     rpx\n%n", TABS);
+    WRITE ("%spop     rax ; save previous rpx to rax\n%n", TABS);
 
     OffsetTableNewFrame      (OFFSET_TABLE);
     OffsetTableAddFuncParams (OFFSET_TABLE, func_id_node, nametable);
@@ -509,6 +507,7 @@ int PutFuncParamsToRAM (const TreeNode* func_id_node, AsmText* asm_text, const N
     OffsetTableDump          (OFFSET_TABLE, nametable);
 
     PopParamsToRAM (func_id_node, asm_text, nametable);
+    WRITE ("%spush    rax ; recover previous rpx from rax\n%n", TABS);
 
     return 0;
 }
@@ -567,7 +566,7 @@ int PopParamsToRAM (const TreeNode* func_id_node, AsmText* asm_text, const NameT
 
     for (int i = 0; i < n_params; i++)
     {
-        WRITE ("%spop [rpx + %d] ; put \"%s\" to RAM\n%n", TABS,
+        WRITE ("%spop     [rpx + %d] ; put \"%s\" to RAM\n%n", TABS,
             OffsetTableGetVarOffset (OFFSET_TABLE, nametable->params[VAL (func_id_node)][i]),
             nametable->names[nametable->params[VAL (func_id_node)][i]]);
     }
@@ -672,16 +671,16 @@ int WriteCondition (const TreeNode* op_node, AsmText* asm_text, const NameTable*
 
     AsmTextAddTab (asm_text);
 
-    WRITE ("%spush 0\n%n", TABS);
-    WRITE ("%spop rax\n%n", TABS);
-    WRITE ("%s%s end_condition_%d\n%n", TABS, comparator, asm_text->cond_count);
-    WRITE ("%spush 1\n%n", TABS);
-    WRITE ("%spop rax\n%n", TABS);
+    WRITE ("%spush    0\n%n", TABS);
+    WRITE ("%spop     rax\n%n", TABS);
+    WRITE ("%s%s     end_condition_%d\n%n", TABS, comparator, asm_text->cond_count);
+    WRITE ("%spush    1\n%n", TABS);
+    WRITE ("%spop     rax\n%n", TABS);
 
     AsmTextRemoveTab (asm_text);
 
     WRITE ("%send_condition_%d:\n%n", TABS, asm_text->cond_count);
-    WRITE ("%spush rax\n%n", TABS);
+    WRITE ("%spush    rax\n%n", TABS);
 
     asm_text->cond_count++;
 
@@ -752,6 +751,8 @@ int OffsetTableDeleteFrame (OffsetTable* offset_table)
         {
             offset_table->ram_tables[offset_table->curr_table_index].index_in_ram[j] = -1;
         }
+
+        offset_table->ram_tables[offset_table->curr_table_index].free_ram_index = 0;
 
         offset_table->curr_table_index--;
 
