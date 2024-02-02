@@ -24,7 +24,8 @@ int main (int argc, char* argv[])
 
     TreeDotDump ("dump.html", ast);
 
-    AsmText* asm_text = TranslateAST (ast);
+    AsmText* asm_text = AsmTextCtor ();
+    AsmText* asm_text = TranslateAST (ast->root, asm_text, ast->nametable);
     TreeDtor (ast);
 
     FILE* output_file = fopen ("out.tinkov", "wb");
@@ -40,23 +41,20 @@ int main (int argc, char* argv[])
 
 // ================================================================================================
 
-AsmText* TranslateAST (const Tree* ast)
+AsmText* TranslateAST (const TreeNode* root_node, AsmText* asm_text, const NameTable* nametable)
 {
-    assert (ast);
-
-    // TODO move this block outside the func (to main maybe)
-    AsmText* asm_text = AsmTextCtor();
+    assert (asm_text);
 
     WRITE ("; this program was written in tinkov language, mne poxyi ya v americu\n\n");
 
     WRITE ("push 3\n");
     WRITE ("pop rpx\n");
     WRITE ("push 1 ; default main() parameter like argc\n"
-           "call function_%d ; calling main function\n", ast->nametable->main_index);
+           "call function_%d ; calling main function\n", nametable->main_index);
 
     WRITE ("hlt\n\n\n");
 
-    TranslateASTSubtree (ast->root, asm_text, ast->nametable);
+    TranslateASTSubtree (root_node, asm_text, nametable);
 
     return asm_text;
 }

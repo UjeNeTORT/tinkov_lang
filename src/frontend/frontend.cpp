@@ -693,7 +693,7 @@ TreeNode* GetAddSubRes (ProgCode* prog_code, ScopeTableStack* sts)
             break;
 
         default:
-            RET_ERROR (NULL, "Syntax error, add or sub operator expected"); // todo
+            RET_ERROR (NULL, "Syntax error, add or sub operator expected");
             break;
         }
     }
@@ -750,8 +750,7 @@ TreeNode* GetMulDivRes (ProgCode* prog_code, ScopeTableStack* sts)
             break;
 
         default:
-
-            RET_ERROR (NULL, "Syntax error, mul or div operator expected"); // todo
+            RET_ERROR (NULL, "Syntax error, mul or div operator expected");
             break;
         }
     }

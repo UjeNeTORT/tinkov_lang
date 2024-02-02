@@ -77,7 +77,7 @@ typedef enum
     TRANSLATE_ERROR          = 2,
 } TranslateRes;
 
-AsmText*     TranslateAST                 (const Tree* ast);
+AsmText*     TranslateAST                 (const TreeNode* root_node, AsmText* asm_text, const NameTable* nametable);
 TranslateRes TranslateASTSubtree          (const TreeNode* node, AsmText* asm_text, const NameTable* nametable);
 
 TranslateRes TranslateDeclarator          (const TreeNode* declr_node, AsmText* asm_text, const NameTable* nametable);
