@@ -28,12 +28,14 @@
 #define TEXT (asm_text->text + asm_text->offset)
 #define TABS (asm_text->tabs)
 
-#define WRITE(format, ...)                   \
-    {                                        \
-        int written = 0;                     \
+#define WRITE_(format, ...)                                           \
+    {                                                                \
+        int written = 0;                                             \
         sprintf (TEXT, format, __VA_ARGS__ __VA_OPT__ (,) &written); \
-        asm_text->offset += written;         \
+        asm_text->offset += written;                                 \
     }
+
+#define WRITE(format, ...) WRITE_ ("%s" format "%n", TABS __VA_OPT__(,) __VA_ARGS__)
 
 #define NODE_IS(type, val) \
     (TYPE (node) == (type) && VAL (node) == (val))
@@ -108,6 +110,5 @@ int          OffsetTableGetVarOffset      (OffsetTable* offset_table, int var_id
 int          OffsetTableAddFuncParams     (OffsetTable* offset_table, const TreeNode* func_id_node, const NameTable* nametable);
 int          OffsetTableGetCurrFrameWidth (OffsetTable* offset_table);
 int          OffsetTableDump              (const OffsetTable* offset_table, const NameTable* nametable);
-
 
 #endif // TINKOV_BACKEND_H

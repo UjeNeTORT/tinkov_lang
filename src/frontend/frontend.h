@@ -120,6 +120,7 @@ TreeNode* GetWhile               (ProgCode* prog_code, ScopeTableStack* sts);
 TreeNode* GetIfElse              (ProgCode* prog_code, ScopeTableStack* sts);
 TreeNode* GetDoIf                (ProgCode* prog_code, ScopeTableStack* sts);
 TreeNode* GetAssign              (ProgCode* prog_code, ScopeTableStack* sts);
+TreeNode* GetInput               (ProgCode* prog_code, ScopeTableStack* sts);
 TreeNode* GetReturn              (ProgCode* prog_code, ScopeTableStack* sts);
 TreeNode* GetPrint               (ProgCode* prog_code, ScopeTableStack* sts);
 TreeNode* GetLvalue              (ProgCode* prog_code, ScopeTableStack* sts);

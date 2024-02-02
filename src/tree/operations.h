@@ -40,7 +40,8 @@ typedef enum
     KW_ELSE   = 2,
     KW_WHILE  = 3,
     KW_RETURN = 4,
-    KW_PRINT  = 5,
+    KW_INPUT  = 5,
+    KW_PRINT  = 6,
 } KeywordCode;
 
 struct Keyword
@@ -56,6 +57,7 @@ const Keyword KEYWORDS[] =
     {"я_могу_ошибаться",         KW_ELSE},
     {"ну_сколько_можно",         KW_WHILE},
     {"никто_никогда_не_вернет",  KW_RETURN},
+    {"мне_надо",                 KW_INPUT},
     {"там_кто_то_мне_пишет",     KW_PRINT},
 };
 const int N_KEYWORDS = sizeof(KEYWORDS) / sizeof(KEYWORDS[0]);

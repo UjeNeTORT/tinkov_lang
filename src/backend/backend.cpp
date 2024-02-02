@@ -47,14 +47,14 @@ AsmText* TranslateAST (const Tree* ast)
     // TODO move this block outside the func (to main maybe)
     AsmText* asm_text = AsmTextCtor();
 
-    WRITE ("; this program was written in tinkov language, mne poxyi ya v americu\n\n%n");
+    WRITE ("; this program was written in tinkov language, mne poxyi ya v americu\n\n");
 
-    WRITE ("push 3\n%n");
-    WRITE ("pop rpx\n%n");
+    WRITE ("push 3\n");
+    WRITE ("pop rpx\n");
     WRITE ("push 1 ; default main() parameter like argc\n"
-           "call function_%d ; calling main function\n%n", ast->nametable->main_index);
-    // WRITE ("out\n%n");
-    WRITE ("hlt\n\n\n%n");
+           "call function_%d ; calling main function\n", ast->nametable->main_index);
+
+    WRITE ("hlt\n\n\n");
 
     TranslateASTSubtree (ast->root, asm_text, ast->nametable);
 
@@ -125,28 +125,28 @@ TranslateRes TranslateDeclarator (const TreeNode* declr_node, AsmText* asm_text,
     else if (VAL (declr_node) == FUNC_DECLARATOR)
     {
         const TreeNode* func_id_node = declr_node->right->right;
-        WRITE ("%sfunction_%d: ; \"%s\"\n%n", TABS, VAL (func_id_node), NAME (func_id_node));
+        WRITE ("function_%d: ; \"%s\"\n", VAL (func_id_node), NAME (func_id_node));
 
         AsmTextAddTab (asm_text);
 
         int n_params = nametable->n_params[VAL (func_id_node)];
 
-        WRITE ("%s; parameters[%d]\n%n", TABS, n_params);
+        WRITE ("; parameters[%d]\n", n_params);
         for (int i = 0; i < n_params; i++)
         {
-            WRITE ("%s; parameter \"%s\" (%d)\n%n", TABS,
+            WRITE ("; parameter \"%s\" (%d)\n",
                 nametable->names[nametable->params[VAL (func_id_node)][i]],
                 nametable->params[VAL (func_id_node)][i]);
         }
 
-        WRITE ("%s\n; BODY\n%n", TABS);
+        WRITE ("\n; BODY\n");
 
         OffsetTableNewFrame (OFFSET_TABLE);
         OffsetTableAddFuncParams (OFFSET_TABLE, func_id_node, nametable);
 
         TranslateASTSubtree (declr_node->left, asm_text, nametable);
 
-        WRITE ("%sret\n\n%n", TABS);
+        WRITE ("ret\n\n");
 
         OffsetTableDeleteFrame (OFFSET_TABLE);
 
@@ -171,21 +171,21 @@ TranslateRes TranslateKeyword (const TreeNode* kw_node, AsmText* asm_text, const
 
     switch (VAL (kw_node))
     {
+        case KW_INPUT:
+        {
+            WRITE ("in ; input of variable \"%s\"\n",
+                NAME (kw_node->right));
+            WRITE ("pop [rpx + %d]\n",
+                OffsetTableGetVarOffset (OFFSET_TABLE, VAL (kw_node->right)));
+
+            break;
+        }
+
         case KW_PRINT:
         {
-            if (TYPE (kw_node->left) == INT_LITERAL)
-            {
-                WRITE ("%spush %d\n%n", TABS, VAL (kw_node->left));
-            }
+            TranslateASTSubtree (kw_node->right, asm_text, nametable);
 
-            else
-            {
-                WRITE ("%spush    [rpx + %d] ; printing \"%s\"\n%n", TABS,
-                    OffsetTableGetVarOffset (OFFSET_TABLE, VAL (kw_node->left)),
-                    NAME (kw_node->left));
-            }
-
-            WRITE ("%sout\n%n", TABS);
+            WRITE ("out\n");
 
             break;
         }
@@ -193,13 +193,13 @@ TranslateRes TranslateKeyword (const TreeNode* kw_node, AsmText* asm_text, const
         case KW_RETURN:
         {
 
-            WRITE ("%s; return statement \n%n", TABS);
+            WRITE ("; return \n");
 
             TranslateASTSubtree (kw_node->left, asm_text, nametable);
 
-            WRITE ("%spop     rrx ; obligatory return value\n%n", TABS);
+            WRITE ("pop     rrx ; obligatory return value\n");
 
-            WRITE ("%sret\n\n%n", TABS);
+            WRITE ("ret\n\n");
             break;
         }
 
@@ -210,26 +210,23 @@ TranslateRes TranslateKeyword (const TreeNode* kw_node, AsmText* asm_text, const
             // condition
             TranslateASTSubtree (kw_node->right, asm_text, nametable);
 
-            WRITE ("%spush    0\n"
-                   "%sjne     if_%d\n"
-                   "%sjmp     else_%d\n%n",
-                    TABS, TABS, curr_if,
-                    TABS, curr_if)
+            WRITE ("push    0\n");
+            WRITE ("jne     if_%d\n", curr_if);
+            WRITE ("jmp     else_%d\n", curr_if);
 
             // if
-            WRITE ("%sif_%d:\n%n", TABS, curr_if);
+            WRITE ("if_%d:\n", curr_if);
 
             AsmTextAddTab (asm_text);
 
             TranslateASTSubtree (kw_node->left->left, asm_text, nametable);
 
-            WRITE ("%sjmp     end_if_%d\n%n",
-                    TABS, curr_if);
+            WRITE ("jmp     end_if_%d\n", curr_if);
 
             AsmTextRemoveTab (asm_text);
 
             // else
-            WRITE ("%selse_%d:\n%n", TABS, curr_if);
+            WRITE ("else_%d:\n", curr_if);
 
             AsmTextAddTab (asm_text);
 
@@ -238,7 +235,7 @@ TranslateRes TranslateKeyword (const TreeNode* kw_node, AsmText* asm_text, const
 
             AsmTextRemoveTab (asm_text);
 
-            WRITE ("%send_if_%d:\n\n%n", TABS, curr_if);
+            WRITE ("end_if_%d:\n\n", curr_if);
 
             break;
         }
@@ -247,19 +244,19 @@ TranslateRes TranslateKeyword (const TreeNode* kw_node, AsmText* asm_text, const
         {
             int curr_while = asm_text->while_statements_count++;
 
-            WRITE ("%swhile_%d:\n%n", TABS, curr_while);
+            WRITE ("while_%d:\n", curr_while);
             AsmTextAddTab (asm_text);
 
             TranslateASTSubtree (kw_node->right, asm_text, nametable);
-            WRITE ("%s; CONDITION\n%n", TABS);
-            WRITE ("%spush    0\n%n", TABS);
-            WRITE ("%sje      end_while_%d\n\n%n", TABS, curr_while);
+            WRITE ("; CONDITION\n");
+            WRITE ("push    0\n");
+            WRITE ("je      end_while_%d\n\n", curr_while);
 
             TranslateASTSubtree (kw_node->left, asm_text, nametable);
-            WRITE ("%sjmp     while_%d\n%n", TABS, curr_while);
+            WRITE ("jmp     while_%d\n", curr_while);
 
             AsmTextRemoveTab (asm_text);
-            WRITE ("%send_while_%d:\n\n%n", TABS, curr_while);
+            WRITE ("end_while_%d:\n\n", curr_while);
 
             break;
         }
@@ -268,7 +265,7 @@ TranslateRes TranslateKeyword (const TreeNode* kw_node, AsmText* asm_text, const
             return TRANSLATE_ERROR;
     }
 
-    WRITE ("%s\n%n", TABS);
+    WRITE ("\n");
 
     return TRANSLATE_SUCCESS;
 }
@@ -323,7 +320,7 @@ TranslateRes TranslateOperator (const TreeNode* op_node, AsmText* asm_text, cons
         case ASSIGN:
         {
             TranslateASTSubtree (op_node->right, asm_text, nametable);
-            WRITE ("%spop     [rpx + %d] ; assign var \"%s\"\n\n%n", TABS, OffsetTableGetVarOffset (OFFSET_TABLE, VAL (op_node->left)), NAME (op_node->left));
+            WRITE ("pop     [rpx + %d] ; assign var \"%s\"\n\n", OffsetTableGetVarOffset (OFFSET_TABLE, VAL (op_node->left)), NAME (op_node->left));
 
             break;
         }
@@ -333,7 +330,7 @@ TranslateRes TranslateOperator (const TreeNode* op_node, AsmText* asm_text, cons
             TranslateASTSubtree (op_node->left, asm_text, nametable);
             TranslateASTSubtree (op_node->right, asm_text, nametable);
 
-            WRITE ("%sadd\n%n", TABS);
+            WRITE ("add\n");
 
             break;
         }
@@ -343,7 +340,7 @@ TranslateRes TranslateOperator (const TreeNode* op_node, AsmText* asm_text, cons
             TranslateASTSubtree (op_node->left, asm_text, nametable);
             TranslateASTSubtree (op_node->right, asm_text, nametable);
 
-            WRITE ("%ssub\n%n", TABS);
+            WRITE ("sub\n");
 
             break;
         }
@@ -353,7 +350,7 @@ TranslateRes TranslateOperator (const TreeNode* op_node, AsmText* asm_text, cons
             TranslateASTSubtree (op_node->left, asm_text, nametable);
             TranslateASTSubtree (op_node->right, asm_text, nametable);
 
-            WRITE ("%smul\n%n", TABS);
+            WRITE ("mul\n");
 
             break;
         }
@@ -363,7 +360,7 @@ TranslateRes TranslateOperator (const TreeNode* op_node, AsmText* asm_text, cons
             TranslateASTSubtree (op_node->left, asm_text, nametable);
             TranslateASTSubtree (op_node->right, asm_text, nametable);
 
-            WRITE ("%sdiv\n%n", TABS);
+            WRITE ("div\n");
 
             break;
         }
@@ -371,7 +368,7 @@ TranslateRes TranslateOperator (const TreeNode* op_node, AsmText* asm_text, cons
         case POW:
         {
             TranslateASTSubtree (op_node->left, asm_text, nametable);
-            WRITE ("%ssqrt\n%n", TABS);
+            WRITE ("sqrt\n");
 
             break;
         }
@@ -443,23 +440,23 @@ TranslateRes TranslateIdentifier (const TreeNode* id_node, AsmText* asm_text, co
     if (IsFunction (id_node, nametable))
     {
         // function call
-        WRITE ("%s\n; function call of \"%s\" (%d)\n%n", TABS, NAME (id_node), VAL (id_node));
+        WRITE ("; calling \"%s\" (%d)\n", NAME (id_node), VAL (id_node));
 
         PutFuncParamsToRAM (id_node, asm_text, nametable);
 
-        WRITE ("%scall    function_%d ; \"%s\"\n%n", TABS, VAL (id_node), NAME (id_node));
+        WRITE ("call    function_%d ; \"%s\"\n", VAL (id_node), NAME (id_node));
 
         // after function call routine
         OffsetTableDeleteFrame (OFFSET_TABLE);
-        WRITE ("%spop     rpx ; recover previous rpx value\n\n%n", TABS);
-        WRITE ("%spush    rrx\n%n ; return value", TABS);
+        WRITE ("pop     rpx ; recover previous rpx value\n\n");
+        WRITE ("push    rrx ; return value\n\n");
 
         return TRANSLATE_SUCCESS;
     }
     else
     {
         // variable
-        WRITE ("%spush    [rpx + %d] ; get value of \"%s\"\n%n", TABS,
+        WRITE ("push    [rpx + %d] ; \"%s\"\n",
             OffsetTableGetVarOffset (OFFSET_TABLE, VAL (id_node)), NAME (id_node));
 
         return TRANSLATE_SUCCESS;
@@ -479,7 +476,7 @@ TranslateRes TranslateNumber (const TreeNode* num_node, AsmText* asm_text, const
     if (TYPE (num_node) != INT_LITERAL)
         return TRANSLATE_TYPE_NOT_MATCH;
 
-    WRITE ("%spush    %d\n%n", TABS, VAL (num_node));
+    WRITE ("push    %d\n", VAL (num_node));
 
     return TRANSLATE_SUCCESS;
 }
@@ -494,18 +491,18 @@ int PutFuncParamsToRAM (const TreeNode* func_id_node, AsmText* asm_text, const N
 
     PushParamsToStack (func_id_node, asm_text, nametable);
 
-    WRITE ("%spush    rpx\n%n", TABS);
-    WRITE ("%spush    rpx\n%n", TABS);
-    WRITE ("%spush    %d\n%n",  TABS, OffsetTableGetCurrFrameWidth (OFFSET_TABLE));
-    WRITE ("%sadd\n%n",         TABS);
-    WRITE ("%spop     rpx\n%n", TABS);
-    WRITE ("%spop     rax ; save previous rpx to rax\n%n", TABS);
+    WRITE ("push    rpx\n");
+    WRITE ("push    rpx\n");
+    WRITE ("push    %d\n", OffsetTableGetCurrFrameWidth (OFFSET_TABLE));
+    WRITE ("add\n");
+    WRITE ("pop     rpx\n");
+    WRITE ("pop     rax ; save previous rpx to rax\n");
 
     OffsetTableNewFrame      (OFFSET_TABLE);
     OffsetTableAddFuncParams (OFFSET_TABLE, func_id_node, nametable);
 
     PopParamsToRAM (func_id_node, asm_text, nametable);
-    WRITE ("%spush    rax ; recover previous rpx from rax\n%n", TABS);
+    WRITE ("push    rax ; recover previous rpx from rax\n");
 
     return 0;
 }
@@ -514,22 +511,13 @@ int PutFuncParamsToRAM (const TreeNode* func_id_node, AsmText* asm_text, const N
 
 int PushParamsToStack (const TreeNode* func_id_node, AsmText* asm_text, const NameTable* nametable)
 {
-    /**
-     * pushing function parameters to stack happens before increase of rpx
-     *
-     * maybe i dont need all this shit, i can instead translate each parameter and it will be pushed this way
-    */
-
     assert (func_id_node);
     assert (asm_text);
     assert (nametable);
 
-    // !!! error may occur if function was not declared yet -
-    // SOLUTION - create flag is_declared in nametable and fill it during backend
-
     int n_params = nametable->n_params[VAL (func_id_node)];
 
-    WRITE ("%s; pushing %d parameters of function \"%s\" to stack\n%n", TABS, n_params, NAME (func_id_node));
+    WRITE ("; pushing %d parameters of function \"%s\" to stack\n", n_params, NAME (func_id_node));
     if (n_params == 0)
         return 0;
 
@@ -537,7 +525,7 @@ int PushParamsToStack (const TreeNode* func_id_node, AsmText* asm_text, const Na
 
     for (int i = 0; i < n_params; i++)
     {
-        WRITE ("%s; \"%s\"\n%n", TABS,
+        WRITE ("; \"%s\"\n",
             nametable->names[nametable->params[VAL (func_id_node)][n_params - 1 - i]]);
 
         TranslateASTSubtree (curr_param->right, asm_text, nametable);
@@ -564,7 +552,7 @@ int PopParamsToRAM (const TreeNode* func_id_node, AsmText* asm_text, const NameT
 
     for (int i = 0; i < n_params; i++)
     {
-        WRITE ("%spop     [rpx + %d] ; put \"%s\" to RAM\n%n", TABS,
+        WRITE ("pop     [rpx + %d] ; put \"%s\" to RAM\n",
             OffsetTableGetVarOffset (OFFSET_TABLE, nametable->params[VAL (func_id_node)][i]),
             nametable->names[nametable->params[VAL (func_id_node)][i]]);
     }
@@ -663,22 +651,22 @@ int WriteCondition (const TreeNode* op_node, AsmText* asm_text, const NameTable*
     assert (nametable);
     assert (comparator);
 
-    WRITE ("%s; CONDITION_%d\n%n", TABS, asm_text->cond_count);
+    WRITE ("; CONDITION_%d\n", asm_text->cond_count);
     TranslateASTSubtree (op_node->left, asm_text, nametable);
     TranslateASTSubtree (op_node->right, asm_text, nametable);
 
     AsmTextAddTab (asm_text);
 
-    WRITE ("%spush    0\n%n", TABS);
-    WRITE ("%spop     rax\n%n", TABS);
-    WRITE ("%s%s     end_condition_%d\n%n", TABS, comparator, asm_text->cond_count);
-    WRITE ("%spush    1\n%n", TABS);
-    WRITE ("%spop     rax\n%n", TABS);
+    WRITE ("push    0\n");
+    WRITE ("pop     rax\n");
+    WRITE ("%s     end_condition_%d\n", comparator, asm_text->cond_count);
+    WRITE ("push    1\n");
+    WRITE ("pop     rax\n");
 
     AsmTextRemoveTab (asm_text);
 
-    WRITE ("%send_condition_%d:\n%n", TABS, asm_text->cond_count);
-    WRITE ("%spush    rax\n%n", TABS);
+    WRITE ("end_condition_%d:\n", asm_text->cond_count);
+    WRITE ("push    rax\n");
 
     asm_text->cond_count++;
 

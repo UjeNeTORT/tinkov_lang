@@ -299,6 +299,19 @@ TreeNode* GetSingleStatement (ProgCode* prog_code, ScopeTableStack* sts)
 
     OFFSET = init_offset;
 
+    single_statement = GetInput (prog_code, sts);
+    if (single_statement)
+    {
+        SYNTAX_ASSERT (TOKEN_IS (SEPARATOR, END_STATEMENT),
+            "\"сомнительно_но_окей\" expected in the end of statement");
+
+        OFFSET++; // skip ";"
+
+        return single_statement;
+    }
+
+    OFFSET = init_offset;
+
     single_statement = GetPrint (prog_code, sts);
     if (single_statement)
     {
@@ -491,6 +504,24 @@ TreeNode* GetAssign (ProgCode* prog_code, ScopeTableStack* sts)
 
 // ================================================================================================
 
+TreeNode* GetInput (ProgCode* prog_code, ScopeTableStack* sts)
+{
+    assert (prog_code);
+    assert (sts);
+
+    if (TOKEN_IS_NOT (KEYWORD, KW_INPUT))
+        return NULL;
+
+    OFFSET++; // skip "input"
+
+    TreeNode* input_var = GetIdentifier (prog_code, sts);
+    SYNTAX_ASSERT (input_var != NULL, "Identifier expected after input keyword");
+
+    return TreeNodeCtor (KW_INPUT, KEYWORD, NULL, NULL, input_var);
+}
+
+// ================================================================================================
+
 TreeNode* GetReturn (ProgCode* prog_code, ScopeTableStack* sts)
 {
     assert (prog_code);
@@ -501,11 +532,7 @@ TreeNode* GetReturn (ProgCode* prog_code, ScopeTableStack* sts)
 
     OFFSET++; // skip "return"
 
-    TreeNode* return_value = GetNumber (prog_code, sts);
-    if (return_value)
-        return TreeNodeCtor (KW_RETURN, KEYWORD, NULL, return_value, NULL);
-
-    return_value = GetRvalue (prog_code, sts);
+    TreeNode* return_value = GetRvalue (prog_code, sts);
     SYNTAX_ASSERT (return_value != NULL, "Return value expected after return");
 
     return TreeNodeCtor (KW_RETURN, KEYWORD, NULL, return_value, NULL);
@@ -526,7 +553,7 @@ TreeNode* GetPrint (ProgCode* prog_code, ScopeTableStack* sts)
     TreeNode* print_value  = GetRvalue (prog_code, sts);
     SYNTAX_ASSERT (print_value != NULL, "Print value (nil)");
 
-    return TreeNodeCtor (KW_PRINT, KEYWORD, NULL, print_value, NULL);
+    return TreeNodeCtor (KW_PRINT, KEYWORD, NULL, NULL, print_value);
 }
 
 // ================================================================================================
