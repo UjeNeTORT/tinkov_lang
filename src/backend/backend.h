@@ -44,7 +44,8 @@
     (TYPE (node) != (type) || VAL (node) != (val))
 // ===========================================================
 
-const size_t MAX_ASM_PROGRAM_SIZE = 50000;
+const size_t MAX_ASM_PROGRAM_SIZE    = 50000;
+const size_t LOCAL_VARIABLES_MAPPING = 5;
 
 struct RamTable
 {
@@ -77,38 +78,38 @@ typedef enum
     TRANSLATE_ERROR          = 2,
 } TranslateRes;
 
-AsmText*     TranslateAST                 (const TreeNode* root_node, AsmText* asm_text, const NameTable* nametable);
-TranslateRes TranslateASTSubtree          (const TreeNode* node, AsmText* asm_text, const NameTable* nametable);
+AsmText*       TranslateAST                 (const TreeNode* root_node, AsmText* asm_text, const NameTable* nametable);
+TranslateRes   TranslateASTSubtree          (const TreeNode* node, AsmText* asm_text, const NameTable* nametable);
 
-TranslateRes TranslateDeclarator          (const TreeNode* declr_node, AsmText* asm_text, const NameTable* nametable);
-TranslateRes TranslateKeyword             (const TreeNode* kw_node,    AsmText* asm_text, const NameTable* nametable);
-TranslateRes TranslateSeparator           (const TreeNode* sep_node,   AsmText* asm_text, const NameTable* nametable);
-TranslateRes TranslateOperator            (const TreeNode* op_node,    AsmText* asm_text, const NameTable* nametable);
-TranslateRes TranslateIdentifier          (const TreeNode* id_node,    AsmText* asm_text, const NameTable* nametable);
-TranslateRes TranslateNumber              (const TreeNode* num_node,   AsmText* asm_text, const NameTable* nametable);
+TranslateRes   TranslateDeclarator          (const TreeNode* declr_node, AsmText* asm_text, const NameTable* nametable);
+TranslateRes   TranslateKeyword             (const TreeNode* kw_node,    AsmText* asm_text, const NameTable* nametable);
+TranslateRes   TranslateSeparator           (const TreeNode* sep_node,   AsmText* asm_text, const NameTable* nametable);
+TranslateRes   TranslateOperator            (const TreeNode* op_node,    AsmText* asm_text, const NameTable* nametable);
+TranslateRes   TranslateIdentifier          (const TreeNode* id_node,    AsmText* asm_text, const NameTable* nametable);
+TranslateRes   TranslateNumber              (const TreeNode* num_node,   AsmText* asm_text, const NameTable* nametable);
 
-int          PutFuncParamsToRAM           (const TreeNode* func_id_node, AsmText* asm_text, const NameTable* nametable);
-int          PushParamsToStack            (const TreeNode* func_id_node, AsmText* asm_text, const NameTable* nametable);
-int          PopParamsToRAM               (const TreeNode* func_id_node, AsmText* asm_text, const NameTable* nametable);
+DefaultFuncRes PutFuncParamsToRAM           (const TreeNode* func_id_node, AsmText* asm_text, const NameTable* nametable);
+DefaultFuncRes PushParamsToStack            (const TreeNode* func_id_node, AsmText* asm_text, const NameTable* nametable);
+DefaultFuncRes PopParamsToRAM               (const TreeNode* func_id_node, AsmText* asm_text, const NameTable* nametable);
 
-AsmText*     AsmTextCtor                  ();
-int          AsmTextDtor                  (AsmText* asm_text);
+AsmText*       AsmTextCtor                  ();
+DefaultFuncRes AsmTextDtor                  (AsmText* asm_text);
 
-int          AsmTextAddTab                (AsmText* asm_text);
-int          AsmTextRemoveTab             (AsmText* asm_text);
+DefaultFuncRes AsmTextAddTab                (AsmText* asm_text);
+DefaultFuncRes AsmTextRemoveTab             (AsmText* asm_text);
 
-int          IsFunction                   (const TreeNode* id_node, const NameTable* nametable);
+int            IsFunction                   (const TreeNode* id_node, const NameTable* nametable);
 
-int          WriteCondition               (const TreeNode* op_node, AsmText* asm_text, const NameTable* nametable, const char* comparator);
+DefaultFuncRes WriteCondition               (const TreeNode* op_node, AsmText* asm_text, const NameTable* nametable, const char* comparator);
 
-OffsetTable* OffsetTableCtor              ();
-int          OffsetTableDtor              (OffsetTable* offset_table);
-int          OffsetTableNewFrame          (OffsetTable* offset_table);
-int          OffsetTableDeleteFrame       (OffsetTable* offset_table);
-int          OffsetTableAddVariable       (OffsetTable* offset_table, int var_id);
-int          OffsetTableGetVarOffset      (OffsetTable* offset_table, int var_id);
-int          OffsetTableAddFuncParams     (OffsetTable* offset_table, const TreeNode* func_id_node, const NameTable* nametable);
-int          OffsetTableGetCurrFrameWidth (OffsetTable* offset_table);
-int          OffsetTableDump              (const OffsetTable* offset_table, const NameTable* nametable);
+OffsetTable*   OffsetTableCtor              ();
+DefaultFuncRes OffsetTableDtor              (OffsetTable* offset_table);
+int            OffsetTableGetVarOffset      (OffsetTable* offset_table, int var_id);
+int            OffsetTableGetCurrFrameWidth (OffsetTable* offset_table);
+DefaultFuncRes OffsetTableAddFrame          (OffsetTable* offset_table);
+DefaultFuncRes OffsetTableDeleteFrame       (OffsetTable* offset_table);
+DefaultFuncRes OffsetTableAddVariable       (OffsetTable* offset_table, int var_id);
+DefaultFuncRes OffsetTableAddFuncParams     (OffsetTable* offset_table, const TreeNode* func_id_node, const NameTable* nametable);
+DefaultFuncRes OffsetTableDump              (const OffsetTable* offset_table, const NameTable* nametable);
 
 #endif // TINKOV_BACKEND_H

@@ -25,7 +25,7 @@ int main (int argc, char* argv[])
     TreeDotDump ("dump.html", ast);
 
     AsmText* asm_text = AsmTextCtor ();
-    AsmText* asm_text = TranslateAST (ast->root, asm_text, ast->nametable);
+    asm_text = TranslateAST (ast->root, asm_text, ast->nametable);
     TreeDtor (ast);
 
     FILE* output_file = fopen ("out.tinkov", "wb");
@@ -47,7 +47,7 @@ AsmText* TranslateAST (const TreeNode* root_node, AsmText* asm_text, const NameT
 
     WRITE ("; this program was written in tinkov language, mne poxyi ya v americu\n\n");
 
-    WRITE ("push 3\n");
+    WRITE ("push %ld\n", LOCAL_VARIABLES_MAPPING);
     WRITE ("pop rpx\n");
     WRITE ("push 1 ; default main() parameter like argc\n"
            "call function_%d ; calling main function\n", nametable->main_index);
@@ -139,7 +139,7 @@ TranslateRes TranslateDeclarator (const TreeNode* declr_node, AsmText* asm_text,
 
         WRITE ("\n; BODY\n");
 
-        OffsetTableNewFrame (OFFSET_TABLE);
+        OffsetTableAddFrame (OFFSET_TABLE);
         OffsetTableAddFuncParams (OFFSET_TABLE, func_id_node, nametable);
 
         TranslateASTSubtree (declr_node->left, asm_text, nametable);
@@ -234,6 +234,14 @@ TranslateRes TranslateKeyword (const TreeNode* kw_node, AsmText* asm_text, const
             AsmTextRemoveTab (asm_text);
 
             WRITE ("end_if_%d:\n\n", curr_if);
+
+            break;
+        }
+
+        case KW_DO: // do if
+        {
+            // ignore condition (it is not even presented in ast)
+            TranslateASTSubtree (kw_node->right, asm_text, nametable);
 
             break;
         }
@@ -481,7 +489,7 @@ TranslateRes TranslateNumber (const TreeNode* num_node, AsmText* asm_text, const
 
 // ================================================================================================
 
-int PutFuncParamsToRAM (const TreeNode* func_id_node, AsmText* asm_text, const NameTable* nametable)
+DefaultFuncRes PutFuncParamsToRAM (const TreeNode* func_id_node, AsmText* asm_text, const NameTable* nametable)
 {
     assert (func_id_node);
     assert (asm_text);
@@ -496,18 +504,18 @@ int PutFuncParamsToRAM (const TreeNode* func_id_node, AsmText* asm_text, const N
     WRITE ("pop     rpx\n");
     WRITE ("pop     rax ; save previous rpx to rax\n");
 
-    OffsetTableNewFrame      (OFFSET_TABLE);
+    OffsetTableAddFrame      (OFFSET_TABLE);
     OffsetTableAddFuncParams (OFFSET_TABLE, func_id_node, nametable);
 
     PopParamsToRAM (func_id_node, asm_text, nametable);
     WRITE ("push    rax ; recover previous rpx from rax\n");
 
-    return 0;
+    return FUNC_SUCCESS;
 }
 
 // ================================================================================================
 
-int PushParamsToStack (const TreeNode* func_id_node, AsmText* asm_text, const NameTable* nametable)
+DefaultFuncRes PushParamsToStack (const TreeNode* func_id_node, AsmText* asm_text, const NameTable* nametable)
 {
     assert (func_id_node);
     assert (asm_text);
@@ -517,7 +525,7 @@ int PushParamsToStack (const TreeNode* func_id_node, AsmText* asm_text, const Na
 
     WRITE ("; pushing %d parameters of function \"%s\" to stack\n", n_params, NAME (func_id_node));
     if (n_params == 0)
-        return 0;
+        return FUNC_SUCCESS;
 
     const TreeNode* curr_param = func_id_node->left;
 
@@ -531,12 +539,12 @@ int PushParamsToStack (const TreeNode* func_id_node, AsmText* asm_text, const Na
         curr_param = curr_param->left;
     }
 
-    return 0;
+    return FUNC_SUCCESS;
 }
 
 // ================================================================================================
 
-int PopParamsToRAM (const TreeNode* func_id_node, AsmText* asm_text, const NameTable* nametable)
+DefaultFuncRes PopParamsToRAM (const TreeNode* func_id_node, AsmText* asm_text, const NameTable* nametable)
 {
     /**
      * popping function parameters to RAM happens after increase of rpx
@@ -555,7 +563,7 @@ int PopParamsToRAM (const TreeNode* func_id_node, AsmText* asm_text, const NameT
             nametable->names[nametable->params[VAL (func_id_node)][i]]);
     }
 
-    return 0;
+    return FUNC_SUCCESS;
 }
 
 // ================================================================================================
@@ -580,7 +588,7 @@ AsmText* AsmTextCtor ()
 
 // ================================================================================================
 
-int AsmTextDtor (AsmText* asm_text)
+DefaultFuncRes AsmTextDtor (AsmText* asm_text)
 {
     assert (asm_text);
 
@@ -592,12 +600,12 @@ int AsmTextDtor (AsmText* asm_text)
     free (asm_text->tabs);
     free (asm_text);
 
-    return 0;
+    return FUNC_SUCCESS;
 }
 
 // ================================================================================================
 // unsafe (buffer overflow)
-int AsmTextAddTab (AsmText* asm_text)
+DefaultFuncRes AsmTextAddTab (AsmText* asm_text)
 {
     assert (asm_text);
 
@@ -605,26 +613,26 @@ int AsmTextAddTab (AsmText* asm_text)
     {
         asm_text->tabs[0] = '\t';
 
-        return 0;
+        return FUNC_SUCCESS;
     }
 
     char* last_tab = strrchr (asm_text->tabs, '\t');
     last_tab++;
     *last_tab = '\t';
 
-    return 0;
+    return FUNC_SUCCESS;
 }
 
 // ================================================================================================
 // unsafe (buffer overflow)
-int AsmTextRemoveTab (AsmText* asm_text)
+DefaultFuncRes AsmTextRemoveTab (AsmText* asm_text)
 {
     assert (asm_text);
 
     char* last_tab = strrchr (asm_text->tabs, '\t');
     *last_tab = 0;
 
-    return 0;
+    return FUNC_SUCCESS;
 }
 
 // ================================================================================================
@@ -642,7 +650,7 @@ int IsFunction (const TreeNode* id_node, const NameTable* nametable)
 
 // ================================================================================================
 
-int WriteCondition (const TreeNode* op_node, AsmText* asm_text, const NameTable* nametable, const char* comparator)
+DefaultFuncRes WriteCondition (const TreeNode* op_node, AsmText* asm_text, const NameTable* nametable, const char* comparator)
 {
     assert (op_node);
     assert (asm_text);
@@ -668,7 +676,7 @@ int WriteCondition (const TreeNode* op_node, AsmText* asm_text, const NameTable*
 
     asm_text->cond_count++;
 
-    return 0;
+    return FUNC_SUCCESS;
 }
 
 // ================================================================================================
@@ -694,7 +702,7 @@ OffsetTable* OffsetTableCtor ()
 
 // ================================================================================================
 
-int OffsetTableDtor (OffsetTable* offset_table)
+DefaultFuncRes OffsetTableDtor (OffsetTable* offset_table)
 {
     assert (offset_table);
 
@@ -702,12 +710,12 @@ int OffsetTableDtor (OffsetTable* offset_table)
     free (offset_table->ram_tables);
     free (offset_table);
 
-    return 0;
+    return FUNC_SUCCESS;
 }
 
 // ================================================================================================
 
-int OffsetTableNewFrame (OffsetTable* offset_table)
+DefaultFuncRes OffsetTableAddFrame (OffsetTable* offset_table)
 {
     assert (offset_table);
 
@@ -716,15 +724,15 @@ int OffsetTableNewFrame (OffsetTable* offset_table)
     {
         offset_table->curr_table_index++;
 
-        return 0; // return code - success
+        return FUNC_SUCCESS;
     }
 
-    return 1; // return code - error
+    return FUNC_ERROR;
 }
 
 // ================================================================================================
 
-int OffsetTableDeleteFrame (OffsetTable* offset_table)
+DefaultFuncRes OffsetTableDeleteFrame (OffsetTable* offset_table)
 {
     assert (offset_table);
 
@@ -740,15 +748,15 @@ int OffsetTableDeleteFrame (OffsetTable* offset_table)
 
         offset_table->curr_table_index--;
 
-        return 0; // return code - success
+        return FUNC_SUCCESS;
     }
 
-    return 1; // return code - error
+    return FUNC_ERROR;
 }
 
 // ================================================================================================
 
-int OffsetTableAddVariable (OffsetTable* offset_table, int var_id)
+DefaultFuncRes OffsetTableAddVariable (OffsetTable* offset_table, int var_id)
 {
     assert (offset_table);
     assert (var_id > -1);
@@ -756,7 +764,7 @@ int OffsetTableAddVariable (OffsetTable* offset_table, int var_id)
     CURR_RAM_TABLE.index_in_ram[CURR_RAM_TABLE.free_ram_index] = var_id;
     CURR_RAM_TABLE.free_ram_index++;
 
-    return 0; // return code - success
+    return FUNC_SUCCESS;
 }
 
 // ================================================================================================
@@ -777,7 +785,7 @@ int OffsetTableGetVarOffset (OffsetTable* offset_table, int var_id)
 
 // ================================================================================================
 
-int OffsetTableAddFuncParams (OffsetTable* offset_table, const TreeNode* func_id_node, const NameTable* nametable)
+DefaultFuncRes OffsetTableAddFuncParams (OffsetTable* offset_table, const TreeNode* func_id_node, const NameTable* nametable)
 {
     assert (offset_table);
     assert (func_id_node);
@@ -785,7 +793,7 @@ int OffsetTableAddFuncParams (OffsetTable* offset_table, const TreeNode* func_id
     for (int i = 0; i < nametable->n_params[VAL (func_id_node)]; i++)
         OffsetTableAddVariable (offset_table, nametable->params[VAL (func_id_node)][i]);
 
-    return 0;
+    return FUNC_SUCCESS;
 }
 
 // ================================================================================================
@@ -804,7 +812,7 @@ int OffsetTableGetCurrFrameWidth (OffsetTable* offset_table)
 
 // ================================================================================================
 
-int OffsetTableDump (const OffsetTable* offset_table, const NameTable* nametable)
+DefaultFuncRes OffsetTableDump (const OffsetTable* offset_table, const NameTable* nametable)
 {
     assert (offset_table);
 
@@ -830,6 +838,6 @@ int OffsetTableDump (const OffsetTable* offset_table, const NameTable* nametable
         printf ("\n\n");
     }
 
-    return 0;
+    return FUNC_SUCCESS;
 }
 

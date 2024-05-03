@@ -428,9 +428,9 @@ TreeNode* GetDoIf (ProgCode* prog_code, ScopeTableStack* sts)
 
     OFFSET++; // skip "?"
 
-    TreeNodeDtor (condition);
+    SubtreeDtor (condition);
 
-    return TreeNodeCtor (KW_DO, KEYWORD, NULL, wrapped_statement, NULL);
+    return TreeNodeCtor (KW_DO, KEYWORD, NULL, NULL, wrapped_statement);
 }
 
 // ================================================================================================

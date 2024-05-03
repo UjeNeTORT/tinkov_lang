@@ -4,7 +4,7 @@
  * email: tikhonovty@gmail.com
  * telegram: https://t.me/netortofficial
  * GitHub:   https://github.com/UjeNeTORT
- * repo:     https://github.com/UjeNeTORT/Tree
+ * repo:     https://github.com/UjeNeTORT/language
  *************************************************************************/
 
 #include <assert.h>

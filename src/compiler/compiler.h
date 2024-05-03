@@ -18,8 +18,8 @@
 
 const int MAX_COMMAND = 1000;
 
-int CompileTinkovProgram (char* filename);
+DefaultFuncRes CompileTinkovProgram         (char* filename);
 
-int IsProgramTextFilenameCorrect (const char* program_text_filename);
+DefaultFuncRes IsProgramTextFilenameCorrect (const char* program_text_filename);
 
 #endif // TINKOV_COMPILER_H
