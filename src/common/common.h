@@ -26,11 +26,15 @@ const int PROGRESS_BAR_LENGTH = 50;
 #define DEBUG_PRINTFS_DETAILED
 #define ERROR_PRINTFS_DETAILED
 
-
 #define streq(s1, s2) (!strcmp ((s1), (s2)))
 #define dbleq(d1, d2) (fabs((d1) - (d2)) < EPS)
 #define sizearr(arr) sizeof(arr) / sizeof((arr)[0])
 
+typedef enum
+{
+    FUNC_SUCCESS = 0,
+    FUNC_ERROR   = 1,
+} DefaultFuncRes;
 
 int PrintfDebug   (const char* funcname, int line, const char* filename, const char* format, ...);
 int PrintfWarning (const char * funcname, int line, const char * filename, const char * format, ...);
@@ -60,7 +64,6 @@ int PrintfError   (const char* funcname, int line, const char* filename, const c
 #define RET_ERROR(ret_val, format, ...) \
     { PrintfError (__FUNCTION__, __LINE__, __FILE__, format __VA_OPT__(,) __VA_ARGS__); \
       return ret_val;}
-
 
 int PrintProgressBar (unsigned count, unsigned max);
 
