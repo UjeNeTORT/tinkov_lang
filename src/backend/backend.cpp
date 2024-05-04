@@ -110,47 +110,54 @@ TranslateRes TranslateDeclarator (const TreeNode* declr_node, AsmText* asm_text,
     if (TYPE (declr_node) != DECLARATOR)
         return TRANSLATE_TYPE_NOT_MATCH;
 
-    if (VAL (declr_node) == VAR_DECLARATOR)
+    switch (VAL (declr_node))
     {
-        const TreeNode* var_id_node = declr_node->left->left;
-
-        OffsetTableAddVariable (OFFSET_TABLE, VAL (var_id_node));
-
-        TranslateASTSubtree (declr_node->left, asm_text, nametable);
-
-        return TRANSLATE_SUCCESS;
-    }
-    else if (VAL (declr_node) == FUNC_DECLARATOR)
-    {
-        const TreeNode* func_id_node = declr_node->right->right;
-        WRITE ("function_%d: ; \"%s\"\n", VAL (func_id_node), NAME (func_id_node));
-
-        AsmTextAddTab (asm_text);
-
-        int n_params = nametable->n_params[VAL (func_id_node)];
-
-        WRITE ("; parameters[%d]\n", n_params);
-        for (int i = 0; i < n_params; i++)
+        case VAR_DECLARATOR:
         {
-            WRITE ("; parameter \"%s\" (%d)\n",
-                nametable->names[nametable->params[VAL (func_id_node)][i]],
-                nametable->params[VAL (func_id_node)][i]);
+            const TreeNode* var_id_node = declr_node->left->left;
+
+            OffsetTableAddVariable (OFFSET_TABLE, VAL (var_id_node));
+
+            TranslateASTSubtree (declr_node->left, asm_text, nametable);
+
+            return TRANSLATE_SUCCESS;
         }
 
-        WRITE ("\n; BODY\n");
+        case FUNC_DECLARATOR:
+        {
+            const TreeNode* func_id_node = declr_node->right->right;
+            WRITE ("function_%d: ; \"%s\"\n", VAL (func_id_node), NAME (func_id_node));
 
-        OffsetTableAddFrame (OFFSET_TABLE);
-        OffsetTableAddFuncParams (OFFSET_TABLE, func_id_node, nametable);
+            AsmTextAddTab (asm_text);
 
-        TranslateASTSubtree (declr_node->left, asm_text, nametable);
+            int n_params = nametable->n_params[VAL (func_id_node)];
 
-        WRITE ("ret\n\n");
+            WRITE ("; parameters[%d]\n", n_params);
+            for (int i = 0; i < n_params; i++)
+            {
+                WRITE ("; parameter \"%s\" (%d)\n",
+                    nametable->names[nametable->params[VAL (func_id_node)][i]],
+                    nametable->params[VAL (func_id_node)][i]);
+            }
 
-        OffsetTableDeleteFrame (OFFSET_TABLE);
+            WRITE ("\n; BODY\n");
 
-        AsmTextRemoveTab (asm_text);
+            OffsetTableAddFrame (OFFSET_TABLE);
+            OffsetTableAddFuncParams (OFFSET_TABLE, func_id_node, nametable);
 
-        return TRANSLATE_SUCCESS;
+            TranslateASTSubtree (declr_node->left, asm_text, nametable);
+
+            WRITE ("ret\n\n");
+
+            OffsetTableDeleteFrame (OFFSET_TABLE);
+
+            AsmTextRemoveTab (asm_text);
+
+            return TRANSLATE_SUCCESS;
+        }
+
+        default:
+            return TRANSLATE_ERROR;
     }
 
     return TRANSLATE_ERROR;
@@ -190,7 +197,6 @@ TranslateRes TranslateKeyword (const TreeNode* kw_node, AsmText* asm_text, const
 
         case KW_RETURN:
         {
-
             WRITE ("; return \n");
 
             TranslateASTSubtree (kw_node->left, asm_text, nametable);
@@ -287,24 +293,24 @@ TranslateRes TranslateSeparator (const TreeNode* sep_node, AsmText* asm_text, co
     if (TYPE (sep_node) != SEPARATOR)
         return TRANSLATE_TYPE_NOT_MATCH;
 
-    if (VAL (sep_node) == END_STATEMENT)
+    switch (VAL (sep_node))
     {
-        if (sep_node->left)
-            if (TranslateASTSubtree (sep_node->left, asm_text, nametable) != TRANSLATE_SUCCESS)
-                return TRANSLATE_ERROR;
+        case END_STATEMENT:
+        {
+            // translate code from tree bottom to the current container node
+            if (sep_node->left)
+                if (TranslateASTSubtree (sep_node->left, asm_text, nametable) != TRANSLATE_SUCCESS)
+                    return TRANSLATE_ERROR;
 
-        if (sep_node->right)
-            return TranslateASTSubtree (sep_node->right, asm_text, nametable);
+            // translation of the container node
+            if (sep_node->right)
+                return TranslateASTSubtree (sep_node->right, asm_text, nametable);
 
-        return TRANSLATE_ERROR;
-    }
+            return TRANSLATE_ERROR;
+        }
 
-    else if (VAL (sep_node) == ENCLOSE_STATEMENT_BEGIN)
-    {
-        if (sep_node->left)
-            return TranslateASTSubtree (sep_node->left, asm_text, nametable);
-
-        return TRANSLATE_ERROR;
+        default:
+            return TRANSLATE_ERROR;
     }
 
     return TRANSLATE_ERROR;
