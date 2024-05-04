@@ -45,9 +45,9 @@ enum REG_ID_OUT
     REG_ID_NOT_A_REG   = -1
 };
 
-static AsmResType   Assemble          (const char * fin_name, const char * fout_name);
-static DecommentRes DecommentProgram  (char ** text, size_t n_lines);
-static int          TranslateProgram  (char * text, char * prog_code);
-static WriteBinRes  WriteCodeBin      (const char * fout_name, char * prog_code, size_t n_bytes);
+AsmResType   Assemble          (const char * fin_name, const char * fout_name);
+DecommentRes DecommentProgram  (char ** text, size_t n_lines);
+int          TranslateProgram  (char * text, char * prog_code);
+WriteBinRes  WriteCodeBin      (const char * fout_name, char * prog_code, size_t n_bytes);
 
 #endif // ASM_H

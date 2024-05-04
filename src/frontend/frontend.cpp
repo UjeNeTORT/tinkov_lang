@@ -594,12 +594,15 @@ TreeNode* GetMathExprRes (ProgCode* prog_code, ScopeTableStack* sts)
     }
 
     if (!HAS_TOKENS_LEFT ||
-        TOKEN_IS_NOT (OPERATOR, LESS)     &&
-        TOKEN_IS_NOT (OPERATOR, LESS_EQ)  &&
-        TOKEN_IS_NOT (OPERATOR, EQUAL)    &&
-        TOKEN_IS_NOT (OPERATOR, MORE_EQ)  &&
-        TOKEN_IS_NOT (OPERATOR, MORE)     &&
-        TOKEN_IS_NOT (OPERATOR, UNEQUAL))
+        (
+            TOKEN_IS_NOT (OPERATOR, LESS)     &&
+            TOKEN_IS_NOT (OPERATOR, LESS_EQ)  &&
+            TOKEN_IS_NOT (OPERATOR, EQUAL)    &&
+            TOKEN_IS_NOT (OPERATOR, MORE_EQ)  &&
+            TOKEN_IS_NOT (OPERATOR, MORE)     &&
+            TOKEN_IS_NOT (OPERATOR, UNEQUAL)
+        )
+    )
         return math_expr_res;
 
     int op_cmp = VAL (CURR_TOKEN);
@@ -662,8 +665,10 @@ TreeNode* GetAddSubRes (ProgCode* prog_code, ScopeTableStack* sts)
     }
 
     if (!HAS_TOKENS_LEFT ||
-        TOKEN_IS_NOT (OPERATOR, ADD) &&
-        TOKEN_IS_NOT (OPERATOR, SUB))
+        (
+            TOKEN_IS_NOT (OPERATOR, ADD) &&
+            TOKEN_IS_NOT (OPERATOR, SUB))
+        )
         return add_sub_res;
 
     while (HAS_TOKENS_LEFT && (
@@ -719,8 +724,10 @@ TreeNode* GetMulDivRes (ProgCode* prog_code, ScopeTableStack* sts)
     }
 
     if (!HAS_TOKENS_LEFT ||
-        TOKEN_IS_NOT (OPERATOR, MUL) &&
-        TOKEN_IS_NOT (OPERATOR, DIV))
+        (
+            TOKEN_IS_NOT (OPERATOR, MUL) &&
+            TOKEN_IS_NOT (OPERATOR, DIV))
+        )
         return mul_div_res;
 
     while (HAS_TOKENS_LEFT && (
@@ -1077,7 +1084,7 @@ int HasForeignAgent (ProgText* text)
     int add_offset = 0;
     int is_first_call = 1;
 
-    for (int i = 0; i < FOREIGN_AGENT_BANNER_WORDS; i++)
+    for (size_t i = 0; i < FOREIGN_AGENT_BANNER_WORDS; i++)
     {
         sscanf (text->text + text->offset, "%s%n", lexem, &add_offset);
 
@@ -1264,7 +1271,7 @@ ScopeTableStack* ScopeTableStackCtor ()
     sts->is_declared =
             (int **) calloc (MAX_SCOPE_DEPTH, sizeof (int *));
 
-    for (int i = 0; i < MAX_SCOPE_DEPTH; i++)
+    for (size_t i = 0; i < MAX_SCOPE_DEPTH; i++)
         sts->is_declared[i] =
             (int*) calloc (NAMETABLE_CAPACITY, sizeof (int)); // everything is false by default
 
@@ -1277,7 +1284,7 @@ int ScopeTableStackDtor (ScopeTableStack* sts)
 {
     assert (sts);
 
-    for (int i = 0; i < MAX_SCOPE_DEPTH; i++)
+    for (size_t i = 0; i < MAX_SCOPE_DEPTH; i++)
         free (sts->is_declared[i]);
 
     free (sts->is_declared);
@@ -1327,7 +1334,7 @@ int IsIdDeclared (const ScopeTableStack* sts, const int id_index)
 {
     assert (sts);
 
-    for (int i = 0; i < MAX_SCOPE_DEPTH; i++)
+    for (size_t i = 0; i < MAX_SCOPE_DEPTH; i++)
         if (sts->is_declared[i][id_index] == 1) return 1;
 
     return 0;
@@ -1452,7 +1459,7 @@ int SyntaxAssert (int line, int has_tokens_left, int condition, ProgCode* prog_c
                                        TYPE (CURR_TOKEN), VAL (CURR_TOKEN), OFFSET);
         fprintf (stderr, RED ("(%d) SYNTAX ERROR! "), line);
 
-        va_list  (ptr);
+        va_list ptr;
         va_start (ptr, format);
 
         vfprintf (stderr, format, ptr);

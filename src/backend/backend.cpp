@@ -209,28 +209,28 @@ TranslateRes TranslateKeyword (const TreeNode* kw_node, AsmText* asm_text, const
 
         case KW_IF:
         {
-            int curr_if = asm_text->if_statements_count++;
+            size_t curr_if = asm_text->if_statements_count++;
 
             // condition
             TranslateASTSubtree (kw_node->right, asm_text, nametable);
 
             WRITE ("push    0\n");
-            WRITE ("jne     if_%d\n", curr_if);
-            WRITE ("jmp     else_%d\n", curr_if);
+            WRITE ("jne     if_%ld\n", curr_if);
+            WRITE ("jmp     else_%ld\n", curr_if);
 
             // if
-            WRITE ("if_%d:\n", curr_if);
+            WRITE ("if_%ld:\n", curr_if);
 
             AsmTextAddTab (asm_text);
 
             TranslateASTSubtree (kw_node->left->left, asm_text, nametable);
 
-            WRITE ("jmp     end_if_%d\n", curr_if);
+            WRITE ("jmp     end_if_%ld\n", curr_if);
 
             AsmTextRemoveTab (asm_text);
 
             // else
-            WRITE ("else_%d:\n", curr_if);
+            WRITE ("else_%ld:\n", curr_if);
 
             AsmTextAddTab (asm_text);
 
@@ -239,7 +239,7 @@ TranslateRes TranslateKeyword (const TreeNode* kw_node, AsmText* asm_text, const
 
             AsmTextRemoveTab (asm_text);
 
-            WRITE ("end_if_%d:\n\n", curr_if);
+            WRITE ("end_if_%ld:\n\n", curr_if);
 
             break;
         }
@@ -254,21 +254,21 @@ TranslateRes TranslateKeyword (const TreeNode* kw_node, AsmText* asm_text, const
 
         case KW_WHILE:
         {
-            int curr_while = asm_text->while_statements_count++;
+            size_t curr_while = asm_text->while_statements_count++;
 
-            WRITE ("while_%d:\n", curr_while);
+            WRITE ("while_%ld:\n", curr_while);
             AsmTextAddTab (asm_text);
 
             TranslateASTSubtree (kw_node->right, asm_text, nametable);
             WRITE ("; CONDITION\n");
             WRITE ("push    0\n");
-            WRITE ("je      end_while_%d\n\n", curr_while);
+            WRITE ("je      end_while_%ld\n\n", curr_while);
 
             TranslateASTSubtree (kw_node->left, asm_text, nametable);
-            WRITE ("jmp     while_%d\n", curr_while);
+            WRITE ("jmp     while_%ld\n", curr_while);
 
             AsmTextRemoveTab (asm_text);
-            WRITE ("end_while_%d:\n\n", curr_while);
+            WRITE ("end_while_%ld:\n\n", curr_while);
 
             break;
         }
@@ -663,7 +663,7 @@ DefaultFuncRes WriteCondition (const TreeNode* op_node, AsmText* asm_text, const
     assert (nametable);
     assert (comparator);
 
-    WRITE ("; CONDITION_%d\n", asm_text->cond_count);
+    WRITE ("; CONDITION_%ld\n", asm_text->cond_count);
     TranslateASTSubtree (op_node->left, asm_text, nametable);
     TranslateASTSubtree (op_node->right, asm_text, nametable);
 
@@ -671,13 +671,13 @@ DefaultFuncRes WriteCondition (const TreeNode* op_node, AsmText* asm_text, const
 
     WRITE ("push    0\n");
     WRITE ("pop     rax\n");
-    WRITE ("%s     end_condition_%d\n", comparator, asm_text->cond_count);
+    WRITE ("%s     end_condition_%ld\n", comparator, asm_text->cond_count);
     WRITE ("push    1\n");
     WRITE ("pop     rax\n");
 
     AsmTextRemoveTab (asm_text);
 
-    WRITE ("end_condition_%d:\n", asm_text->cond_count);
+    WRITE ("end_condition_%ld:\n", asm_text->cond_count);
     WRITE ("push    rax\n");
 
     asm_text->cond_count++;
@@ -693,9 +693,9 @@ OffsetTable* OffsetTableCtor ()
     offset_table->ram_tables  = (RamTable*)    calloc (MAX_SCOPE_DEPTH, sizeof (RamTable));
     offset_table->curr_table_index = 0;
 
-    for (int i = 0; i < MAX_SCOPE_DEPTH; i++)
+    for (size_t i = 0; i < MAX_SCOPE_DEPTH; i++)
     {
-        for (int j = 0; j < NAMETABLE_CAPACITY; j++)
+        for (size_t j = 0; j < NAMETABLE_CAPACITY; j++)
         {
             offset_table->ram_tables[i].index_in_ram[j] = -1;
         }
@@ -725,8 +725,7 @@ DefaultFuncRes OffsetTableAddFrame (OffsetTable* offset_table)
 {
     assert (offset_table);
 
-    if (-1 < offset_table->curr_table_index &&
-             offset_table->curr_table_index < MAX_SCOPE_DEPTH)
+    if (offset_table->curr_table_index < MAX_SCOPE_DEPTH)
     {
         offset_table->curr_table_index++;
 
@@ -745,7 +744,7 @@ DefaultFuncRes OffsetTableDeleteFrame (OffsetTable* offset_table)
     if (0 < offset_table->curr_table_index &&
             offset_table->curr_table_index < MAX_SCOPE_DEPTH)
     {
-        for (int j = 0; j < NAMETABLE_CAPACITY; j++)
+        for (size_t j = 0; j < NAMETABLE_CAPACITY; j++)
         {
             offset_table->ram_tables[offset_table->curr_table_index].index_in_ram[j] = -1;
         }
@@ -762,10 +761,9 @@ DefaultFuncRes OffsetTableDeleteFrame (OffsetTable* offset_table)
 
 // ================================================================================================
 
-DefaultFuncRes OffsetTableAddVariable (OffsetTable* offset_table, int var_id)
+DefaultFuncRes OffsetTableAddVariable (OffsetTable* offset_table, size_t var_id)
 {
     assert (offset_table);
-    assert (var_id > -1);
 
     CURR_RAM_TABLE.index_in_ram[CURR_RAM_TABLE.free_ram_index] = var_id;
     CURR_RAM_TABLE.free_ram_index++;
@@ -775,14 +773,14 @@ DefaultFuncRes OffsetTableAddVariable (OffsetTable* offset_table, int var_id)
 
 // ================================================================================================
 
-int OffsetTableGetVarOffset (OffsetTable* offset_table, int var_id)
+int OffsetTableGetVarOffset (OffsetTable* offset_table, size_t var_id)
 {
     assert (offset_table);
-    assert (0 <= var_id && var_id < NAMETABLE_CAPACITY);
+    assert (var_id < NAMETABLE_CAPACITY);
 
-    for (int i = 0; i < sizeof (CURR_RAM_TABLE.index_in_ram); i++)
+    for (size_t i = 0; i < sizeof (CURR_RAM_TABLE.index_in_ram); i++)
     {
-        if (CURR_RAM_TABLE.index_in_ram[i] == var_id)
+        if (CURR_RAM_TABLE.index_in_ram[i] == (int) var_id)
             return i;
     }
 
@@ -822,22 +820,22 @@ DefaultFuncRes OffsetTableDump (const OffsetTable* offset_table, const NameTable
 {
     assert (offset_table);
 
-    for (int curr_table_id = 0; curr_table_id < offset_table->curr_table_index + 1; curr_table_id++)
+    for (size_t curr_table_id = 0; curr_table_id < offset_table->curr_table_index + 1; curr_table_id++)
     {
-        printf ("============================================ table %d ============================================\n", curr_table_id);
+        printf ("============================================ table %ld ============================================\n", curr_table_id);
 
-        for (int i = 0; i < NAMETABLE_CAPACITY; i++)
-            printf ("%6d ", i);
+        for (size_t i = 0; i < NAMETABLE_CAPACITY; i++)
+            printf ("%6ld ", i);
 
         printf ("\n");
 
-        for (int i = 0; i < NAMETABLE_CAPACITY; i++)
+        for (size_t i = 0; i < NAMETABLE_CAPACITY; i++)
             printf ("%6d ", offset_table->ram_tables[curr_table_id].index_in_ram[i]);
 
         printf ("\n");
 
         if (nametable)
-            for (int i = 0; i < NAMETABLE_CAPACITY; i++)
+            for (size_t i = 0; i < NAMETABLE_CAPACITY; i++)
                 if (offset_table->ram_tables[curr_table_id].index_in_ram[i] != -1)
                     printf ("%6.6s ", nametable->names[offset_table->ram_tables[curr_table_id].index_in_ram[i]]);
 

@@ -427,7 +427,7 @@ WriteBinRes WriteCodeBin (const char * fout_name, cmd_code_t * prog_code, size_t
     return WRITE_NO_ERR;
 }
 
-int TokenizeText (char ** text, size_t n_lines, char * text_tokenized)
+static int TokenizeText (char ** text, size_t n_lines, char * text_tokenized)
 {
     assert(text);
 

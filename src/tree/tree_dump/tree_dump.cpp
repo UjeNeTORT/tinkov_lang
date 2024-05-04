@@ -195,8 +195,6 @@ DotTreePrintRes DotSubtreePrint (FILE* dot_file, const TreeNode* node, const Tre
     const char* color = "";
     char node_data[MAX_OP] = "";
 
-    int opnum = 0;
-
     switch (TYPE (node))
     {
     case ERROR:
@@ -345,7 +343,6 @@ DotTreePrintRes DotSubtreeDetailedPrint (FILE* dot_file, const TreeNode* node, c
     fprintf (dot_file, "\tdetailed_node_%d [label = \"{type = %d | val = %d}\"];\n", *node_id, TYPE(node), VAL(node));
 
     int left_subtree_id  = 0;
-    int mid_subtree_id  = 0;
     int right_subtree_id = 0;
 
     if (DotSubtreeDetailedPrint (dot_file, (const TreeNode *) node->left, tree, &left_subtree_id) != DOT_PRINT_SUCCESS)

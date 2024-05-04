@@ -1,66 +1,63 @@
-DEBUG = -Wshadow -Winit-self -Wredundant-decls -Wcast-align -Wundef -Wfloat-equal -Winline -Wunreachable-code -Wmissing-declarations  \
--Wmissing-include-dirs -Wswitch-enum -Wswitch-default -Weffc++ -Wmain -Wextra -Wall -g -pipe -fexceptions -Wconversion 						\
--Wctor-dtor-privacy -Wempty-body -Wformat-security -Wformat=2 -Wignored-qualifiers -Wlogical-op -Wno-missing-field-initializers 			\
--Wnon-virtual-dtor -Woverloaded-virtual -Wpointer-arith -Wsign-promo -Wstack-usage=8192 -Wstrict-aliasing -Wstrict-null-sentinel 			\
--Wtype-limits -Wwrite-strings -Werror=vla -D_DEBUG -D_EJUDGE_CLIENT_SIDE
+C_FLAGS = -Wall -Wextra
 
 CPP = g++
 
 start: stack.o onegin.o spu.o asm.o tree.o tree_dump.o frontend.o middleend.o backend.o common.o compiler.o
-	$(CPP) tree.o tree_dump.o common.o frontend.o  -o frontend  $(DEBUG)
-	$(CPP) tree.o tree_dump.o common.o middleend.o -o middleend $(DEBUG)
-	$(CPP) tree.o tree_dump.o common.o backend.o   -o backend   $(DEBUG)
+	$(CPP) obj/tree.o obj/tree_dump.o obj/common.o obj/frontend.o  -o frontend
+	$(CPP) obj/tree.o obj/tree_dump.o obj/common.o obj/middleend.o -o middleend
+	$(CPP) obj/tree.o obj/tree_dump.o obj/common.o obj/backend.o   -o backend
 
-	$(CPP) onegin.o asm.o -o asm $(DEBUG)
-	$(CPP) my_hash.o stack.o spu.o -o spu $(DEBUG)
+	$(CPP) obj/onegin.o obj/asm.o -o asm
+	$(CPP) obj/my_hash.o obj/stack.o obj/spu.o -o spu
 
-	$(CPP) common.o compiler.o -o compiler
+	$(CPP) obj/common.o obj/compiler.o -o compiler
 
 run:
 	./compiler test_code/fibo.tnkff
 
 compiler.o: src/compiler/compiler.*
-	$(CPP) src/compiler/compiler.cpp -c
+	$(CPP) $(C_FLAGS) src/compiler/compiler.cpp -c -o obj/compiler.o
 
-tree.o : src/tree/tree.*
-	$(CPP) src/tree/tree.cpp -c
+tree.o: src/tree/tree.*
+	$(CPP) $(C_FLAGS) src/tree/tree.cpp -c -o obj/tree.o
 
-tree_dump.o : src/tree/tree_dump/tree_dump.*
-	$(CPP) src/tree/tree_dump/tree_dump.cpp -c
+tree_dump.o: src/tree/tree_dump/tree_dump.*
+	$(CPP) $(C_FLAGS) src/tree/tree_dump/tree_dump.cpp -c -o obj/tree_dump.o
 
-frontend.o : src/frontend/frontend.*
-	$(CPP) src/frontend/frontend.cpp -c
+frontend.o: src/frontend/frontend.*
+	$(CPP) $(C_FLAGS) src/frontend/frontend.cpp -c -o obj/frontend.o
 
-middleend.o : src/middleend/middleend.*
-	$(CPP) src/middleend/middleend.cpp -c
+middleend.o: src/middleend/middleend.*
+	$(CPP) $(C_FLAGS) src/middleend/middleend.cpp -c -o obj/middleend.o
 
-backend.o : src/backend/backend.*
-	$(CPP) src/backend/backend.cpp -c
+backend.o: src/backend/backend.*
+	$(CPP) $(C_FLAGS) src/backend/backend.cpp -c -o obj/backend.o
 
 common.o: src/common/common.*
-	$(CPP) src/common/common.cpp -c
+	$(CPP) $(C_FLAGS) src/common/common.cpp -c -o obj/common.o
 
 processor.o: stack.o onegin.o spu.o asm.o disasm.o
-	$(CPP) onegin.o asm.o -o asm $(DEBUG)
-	$(CPP) my_hash.o stack.o spu.o -o spu $(DEBUG)
+	$(CPP) $(C_FLAGS) obj/onegin.o obj/asm.o -o asm $(C_FLAGS)
+	$(CPP) $(C_FLAGS) obj/my_hash.o obj/stack.o obj/spu.o -o spu $(C_FLAGS)
 
 stack.o : src/stack/stack.*
-	$(CPP) src/stack/stack.cpp -c -o stack.o
-	$(CPP) src/stack/my_hash.cpp -c -o my_hash.o
+	$(CPP) src/stack/stack.cpp -c -o obj/stack.o
+	$(CPP) src/stack/my_hash.cpp -c -o obj/my_hash.o
 
 onegin.o : src/processor/text_processing_lib/text_buf.*
-	$(CPP) src/processor/text_processing_lib/text_buf.cpp -c -o onegin.o
+	$(CPP) $(C_FLAGS) src/processor/text_processing_lib/text_buf.cpp -c -o obj/onegin.o
 
 spu.o : src/processor/processor/spu.*
-	$(CPP) src/processor/processor/spu.cpp -c -o spu.o
+	$(CPP) $(C_FLAGS) src/processor/processor/spu.cpp -c -o obj/spu.o
 
 asm.o : spu.o src/processor/assembler/asm.*
-	$(CPP) src/processor/assembler/asm.cpp -c -o asm.o
+	$(CPP) $(C_FLAGS) src/processor/assembler/asm.cpp -c -o obj/asm.o
 
 clean:
 	rm -f *.out
 	rm -f *.exe
 	rm -f *.o
+	rm -f obj/*
 	rm -f spu
 	rm -f asm
 	rm -f frontend
@@ -72,6 +69,7 @@ clean_all:
 	rm -f *.out
 	rm -f *.exe
 	rm -f *.o
+	rm -f obj/*
 	rm -f spu
 	rm -f asm
 	rm -f frontend

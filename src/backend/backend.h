@@ -50,25 +50,25 @@ const size_t LOCAL_VARIABLES_MAPPING = 5;
 struct RamTable
 {
     int index_in_ram[NAMETABLE_CAPACITY];
-    int free_ram_index;
+    size_t free_ram_index;
 };
 
 struct OffsetTable
 {
     RamTable* ram_tables;
-    int curr_table_index;
+    size_t    curr_table_index;
 };
 
 struct AsmText
 {
-    char* text;
-    int   offset;
+    char*  text;
+    size_t offset;
     OffsetTable* offset_table; // stack of RamTables to specify offset of each variable within its location in RAM
-    int if_statements_count;
-    int while_statements_count;
-    int funcs_count;
-    int cond_count;
-    char* tabs;
+    size_t if_statements_count;
+    size_t while_statements_count;
+    size_t funcs_count;
+    size_t cond_count;
+    char*  tabs;
 };
 
 typedef enum
@@ -104,11 +104,11 @@ DefaultFuncRes WriteCondition               (const TreeNode* op_node, AsmText* a
 
 OffsetTable*   OffsetTableCtor              ();
 DefaultFuncRes OffsetTableDtor              (OffsetTable* offset_table);
-int            OffsetTableGetVarOffset      (OffsetTable* offset_table, int var_id);
+int            OffsetTableGetVarOffset      (OffsetTable* offset_table, size_t var_id);
 int            OffsetTableGetCurrFrameWidth (OffsetTable* offset_table);
 DefaultFuncRes OffsetTableAddFrame          (OffsetTable* offset_table);
 DefaultFuncRes OffsetTableDeleteFrame       (OffsetTable* offset_table);
-DefaultFuncRes OffsetTableAddVariable       (OffsetTable* offset_table, int var_id);
+DefaultFuncRes OffsetTableAddVariable       (OffsetTable* offset_table, size_t var_id);
 DefaultFuncRes OffsetTableAddFuncParams     (OffsetTable* offset_table, const TreeNode* func_id_node, const NameTable* nametable);
 DefaultFuncRes OffsetTableDump              (const OffsetTable* offset_table, const NameTable* nametable);
 

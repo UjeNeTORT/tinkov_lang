@@ -29,7 +29,7 @@ static int ReadBuf(const char * const file, char **buf);
  * @details
  * ONLY <= 2GB files accepted
 */
-static long GetFileSize(FILE *file);
+static size_t GetFileSize(FILE *file);
 
 //----------------------------------------------------
 /**
@@ -89,7 +89,7 @@ int ReadBuf(const char * const file, char **buf) {
 
     FILE *fin = fopen(file, "rb");
 
-    long f_size = GetFileSize(fin);
+    size_t f_size = GetFileSize(fin);
 
     *buf = (char *) calloc(f_size + 1, sizeof(char));
 
@@ -245,7 +245,7 @@ void WriteBuf(const char * const file, const char * const mode, const char *buf,
 
 //----------------------------------------------------
 
-long GetFileSize(FILE *file) {
+size_t GetFileSize (FILE *file) {
     assert (file);
 
     if (!file) {
@@ -254,7 +254,7 @@ long GetFileSize(FILE *file) {
     }
 
     fseek(file, 0, SEEK_END);
-    long res = ftell(file);
+    size_t res = ftell(file);
     rewind(file);
 
     return res;

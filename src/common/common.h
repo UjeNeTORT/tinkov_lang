@@ -53,7 +53,7 @@ int PrintfError   (const char* funcname, int line, const char* filename, const c
 
 #ifdef LOGS
     #define LOG(format, ...) \
-    PrintfLog (__FUNCTION__, __LINE__, __FILE__, format __VA_OPT__(,) __VA_ARGS__)
+    PrintfLog (__FUNCTION__, __FILE__, format __VA_OPT__(,) __VA_ARGS__)
 #else // LOGS
     #define LOG(format, ...) ;
 #endif // LOGS

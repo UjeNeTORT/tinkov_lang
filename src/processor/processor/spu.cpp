@@ -124,7 +124,7 @@ int main(int argc, char * argv[])
     return 0;
 }
 
-size_t ReadByteCode (const char * in_fname, cmd_code_t ** prog_code)
+static size_t ReadByteCode (const char * in_fname, cmd_code_t ** prog_code)
 {
     assert(in_fname);
     assert(prog_code);
@@ -152,7 +152,7 @@ size_t ReadByteCode (const char * in_fname, cmd_code_t ** prog_code)
     return n_bytes;
 }
 
-RunBinRes RunBin (const cmd_code_t * prog_code, size_t n_bytes, SPU * spu)
+static RunBinRes RunBin (const cmd_code_t * prog_code, size_t n_bytes, SPU * spu)
 {
     assert(prog_code);
     assert(spu);
@@ -197,7 +197,7 @@ RunBinRes RunBin (const cmd_code_t * prog_code, size_t n_bytes, SPU * spu)
     return REACH_END;
 }
 
-Elem_t GetPushArg (const cmd_code_t * prog_code, size_t ip, Elem_t gp_regs[], Elem_t RAM[])
+static Elem_t GetPushArg (const cmd_code_t * prog_code, size_t ip, Elem_t gp_regs[], Elem_t RAM[])
 {
     assert(prog_code);
     assert(gp_regs);
@@ -245,7 +245,7 @@ Elem_t GetPushArg (const cmd_code_t * prog_code, size_t ip, Elem_t gp_regs[], El
     return res;
 }
 
-Elem_t * GetPopArgAddr (const cmd_code_t * prog_code, size_t ip, Elem_t gp_regs[], Elem_t RAM[])
+static Elem_t * GetPopArgAddr (const cmd_code_t * prog_code, size_t ip, Elem_t gp_regs[], Elem_t RAM[])
 {
     assert(prog_code);
     assert(gp_regs);
@@ -293,7 +293,7 @@ Elem_t * GetPopArgAddr (const cmd_code_t * prog_code, size_t ip, Elem_t gp_regs[
     return reg_ptr;
 }
 
-int CalcIpOffset (cmd_code_t cmd)
+static int CalcIpOffset (cmd_code_t cmd)
 {
     int offset = sizeof(cmd_code_t);
 
@@ -319,7 +319,7 @@ static int CmdCodeIsValid (cmd_code_t cmd)
     return 1;
 }
 
-int SPUCtor (SPU * spu, int stack_capacity, int call_stack_capacity, int ram_size)
+static int SPUCtor (SPU * spu, int stack_capacity, int call_stack_capacity, int ram_size)
 {
     assert(spu);
 
@@ -345,7 +345,7 @@ int SPUCtor (SPU * spu, int stack_capacity, int call_stack_capacity, int ram_siz
     return 0;
 }
 
-int SPUDtor (SPU * spu)
+static int SPUDtor (SPU * spu)
 {
     assert(spu);
 
@@ -357,7 +357,7 @@ int SPUDtor (SPU * spu)
     return 0;
 }
 
-Elem_t PopCmpTopStack(stack * stk_ptr)
+static Elem_t PopCmpTopStack(stack * stk_ptr)
 {
     assert(stk_ptr);
 
@@ -416,12 +416,12 @@ static Elem_t MultInts (Elem_t frst, Elem_t scnd)
     return frst * scnd / STK_PRECISION;
 }
 
-Elem_t DivideInts(Elem_t numerator, int denominator)
+static Elem_t DivideInts(Elem_t numerator, int denominator)
 {
    return (Elem_t) ( (float) numerator / denominator * STK_PRECISION);
 }
 
-int printf_intermed_info (const char * format, ...)
+static int printf_intermed_info (const char * format, ...)
 {
     assert(format);
 

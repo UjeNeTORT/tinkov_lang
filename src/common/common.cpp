@@ -88,7 +88,7 @@ int PrintfWarning (const char * funcname, int line, const char * filename, const
     return res;
 }
 
-int PrintfLog (const char * funcname, int line, const char * filename, const char * format, ...)
+int PrintfLog (const char * funcname, const char * filename, const char * format, ...)
 {
     assert (funcname);
     assert (filename);
