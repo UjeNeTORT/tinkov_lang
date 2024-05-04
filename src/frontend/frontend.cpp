@@ -211,8 +211,7 @@ TreeNode* GetCompoundStatement (ProgCode* prog_code, ScopeTableStack* sts)
     int init_offset = OFFSET;
 
     TreeNode* wrapped_statement = GetStatementBlock (prog_code, sts);
-    if (wrapped_statement)
-        return wrapped_statement;
+    if (wrapped_statement) return wrapped_statement;
 
     OFFSET = init_offset;
 
@@ -254,7 +253,7 @@ TreeNode* GetStatementBlock (ProgCode* prog_code, ScopeTableStack* sts)
 
     CLOSE_SCOPE;
 
-    return TreeNodeCtor (ENCLOSE_STATEMENT_BEGIN, SEPARATOR, NULL, statement_block, NULL);
+    return statement_block;
 }
 
 // ================================================================================================
@@ -428,9 +427,9 @@ TreeNode* GetDoIf (ProgCode* prog_code, ScopeTableStack* sts)
 
     OFFSET++; // skip "?"
 
-    TreeNodeDtor (condition);
+    SubtreeDtor (condition);
 
-    return TreeNodeCtor (KW_DO, KEYWORD, NULL, wrapped_statement, NULL);
+    return TreeNodeCtor (KW_DO, KEYWORD, NULL, NULL, wrapped_statement);
 }
 
 // ================================================================================================

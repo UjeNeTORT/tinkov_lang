@@ -17,16 +17,17 @@ int main (int argc, char* argv[])
     return CompileTinkovProgram (argv[1]);
 }
 
-int CompileTinkovProgram (char* filename)
+DefaultFuncRes CompileTinkovProgram (char* filename)
 {
     assert (filename);
 
     if (!IsProgramTextFilenameCorrect(filename))
     {
-        RET_ERROR (1, "Incorrect filename %s, extension .tnkff awaited\n", filename);
+        RET_ERROR (FUNC_ERROR, "Incorrect filename %s, extension .tnkff awaited\n", filename);
     }
 
     char* command = (char*) calloc (MAX_COMMAND, sizeof (char));
+
     sprintf (command, "./frontend %s\n", filename);
     assert (system (command) == 0);
 
@@ -44,10 +45,10 @@ int CompileTinkovProgram (char* filename)
 
     free (command);
 
-    return 0;
+    return FUNC_SUCCESS;
 }
 
-int IsProgramTextFilenameCorrect (const char* program_text_filename)
+DefaultFuncRes IsProgramTextFilenameCorrect (const char* program_text_filename)
 {
     assert (program_text_filename);
 
@@ -55,7 +56,7 @@ int IsProgramTextFilenameCorrect (const char* program_text_filename)
         ;
 
     if (streq (program_text_filename, "tnkff"))
-        return 1;
+        return FUNC_ERROR;
 
-    return 0;
+    return FUNC_SUCCESS;
 }

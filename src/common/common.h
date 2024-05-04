@@ -7,8 +7,8 @@
  * repo:     https://github.com/UjeNeTORT/language
  *************************************************************************/
 
-#ifndef TOOLS_H
-#define TOOLS_H
+#ifndef COMMON_H
+#define COMMON_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,6 +25,7 @@ const int PROGRESS_BAR_LENGTH = 50;
 // #define LOGS_DETAILED
 #define DEBUG_PRINTFS_DETAILED
 #define ERROR_PRINTFS_DETAILED
+
 
 #define streq(s1, s2) (!strcmp ((s1), (s2)))
 #define dbleq(d1, d2) (fabs((d1) - (d2)) < EPS)
@@ -60,11 +61,10 @@ int PrintfError   (const char* funcname, int line, const char* filename, const c
     { PrintfError (__FUNCTION__, __LINE__, __FILE__, format __VA_OPT__(,) __VA_ARGS__); \
       return ret_val;}
 
-int CheckExtension (char* filename);
-int DelExtension   (char* filename);
 
 int PrintProgressBar (unsigned count, unsigned max);
 
 u_int64_t GetCPUTicks ();
 
 #endif // TOOLS_H
+
