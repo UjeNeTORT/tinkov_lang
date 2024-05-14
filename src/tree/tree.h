@@ -20,17 +20,19 @@ const size_t MAX_N_NODES = 50000;  // max number of nodes in AST
 const size_t MAX_TREE    = 500000; // max len of a string-written tree in a file
 const size_t MAX_OP      = 200;    // max len of an operator
 
-const size_t NAMETABLE_CAPACITY = 15;
+const size_t NAMETABLE_CAPACITY = 1000;
 
 const double EXPONENT = 2.718281828;
 const double PI       = 3.141592654;
 
 // ===================== DSL =====================
 
-#define TYPE(node) (node)->data.type
-#define VAL(node)  (node)->data.val
+#define TYPE(node)      ((node)->data.type)
+#define VAL(node)       ((node)->data.val)
 
-#define NAME(node) (nametable->names[VAL (node)])
+#define NAME(node)      ((nametable)->names[VAL (node)])
+#define N_PARAMS(node)  ((nametable)->n_params[VAL (node)])
+#define PARAMS(node, i) ((nametable)->params[VAL (node)][i])
 
 #define CHECK_VAL(node, val) (TYPE(node) == INT_LITERAL && VAL(node) == val)
 // ===============================================
@@ -159,8 +161,8 @@ typedef enum
 
 struct NameTable
 {
-    char* names    [NAMETABLE_CAPACITY];
-    int*  params   [NAMETABLE_CAPACITY];
+    char* names    [NAMETABLE_CAPACITY]; // variable names
+    int*  params   [NAMETABLE_CAPACITY]; // array of parameters of function
     int   n_params [NAMETABLE_CAPACITY];
     int   main_index;
     int   free;
@@ -191,51 +193,51 @@ struct Tree
 typedef long long TreeErrorVector;
 typedef int (* NodeAction_t) (TreeNode* node);
 
-TreeEvalRes TreeEval        (const Tree* tree, int* result);
-TreeEvalRes SubtreeEval     (const TreeNode* node, const Tree* tree, int* result);
-TreeEvalRes SubtreeEvalUnOp (const TreeNode* node, int right, int* result);
-TreeEvalRes SubtreeEvalBiOp (const TreeNode* node, int left, int right, int* result);
+TreeEvalRes             TreeEval                 (const Tree* tree, int* result);
+TreeEvalRes             SubtreeEval              (const TreeNode* node, const Tree* tree, int* result);
+TreeEvalRes             SubtreeEvalUnOp          (const TreeNode* node, int right, int* result);
+TreeEvalRes             SubtreeEvalBiOp          (const TreeNode* node, int left, int right, int* result);
 
-TreeSimplifyRes TreeSimplify             (Tree* tree);
-TreeSimplifyRes SubtreeSimplify          (TreeNode* node);
-TreeSimplifyRes SubtreeSimplifyConstants (TreeNode* node, int* tree_changed_flag);
-TreeSimplifyRes SubtreeSimplifyNeutrals  (TreeNode* node, int* tree_changed_flag);
+TreeSimplifyRes         TreeSimplify             (Tree* tree);
+TreeSimplifyRes         SubtreeSimplify          (TreeNode* node);
+TreeSimplifyRes         SubtreeSimplifyConstants (TreeNode* node, int* tree_changed_flag);
+TreeSimplifyRes         SubtreeSimplifyNeutrals  (TreeNode* node, int* tree_changed_flag);
 
-TreeNode* TreeNodeCtor (int val, NodeType type, TreeNode* prev, TreeNode* left, TreeNode* right);
-int       TreeNodeDtor (TreeNode* node);
-int       SubtreeDtor  (TreeNode* node);
+TreeNode*               TreeNodeCtor             (int val, NodeType type, TreeNode* prev, TreeNode* left, TreeNode* right);
+int                     TreeNodeDtor             (TreeNode* node);
+int                     SubtreeDtor              (TreeNode* node);
 
-Tree*       TreeCtor   ();
-TreeDtorRes TreeDtor   (Tree* tree);
+Tree*                   TreeCtor                 ();
+TreeDtorRes             TreeDtor                 (Tree* tree);
 
-NameTable*       NameTableCtor          ();
-NameTableDtorRes NameTableDtor          (NameTable* nametable);
-int              NameTableUpdFuncParams (const TreeNode* node, NameTable* nametable);
+NameTable*              NameTableCtor            ();
+NameTableDtorRes        NameTableDtor            (NameTable* nametable);
+int                     NameTableUpdFuncParams   (const TreeNode* node, NameTable* nametable);
 
-int              CountFuncParams        (const TreeNode* func_declr_node);
+int                     CountFuncParams          (const TreeNode* func_declr_node);
 
-Tree*            TreeCopyOf    (const Tree* tree);
-TreeNode*        SubtreeCopyOf (const TreeNode* node);
-NameTableCopyRes NameTableCopy (NameTable* dst, const NameTable* src);
+Tree*                   TreeCopyOf               (const Tree* tree);
+TreeNode*               SubtreeCopyOf            (const TreeNode* node);
+NameTableCopyRes        NameTableCopy            (NameTable* dst, const NameTable* src);
 
-LiftChildToParentRes LiftChildToParent (TreeNode* node, NodeLocation child_location);
-SubtreeToNumRes      SubtreeToNum      (TreeNode* node, int val);
+LiftChildToParentRes    LiftChildToParent        (TreeNode* node, NodeLocation child_location);
+SubtreeToNumRes         SubtreeToNum             (TreeNode* node, int val);
 
-Tree*      ReadTree     (FILE* stream);
-Tree*      ReadTree     (const char* infix_tree);
-TreeNode*  ReadSubtree  (const char* infix_tree, const Tree* tree, int* offset);
-NodeData   ReadNodeData (const char* infix_tree, const Tree* tree, int* offset);
+Tree*                   ReadTree                 (FILE* stream);
+Tree*                   ReadTree                 (const char* infix_tree);
+TreeNode*               ReadSubtree              (const char* infix_tree, const Tree* tree, int* offset);
+NodeData                ReadNodeData             (const char* infix_tree, const Tree* tree, int* offset);
 
-ReadAssignNumberRes     ReadAssignNumber      (NodeData* data, char* word);
-ReadAssignDeclaratorRes ReadAssignDeclarator  (NodeData* data, char* word);
-ReadAssignKeywordRes    ReadAssignKeyword     (NodeData* data, char* word);
-ReadAssignSeparatorRes  ReadAssignSeparator   (NodeData* data, char* word);
-ReadAssignOperatorRes   ReadAssignOperator    (NodeData* data, char* word);
-ReadAssignIdentifierRes ReadAssignIdentifier  (NodeData* data, char* word, const Tree* tree);
+ReadAssignNumberRes     ReadAssignNumber          (NodeData* data, char* word);
+ReadAssignDeclaratorRes ReadAssignDeclarator      (NodeData* data, char* word);
+ReadAssignKeywordRes    ReadAssignKeyword         (NodeData* data, char* word);
+ReadAssignSeparatorRes  ReadAssignSeparator       (NodeData* data, char* word);
+ReadAssignOperatorRes   ReadAssignOperator        (NodeData* data, char* word);
+ReadAssignIdentifierRes ReadAssignIdentifier      (NodeData* data, char* word, const Tree* tree);
 
-WriteTreeRes WriteTree     (FILE* stream, const Tree* tree);
-WriteTreeRes WriteSubtree  (FILE* stream, const TreeNode* node, const Tree* tree);
-WriteTreeRes WriteNodeData (FILE* stream, NodeData data, const NameTable* nametable);
+WriteTreeRes            WriteTree                 (FILE* stream, const Tree* tree);
+WriteTreeRes            WriteSubtree              (FILE* stream, const TreeNode* node, const Tree* tree);
+WriteTreeRes            WriteNodeData             (FILE* stream, NodeData data, const NameTable* nametable);
 
 int FindInNametable (const char* word, const NameTable* nametable);
 int UpdNameTable       (const char* word, NameTable* nametable);

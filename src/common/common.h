@@ -21,7 +21,7 @@ const double EPS = 1e-7;
 const int PROGRESS_BAR_LENGTH = 50;
 
 #define LOGS
-#define WARNINGS
+// #define WARNINGS
 // #define LOGS_DETAILED
 #define DEBUG_PRINTFS_DETAILED
 #define ERROR_PRINTFS_DETAILED
@@ -64,6 +64,19 @@ int PrintfError   (const char* funcname, int line, const char* filename, const c
 #define RET_ERROR(ret_val, format, ...) \
     { PrintfError (__FUNCTION__, __LINE__, __FILE__, format __VA_OPT__(,) __VA_ARGS__); \
       return ret_val;}
+
+
+struct StackLight
+{
+    int *buffer;
+    int sp;
+    size_t capacity;
+};
+
+StackLight* StackLightCtor (size_t capacity);
+int         StackLightDtor (StackLight* stack);
+int         StackLightPush (StackLight* stack, int val);
+int         StackLightPop  (StackLight* stack);
 
 int PrintProgressBar (unsigned count, unsigned max);
 

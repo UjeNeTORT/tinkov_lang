@@ -23,18 +23,18 @@
 // =========================== DSL ===========================
 
 // push reg/imm/mem to calc stack
-#define CPUSH(r_i_m, ...) WRITE_NO_TAB ("\tsub r15, 8\t\t; push to calc stack\n" \
-                                        "\tmov [r15], " r_i_m "\n" __VA_OPT__(,) __VA_ARGS__)
+#define CPUSH(r_i_m, ...) WRITE ("sub r15, 8\t\t; push to calc stack\n"); \
+                          WRITE ("mov [r15], " r_i_m "\n" __VA_OPT__(,) __VA_ARGS__)
 
 // pop value from calc stack to reg/mem
-#define CPOP(r_m, ...) WRITE ("mov " r_m ", QWORD [r15]  ; pop from calc stack\n" \
-                              "add r15, 8\n" __VA_OPT__(,) __VA_ARGS__)
+#define CPOP(r_m, ...) WRITE ("mov " r_m ", QWORD [r15]  ; pop from calc stack\n"); \
+                       WRITE ("add r15, 8\n" __VA_OPT__(,) __VA_ARGS__)
 
 #define PUSH(r_i_m, ...) WRITE ("push " r_i_m "\n" __VA_OPT__(,) __VA_ARGS__)
-#define POP(r_m, ...) WRITE ("pop " r_m "\n" __VA_OPT__(,) __VA_ARGS__)
+#define POP(r_m, ...)    WRITE ("pop " r_m "\n"    __VA_OPT__(,) __VA_ARGS__)
 
 #define MOV(r_m, r_i_m, ...) WRITE ("mov " r_m ", " r_i_m "\n" __VA_OPT__(,) __VA_ARGS__)
-#define RET WRITE ("ret\n")
+#define RET WRITE ("ret\n\n")
 
 #define COND_COUNT  asm_text->cond_count
 #define IF_COUNT    asm_text->if_statements_count
@@ -67,7 +67,7 @@
 
 const size_t MAX_ASM_PROGRAM_SIZE    = 50000;
 const size_t LOCAL_VARIABLES_MAPPING = 5;
-const size_t RAM_TABLE_CAPACITY      = 100;
+const size_t OFFSET_TABLE_CAPACITY   = 256; // former RAM_TABLE_CAPACITY
 
 struct RamTable
 {
@@ -80,6 +80,13 @@ struct OffsetTable
 {
     RamTable* ram_tables;       // stack of ram tables
     size_t    curr_table_index; // stack pointer
+
+    size_t n_params;            // number of parameters of curr function
+    int   *offset_table;
+    size_t offset_table_ptr;
+    size_t offset_table_base;
+
+    StackLight *base_stack;
 };
 
 struct AsmText
@@ -99,6 +106,7 @@ typedef enum
     TRANSLATE_SUCCESS        = 0,
     TRANSLATE_TYPE_NOT_MATCH = 1,
     TRANSLATE_ERROR          = 2,
+    TRANSLATE_DECLR_ERROR    = 3,
 } TranslateRes;
 
 typedef enum
@@ -156,12 +164,15 @@ DefaultFuncRes TranslateCondition           (const TreeNode* op_node, AsmText* a
 
 OffsetTable*   OffsetTableCtor              ();
 DefaultFuncRes OffsetTableDtor              (OffsetTable* offset_table);
-int            OffsetTableGetVarOffset      (OffsetTable* offset_table, size_t var_id);
 int            OffsetTableGetCurrFrameWidth (OffsetTable* offset_table);
 DefaultFuncRes OffsetTableAddFrame          (OffsetTable* offset_table, size_t n_params);
+int            OffsetTableGetVarOffset      (OffsetTable* offset_table, size_t var_id);
 DefaultFuncRes OffsetTableDeleteFrame       (OffsetTable* offset_table);
 DefaultFuncRes OffsetTableAddVariable       (OffsetTable* offset_table, size_t var_id);
 DefaultFuncRes OffsetTableAddFuncParams     (OffsetTable* offset_table, const TreeNode* func_id_node, const NameTable* nametable);
+DefaultFuncRes OffsetTableAddFuncLocals     (OffsetTable* offset_table, const TreeNode* func_body_node, const NameTable* nametable);
 DefaultFuncRes OffsetTableDump              (const OffsetTable* offset_table, const NameTable* nametable);
+
+int            DescribeCurrFunction         (AsmText *asm_text, const NameTable *nametable);
 
 #endif // TINKOV_BACKEND_H

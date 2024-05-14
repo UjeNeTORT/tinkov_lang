@@ -402,7 +402,7 @@ NameTable* NameTableCtor ()
     }
 
     nametable->main_index = -1;
-    nametable->free  = 0;
+    nametable->free  = 1;   // id = 0 not allowed
 
     return nametable;
 }

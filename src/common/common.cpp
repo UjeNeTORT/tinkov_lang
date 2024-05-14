@@ -113,6 +113,49 @@ int PrintfLog (const char * funcname, const char * filename, const char * format
     return res;
 }
 
+StackLight* StackLightCtor (size_t capacity)
+{
+    assert (capacity != 0);
+
+    StackLight *stack = (StackLight *) calloc (1, sizeof (StackLight));
+    stack->buffer   = (int *) calloc (capacity, sizeof (int));
+    stack->capacity = capacity;
+
+    return stack;
+}
+
+int StackLightDtor (StackLight* stack)
+{
+    assert (stack);
+
+    free (stack->buffer);
+    free (stack);
+
+    return 0;
+}
+
+int StackLightPush (StackLight* stack, int val)
+{
+    assert (stack);
+    if (stack->sp >= stack->capacity) return 1;
+
+    stack->buffer[stack->sp] = val;
+    stack->sp++;
+
+    return 0;
+}
+
+int StackLightPop  (StackLight* stack)
+{
+    assert (stack);
+
+    stack->sp--;
+    int ret_val = stack->buffer[stack->sp];
+    stack->buffer[stack->sp] = 0;
+
+    return ret_val;
+}
+
 int PrintProgressBar (unsigned curr_progress, unsigned max_progress)
 {
     assert (curr_progress <= max_progress);
