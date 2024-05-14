@@ -69,7 +69,7 @@ int PrintfError   (const char* funcname, int line, const char* filename, const c
 struct StackLight
 {
     int *buffer;
-    int sp;
+    size_t sp;
     size_t capacity;
 };
 

@@ -132,7 +132,8 @@ TranslateRes TranslateDeclarator (const TreeNode* declr_node, AsmText* asm_text,
         {
             const TreeNode* func_id_node = declr_node->right->right;
 
-            OffsetTableAddFrame      (OFFSET_TABLE, N_PARAMS (func_id_node));
+            OFFSET_TABLE->n_params = N_PARAMS (func_id_node);
+            OffsetTableAddFrame      (OFFSET_TABLE);
             OffsetTableAddFuncParams (OFFSET_TABLE, func_id_node, nametable);
             OffsetTableAddFuncLocals (OFFSET_TABLE, declr_node->left, nametable);
 
@@ -581,21 +582,7 @@ DefaultFuncRes PutFuncParamsToRAM (const TreeNode* func_id_node, AsmText* asm_te
     assert (asm_text);
     assert (nametable);
 
-    PushParamsToStack (func_id_node, asm_text, nametable);
-
-    WRITE ("push    rpx\n");
-    WRITE ("push    rpx\n");
-    WRITE ("push    %d\n", OffsetTableGetCurrFrameWidth (OFFSET_TABLE));
-    WRITE ("add\n");
-    WRITE ("pop     rpx\n");
-    WRITE ("pop     rax ; save previous rpx to rax\n");
-
-    OffsetTableAddFrame      (OFFSET_TABLE, N_PARAMS (func_id_node));
-    OffsetTableAddFuncParams (OFFSET_TABLE, func_id_node, nametable);
-
-    PopParamsToRAM (func_id_node, asm_text, nametable);
-    WRITE ("push    rax ; recover previous rpx from rax\n");
-
+    // todo
     return FUNC_SUCCESS;
 }
 
@@ -795,8 +782,6 @@ DefaultFuncRes TranslateCondition (const TreeNode* op_node, AsmText* asm_text, c
 OffsetTable* OffsetTableCtor ()
 {
     OffsetTable* offset_table = (OffsetTable*) calloc (1, sizeof (OffsetTable));
-    offset_table->ram_tables  = (RamTable*)    calloc (MAX_SCOPE_DEPTH, sizeof (RamTable));
-    offset_table->curr_table_index = 0;
 
     offset_table->n_params          = 0;
     offset_table->offset_table      = (int*) calloc (OFFSET_TABLE_CAPACITY, sizeof (int));
@@ -804,17 +789,6 @@ OffsetTable* OffsetTableCtor ()
     offset_table->offset_table_ptr  = 0;
 
     offset_table->base_stack = StackLightCtor (MAX_SCOPE_DEPTH);
-
-    for (size_t i = 0; i < MAX_SCOPE_DEPTH; i++)
-    {
-        for (size_t j = 0; j < OFFSET_TABLE_CAPACITY; j++)
-        {
-            offset_table->ram_tables[i].index_in_ram[j] = -1;
-        }
-
-        offset_table->ram_tables[i].free_ram_index = 0;
-        offset_table->ram_tables[i].n_params       = 0;
-    }
 
     return offset_table;
 }
@@ -825,9 +799,7 @@ DefaultFuncRes OffsetTableDtor (OffsetTable* offset_table)
 {
     assert (offset_table);
 
-    offset_table->curr_table_index = 0;
     StackLightDtor (offset_table->base_stack);
-    free (offset_table->ram_tables);
     free (offset_table->offset_table);
     free (offset_table);
 
@@ -836,19 +808,10 @@ DefaultFuncRes OffsetTableDtor (OffsetTable* offset_table)
 
 // ================================================================================================
 
-DefaultFuncRes OffsetTableAddFrame (OffsetTable* offset_table, size_t n_params)
+DefaultFuncRes OffsetTableAddFrame (OffsetTable* offset_table)
 {
     assert (offset_table);
 
-    // if (offset_table->curr_table_index < MAX_SCOPE_DEPTH)
-    // {
-    //     offset_table->curr_table_index++;
-    //     CURR_RAM_TABLE.n_params = n_params;
-
-    //     return FUNC_SUCCESS;
-    // }
-
-    // better alternative:
     if (offset_table->offset_table_ptr < MAX_SCOPE_DEPTH)
     {
         StackLightPush (offset_table->base_stack, offset_table->offset_table_base);
@@ -867,22 +830,6 @@ DefaultFuncRes OffsetTableDeleteFrame (OffsetTable* offset_table)
 {
     assert (offset_table);
 
-    // if (0 < offset_table->curr_table_index &&
-    //         offset_table->curr_table_index < MAX_SCOPE_DEPTH)
-    // {
-    //     for (size_t j = 0; j < NAMETABLE_CAPACITY; j++)
-    //     {
-    //         offset_table->ram_tables[offset_table->curr_table_index].index_in_ram[j] = -1;
-    //     }
-
-    //     offset_table->ram_tables[offset_table->curr_table_index].free_ram_index = 0;
-
-    //     offset_table->curr_table_index--;
-
-    //     return FUNC_SUCCESS;
-    // }
-
-    // better alternative
     if (0 < offset_table->offset_table_ptr &&
             offset_table->offset_table_ptr < MAX_SCOPE_DEPTH)
     {
@@ -933,23 +880,11 @@ int OffsetTableGetVarOffset (OffsetTable* offset_table, size_t var_id)
     assert (offset_table);
     assert (var_id < NAMETABLE_CAPACITY);
 
-    // int eff_offset = 0; // error code - not found
-
-    // for (size_t i = 0; i < sizeof (CURR_RAM_TABLE.index_in_ram); i++)
-    //     if (CURR_RAM_TABLE.index_in_ram[i] == (int) var_id)
-    //     {
-    //         eff_offset = i - CURR_RAM_TABLE.n_params;
-    //         if (eff_offset >= 0) eff_offset++; // to avoid [rbp + 0],
-    //                                            // eff_offset = 0 - is bad and means "val not found"
-    //         break;
-    //     }
-
-    // better alternative
     int eff_offset = 0; // error code - not found
 
     for (size_t i = 0; i < offset_table->offset_table_ptr; i++)
     {
-        if (offset_table->offset_table[i] == var_id)
+        if (offset_table->offset_table[i] == (int) var_id)
         {
             eff_offset = i - offset_table->n_params;
             if (eff_offset >= 0) eff_offset++; // to avoid [rbp + 0],
@@ -1037,7 +972,7 @@ DefaultFuncRes OffsetTableAddFuncLocals (OffsetTable* offset_table, const TreeNo
     OffsetTableAddFuncLocals (offset_table, func_body_node->left, nametable);
 
     if (TYPE (func_body_node) == SEPARATOR && VAL (func_body_node) == ENCLOSE_STATEMENT_BEGIN)
-        OffsetTableAddFrame (offset_table, offset_table->n_params);
+        OffsetTableAddFrame (offset_table);
 
     if (TYPE (func_body_node) == DECLARATOR && VAL (func_body_node) == VAR_DECLARATOR)
         OffsetTableAddVariable (offset_table, VAL (func_body_node->left->left));
@@ -1053,47 +988,9 @@ int OffsetTableGetCurrFrameWidth (OffsetTable* offset_table)
 {
     assert (offset_table);
 
-    // int frame_width = 0;
-//
-    // while (CURR_RAM_TABLE.index_in_ram[frame_width] != -1)
-        // frame_width++;
-
-    // better alternative
     int frame_width = offset_table->offset_table_ptr - offset_table->offset_table_base;
 
     return frame_width;
 }
 
-// ================================================================================================
-/**
- ** LEGACY
-*/
-DefaultFuncRes OffsetTableDump (const OffsetTable* offset_table, const NameTable* nametable)
-{
-    assert (offset_table);
-
-    for (size_t curr_table_id = 0; curr_table_id < offset_table->curr_table_index + 1; curr_table_id++)
-    {
-        printf ("============================================ table %ld ============================================\n", curr_table_id);
-
-        for (size_t i = 0; i < NAMETABLE_CAPACITY; i++)
-            printf ("%6ld ", i);
-
-        printf ("\n");
-
-        for (size_t i = 0; i < NAMETABLE_CAPACITY; i++)
-            printf ("%6d ", offset_table->ram_tables[curr_table_id].index_in_ram[i]);
-
-        printf ("\n");
-
-        if (nametable)
-            for (size_t i = 0; i < NAMETABLE_CAPACITY; i++)
-                if (offset_table->ram_tables[curr_table_id].index_in_ram[i] != -1)
-                    printf ("%6.6s ", nametable->names[offset_table->ram_tables[curr_table_id].index_in_ram[i]]);
-
-        printf ("\n\n");
-    }
-
-    return FUNC_SUCCESS;
-}
 

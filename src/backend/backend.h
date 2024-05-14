@@ -78,15 +78,12 @@ struct RamTable
 
 struct OffsetTable
 {
-    RamTable* ram_tables;       // stack of ram tables
-    size_t    curr_table_index; // stack pointer
-
-    size_t n_params;            // number of parameters of curr function
     int   *offset_table;
     size_t offset_table_ptr;
     size_t offset_table_base;
-
     StackLight *base_stack;
+
+    size_t n_params;            // number of parameters of curr function
 };
 
 struct AsmText
@@ -165,13 +162,12 @@ DefaultFuncRes TranslateCondition           (const TreeNode* op_node, AsmText* a
 OffsetTable*   OffsetTableCtor              ();
 DefaultFuncRes OffsetTableDtor              (OffsetTable* offset_table);
 int            OffsetTableGetCurrFrameWidth (OffsetTable* offset_table);
-DefaultFuncRes OffsetTableAddFrame          (OffsetTable* offset_table, size_t n_params);
+DefaultFuncRes OffsetTableAddFrame          (OffsetTable* offset_table);
 int            OffsetTableGetVarOffset      (OffsetTable* offset_table, size_t var_id);
 DefaultFuncRes OffsetTableDeleteFrame       (OffsetTable* offset_table);
 DefaultFuncRes OffsetTableAddVariable       (OffsetTable* offset_table, size_t var_id);
 DefaultFuncRes OffsetTableAddFuncParams     (OffsetTable* offset_table, const TreeNode* func_id_node, const NameTable* nametable);
 DefaultFuncRes OffsetTableAddFuncLocals     (OffsetTable* offset_table, const TreeNode* func_body_node, const NameTable* nametable);
-DefaultFuncRes OffsetTableDump              (const OffsetTable* offset_table, const NameTable* nametable);
 
 int            DescribeCurrFunction         (AsmText *asm_text, const NameTable *nametable);
 
