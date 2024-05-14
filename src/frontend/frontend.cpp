@@ -8,23 +8,23 @@
  *************************************************************************/
 
 /**
- * BUGS: x lexer thinks that "131aboba" is a number 131
- *       - lexer thinks that "_aboba228_ is unknown lexem"
- *       x lexer does not take \n as a space between tokens (I THINK THE PROBLEM IS NOT IN THIS, NOT A BUG)
- *       x syntaxer does not give an error if there is no ; in the end
- *       x difference between index of keyword and its opcode is not always trivial
- *       x there are no checks in many places if there are tokens left, if there are no more
- *         tokens left, this may result in attempt to access area behind the array
- *       x in some places i have to write 2 syntax asserts checking if there are tokens left and then
- *         getting access to token if ir exists, so it results in copypaste
- *       x lexer does not understand russian
- *       x syntaxer allows same variable names in function parameters
- *       x chaos with declaration check in lexer
- *       x if no function declared - falls with segfault
- *       x it should handle not Fucnitons sequence but (function | operation)+ sequence
- *       x does not require having an entry point
- *       x var declarators in tree are not represented
- *       - what if we delete global scope?
+ * BUGS: - [x] lexer thinks that "131aboba" is a number 131
+ *       - [-] lexer thinks that "_aboba228_ is unknown lexem"
+ *       - [x] lexer does not take \n as a space between tokens (I THINK THE PROBLEM IS NOT IN THIS, NOT A BUG)
+ *       - [x] syntaxer does not give an error if there is no ; in the end
+ *       - [x] difference between index of keyword and its opcode is not always trivial
+ *       - [x] there are no checks in many places if there are tokens left, if there are no more
+ *       - [ ] tokens left, this may result in attempt to access area behind the array
+ *       - [x] in some places i have to write 2 syntax asserts checking if there are tokens left and then
+ *       - [ ] getting access to token if ir exists, so it results in copypaste
+ *       - [x] lexer does not understand russian
+ *       - [x] syntaxer allows same variable names in function parameters
+ *       - [x] chaos with declaration check in lexer
+ *       - [x] if no function declared - falls with segfault
+ *       - [x] it should handle not Fucnitons sequence but (function | operation)+ sequence
+ *       - [x] does not require having an entry point
+ *       - [x] var declarators in tree are not represented
+ *       - [ ] what if we delete global scope?
  *
  * TODO: - fix bugs (lol)
 */
@@ -41,8 +41,7 @@ int main (int argc, char* argv[])
     ProgText* prog_text = GetProgText (prog_name);
     ProgCode* prog_code = LexerTokenize (prog_text);
     ProgTextDtor (prog_text);
-    if (!prog_code)
-        RET_ERROR (1, "Error during syntax analysis");
+    if (!prog_code) RET_ERROR (1, "Error during syntax analysis");
 
     Tree* ast = BuildAST (prog_code);
     ProgCodeDtor (prog_code);

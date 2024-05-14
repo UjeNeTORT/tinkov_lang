@@ -21,13 +21,13 @@ DEF_CMD (name, num, text,
 #define INCR_IP(cmd)         \
     ip += CalcIpOffset(cmd); \
 
-#define PUSH(val)               \
+#define SPU_PUSH(val)           \
     PushStack(&spu->stk, val);  \
 
-#define POP()                       \
+#define SPU_POP()                   \
     PopStack(&spu->stk, &pop_err)   \
 
-#define JMP(ip)                                          \
+#define SPU_JMP(ip)                                      \
     *(Elem_t *)(prog_code + (ip) + sizeof(cmd_code_t));  \
 
 // ===============================================================================================
@@ -58,7 +58,7 @@ SPU_CODE
     {
         Elem_t arg = GetPushArg(prog_code, ip, spu->gp_regs, spu->RAM);
 
-        PUSH(arg);
+        SPU_PUSH(arg);
 
         INCR_IP(cmd);
 
@@ -92,7 +92,7 @@ SPU_CODE
             }
 
             pop_err = POP_NO_ERR;
-            *arg_ptr = POP();
+            *arg_ptr = SPU_POP();
 
             printf_intermed_info("# (%s - %3ld) Pop number %d to %p\n", "proc", ip_init, *arg_ptr, arg_ptr);
 
@@ -101,7 +101,7 @@ SPU_CODE
         else
         {
             pop_err = POP_NO_ERR;
-            POP();
+            SPU_POP();
 
             printf_intermed_info("# (%s - %3ld) Pop number\n", "proc", ip_init);
 
@@ -135,7 +135,7 @@ SPU_CODE
 
         val *= STK_PRECISION;
 
-        PUSH(val);
+        SPU_PUSH(val);
 
         INCR_IP(cmd);
     },
@@ -157,7 +157,7 @@ DEF_CMD (OUT, 4, "out", 0,
 SPU_CODE
     {
         pop_err = POP_NO_ERR;
-        double ret_val = (double) POP() / STK_PRECISION;
+        double ret_val = (double) SPU_POP() / STK_PRECISION;
         fprintf(stdout, "\n<< %lg\n", ret_val);
 
         INCR_IP(cmd);
@@ -181,8 +181,8 @@ SPU_CODE
     {
         pop_err = POP_NO_ERR;
 
-        val = POP() + POP();
-        PUSH(val);
+        val = SPU_POP() + SPU_POP();
+        SPU_PUSH(val);
 
         printf_intermed_info("# (%s - %3ld) Add: %d\n", "proc", ip_init, val);
 
@@ -206,9 +206,9 @@ DEF_CMD (SUB, 6, "sub", 0,
 SPU_CODE
     {
         pop_err = POP_NO_ERR;
-        val -= POP();
-        val += POP();
-        PUSH(val);
+        val -= SPU_POP();
+        val += SPU_POP();
+        SPU_PUSH(val);
 
         printf_intermed_info("# (%s - %3ld) Sub: %d\n", "proc", ip_init, val);
 
@@ -232,11 +232,11 @@ DEF_CMD (MUL, 7, "mul", 0,
 SPU_CODE
     {
         pop_err = POP_NO_ERR;
-        val = MultInts(POP(), POP());
+        val = MultInts(SPU_POP(), SPU_POP());
 
         printf_intermed_info("# (%s - %3ld) Mul: %d\n", "proc", ip_init, val);
 
-        PUSH(val);
+        SPU_PUSH(val);
 
         INCR_IP(cmd);
     },
@@ -259,13 +259,13 @@ SPU_CODE
     {
         pop_err = POP_NO_ERR;
 
-        Elem_t denominator = POP();
-        Elem_t numerator   = POP();
+        Elem_t denominator = SPU_POP();
+        Elem_t numerator   = SPU_POP();
 
         val = 0;
         val = DivideInts(numerator, denominator);
 
-        PUSH(val);
+        SPU_PUSH(val);
 
         printf_intermed_info("# (%s - %3ld) Div: %d\n", "proc", ip_init, val);
 
@@ -288,7 +288,7 @@ DEF_CMD (JMP, 9, "jmp", 1,
 
 SPU_CODE
     {
-        ip = JMP(ip);
+        ip = SPU_JMP(ip);
 
         printf_intermed_info("# (%s - %3ld) Jmp to %lu\n", "proc", ip_init, ip);
     },
@@ -315,7 +315,7 @@ SPU_CODE
 
         if (cmp_res > 0)
         {
-            ip = JMP(ip);
+            ip = SPU_JMP(ip);
 
             printf_intermed_info("# (%s - %3ld) Jmp to %lu\n", "proc", ip_init, ip);
         }
@@ -348,7 +348,7 @@ SPU_CODE
 
         if (cmp_res >= 0)
         {
-            ip = JMP(ip);
+            ip = SPU_JMP(ip);
 
             printf_intermed_info("# (%s - %3ld) Jmp to %lu\n", "proc", ip_init, ip);
         }
@@ -381,7 +381,7 @@ SPU_CODE
 
         if (cmp_res < 0)
         {
-            ip = JMP(ip);
+            ip = SPU_JMP(ip);
 
             printf_intermed_info("# (%s - %3ld) Jmp to %lu\n", "proc", ip_init, ip);
         }
@@ -414,7 +414,7 @@ SPU_CODE
 
         if (cmp_res <= 0)
         {
-            ip = JMP(ip);
+            ip = SPU_JMP(ip);
 
             printf_intermed_info("# (%s - %3ld) Jmp to %lu\n", "proc", ip_init, ip);
         }
@@ -446,7 +446,7 @@ SPU_CODE
 
         if (cmp_res == 0)
         {
-            ip = JMP(ip);
+            ip = SPU_JMP(ip);
 
             printf_intermed_info("# (%s - %3ld) Jmp to %lu\n", "proc", ip_init, ip);
         }
@@ -478,7 +478,7 @@ SPU_CODE
 
         if (cmp_res != 0)
         {
-            ip = JMP(ip);
+            ip = SPU_JMP(ip);
 
             printf_intermed_info("# (%s - %3ld) Jmp to %lu\n", "proc", ip_init, ip);
         }
@@ -508,7 +508,7 @@ SPU_CODE
     {
         PushStack(&spu->call_stk, (Elem_t)(ip + sizeof(cmd_code_t) + sizeof(Elem_t)));
 
-        ip = JMP(ip);
+        ip = SPU_JMP(ip);
 
         printf_intermed_info("# (%s - %3ld) Call to %lu\n", "proc", ip_init, ip);
     },
@@ -554,13 +554,13 @@ DEF_CMD (SQRT, 18, "sqrt", 0,
 SPU_CODE
     {
         pop_err = POP_NO_ERR;
-        val = POP();
+        val = SPU_POP();
 
         val = (int) sqrt(val * STK_PRECISION);
 
         printf_intermed_info("# (%s - %3ld) Sqrt: %d\n", "proc", ip_init, val);
 
-        PUSH(val);
+        SPU_PUSH(val);
 
         INCR_IP(cmd);
     },
@@ -582,13 +582,13 @@ DEF_CMD (SQR, 19, "sqr", 0,
 SPU_CODE
     {
         pop_err = POP_NO_ERR;
-        val = POP();
+        val = SPU_POP();
 
         val = val * val / STK_PRECISION;
 
         printf_intermed_info("# (%s - %3ld) Sqr: %d\n", "proc", ip_init, val);
 
-        PUSH(val);
+        SPU_PUSH(val);
 
         INCR_IP(cmd);
     },
@@ -610,12 +610,12 @@ DEF_CMD (MOD, 20, "mod", 0,
 SPU_CODE
     {
         pop_err = POP_NO_ERR;
-        Elem_t denominator = POP();
-        Elem_t numerator   = POP();
+        Elem_t denominator = SPU_POP();
+        Elem_t numerator   = SPU_POP();
 
         val = CalcMod(numerator, denominator);
 
-        PUSH(val);
+        SPU_PUSH(val);
 
         printf_intermed_info("# (%s - %3ld) Mod: %d\n", "proc", ip_init, val);
 
@@ -639,12 +639,12 @@ DEF_CMD (IDIV, 21, "idiv", 0,
 SPU_CODE
     {
         pop_err = POP_NO_ERR;
-        Elem_t denominator = POP();
-        Elem_t numerator   = POP();
+        Elem_t denominator = SPU_POP();
+        Elem_t numerator   = SPU_POP();
 
         val = CalcIdiv(numerator, denominator);
 
-        PUSH(val);
+        SPU_PUSH(val);
 
         printf_intermed_info("# (%s - %3ld) Idiv: %d\n", "proc", ip_init, val);
 
