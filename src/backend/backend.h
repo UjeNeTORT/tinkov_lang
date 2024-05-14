@@ -65,9 +65,10 @@
     (TYPE (node) != (type) || VAL (node) != (val))
 // ===========================================================
 
-const size_t MAX_ASM_PROGRAM_SIZE    = 50000;
-const size_t LOCAL_VARIABLES_MAPPING = 5;
-const size_t OFFSET_TABLE_CAPACITY   = 256; // former RAM_TABLE_CAPACITY
+const unsigned QWORD_SIZE              = 8;
+const size_t   MAX_ASM_PROGRAM_SIZE    = 50000;
+const size_t   LOCAL_VARIABLES_MAPPING = 5;
+const size_t   OFFSET_TABLE_CAPACITY   = 256; // former RAM_TABLE_CAPACITY
 
 struct RamTable
 {

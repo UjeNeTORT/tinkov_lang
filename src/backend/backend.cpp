@@ -142,16 +142,6 @@ TranslateRes TranslateDeclarator (const TreeNode* declr_node, AsmText* asm_text,
                             VAL      (func_id_node),
                             N_PARAMS (func_id_node));
 
-            // TreeNode *param_node = declr_node->right->left;
-            // for (size_t n_param = 0; n_param < N_PARAMS (func_id_node); n_param++)
-            // {
-                // int eff_offset = OffsetTableGetVarOffset (OFFSET_TABLE, VAL (param_node->right));
-                // WRITE ("\t\t; param int64_t %s @ rbp+0x%x\n",
-                        // NAME (param_node->right),
-                        // (unsigned) (-eff_offset));
-                // param_node = param_node->left;
-            // }
-
             DescribeCurrFunction (asm_text, nametable);
 
             AsmTextAddTab (asm_text);
@@ -357,9 +347,9 @@ TranslateRes TranslateOperator (const TreeNode* op_node, AsmText* asm_text, cons
             int effective_offset = OffsetTableGetVarOffset (asm_text->offset_table, VAL (op_node->left));
 
             // mov [rbp - 8 * -1], ... <- source operand is a variable/parameter/number ALWAYS in RAX
-            WRITE ("[rbp - 8 * %d], rax", effective_offset);
+            WRITE ("[rbp - %d], rax", effective_offset * QWORD_SIZE);
 
-            WRITE ("\t; %s#%d = rax\n", (effective_offset > 0) ? "var" : "par", effective_offset);
+            WRITE ("\t; %s = rax\n", NAME (op_node->left));
 
             POP ("rax");
 
@@ -489,6 +479,8 @@ TranslateRes TranslateOperator (const TreeNode* op_node, AsmText* asm_text, cons
         }
     }
 
+    WRITE ("\n");
+
     return TRANSLATE_SUCCESS;
 }
 
@@ -538,7 +530,7 @@ TranslateRes TranslateIdentifier (const TreeNode* id_node, AsmText* asm_text, co
 
             int effective_offset = OffsetTableGetVarOffset (OFFSET_TABLE, VAL (id_node));
 
-            WRITE ("QWORD [rbp + 8*%d]\n", effective_offset);
+            WRITE ("QWORD [rbp - %d] ; rax = %s\n", effective_offset * QWORD_SIZE, NAME (id_node));
         }
         else
         {
@@ -551,6 +543,8 @@ TranslateRes TranslateIdentifier (const TreeNode* id_node, AsmText* asm_text, co
 
         return TRANSLATE_SUCCESS;
     }
+
+    WRITE ("\n");
 
     return TRANSLATE_ERROR;
 }
@@ -924,19 +918,21 @@ int DescribeCurrFunction (AsmText *asm_text, const NameTable *nametable)
         {
             WRITE ("\t\t; par int64_t %6s @ rbp+0x%x\n",
                         nametable->names[OFFSET_TABLE->offset_table[i]],
-                        (unsigned) (-eff_offset));
+                        (unsigned) (-eff_offset * QWORD_SIZE));
         }
         else
         {
             WRITE ("\t\t; var int64_t %6s @ rbp-0x%x\n",
                         nametable->names[OFFSET_TABLE->offset_table[i]],
-                        eff_offset);
+                        eff_offset * QWORD_SIZE);
         }
 
         eff_offset++; // grows along with i
     }
 
-    return eff_offset;
+    WRITE ("\n");
+
+    return 0;
 }
 
 // ================================================================================================
