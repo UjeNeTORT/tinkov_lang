@@ -22,18 +22,32 @@
 
 // =========================== DSL ===========================
 
-// push reg/imm/mem to calc stack
-#define CPUSH(r_i_m, ...) WRITE ("sub r15, 8\t\t; push to calc stack\n"); \
-                          WRITE ("mov [r15], " r_i_m "\n" __VA_OPT__(,) __VA_ARGS__)
+// push reg/imm/mem to calc stack (r15)
+#define CPUSH(r_i_m, ...) WRITE ("sub r15, 8\t\t\t; push to calc stack\n"); \
+                          WRITE ("mov QWORD [r15], " r_i_m "\n" __VA_OPT__(,) __VA_ARGS__)
 
-// pop value from calc stack to reg/mem
-#define CPOP(r_m, ...) WRITE ("mov " r_m ", QWORD [r15]  ; pop from calc stack\n"); \
+// pop value from calc stack (r15) to reg/mem
+#define CPOP(r_m, ...) WRITE ("mov " r_m ", QWORD [r15]\t\t; pop from calc stack\n"); \
                        WRITE ("add r15, 8\n" __VA_OPT__(,) __VA_ARGS__)
 
 #define PUSH(r_i_m, ...) WRITE ("push " r_i_m "\n" __VA_OPT__(,) __VA_ARGS__)
 #define POP(r_m, ...)    WRITE ("pop " r_m "\n"    __VA_OPT__(,) __VA_ARGS__)
 
+/**
+ * pop value from calc stack (r15) and push it to the real one (rsp)
+ *
+ * DESTR: rax
+*/
+#define REPUSH PUSH ("rax\t\t\t; repush begin");        \
+               CPOP ("rax");                            \
+               XCHG ("rax", "QWORD [rsp]\t\t; repush end")
+
+#define CALL(func_name)   WRITE ("call %s\n", func_name)
 #define MOV(r_m, r_i_m, ...) WRITE ("mov " r_m ", " r_i_m "\n" __VA_OPT__(,) __VA_ARGS__)
+#define XCHG(r_m, r_i_m, ...) WRITE ("xchg " r_m ", " r_i_m "\n" __VA_OPT__(,) __VA_ARGS__)
+#define CMP(r_m, r_i_m, ...) WRITE ("cmp " r_m ", " r_i_m "\n" __VA_OPT__(,) __VA_ARGS__)
+#define XOR(r_m_1, r_m_2, ...) WRITE ("xor " r_m_1 ", " r_m_2 "\n" __VA_OPT__(,) __VA_ARGS__)
+
 #define RET WRITE ("ret\n\n")
 
 #define COND_COUNT  asm_text->cond_count
@@ -68,21 +82,18 @@
 const unsigned QWORD_SIZE              = 8;
 const size_t   MAX_ASM_PROGRAM_SIZE    = 50000;
 const size_t   LOCAL_VARIABLES_MAPPING = 5;
-const size_t   OFFSET_TABLE_CAPACITY   = 256; // former RAM_TABLE_CAPACITY
-
-struct RamTable
-{
-    int index_in_ram[NAMETABLE_CAPACITY];   // stack of base-relative ram offsets of each variable
-    size_t free_ram_index;                  // stack pointer
-    size_t n_params;                        // n of parameters of func represented by current ram table
-};
+const size_t   OFFSET_TABLE_CAPACITY   = 256;
+const size_t   CALC_STACK_CAPACITY     = 2048;
 
 struct OffsetTable
 {
-    int   *offset_table;
-    size_t offset_table_ptr;
-    size_t offset_table_base;
-    StackLight *base_stack;
+    int   *offset_table;        // array of function params and loc.vars
+                                // first n_params values - ids of params
+                                // all the rest          - local vars
+
+    size_t offset_table_ptr;    // points to a free position
+    size_t offset_table_base;   // points to a curr frame base
+    StackLight *base_stack;     // stores all the frame base ptrs
 
     size_t n_params;            // number of parameters of curr function
 };
@@ -91,7 +102,7 @@ struct AsmText
 {
     char*  text;
     size_t offset;
-    OffsetTable* offset_table; // stack of RamTables to specify offset of each variable within its scope in memory
+    OffsetTable* offset_table; // stores offset of each variable within its scope in memory
     size_t if_statements_count;
     size_t while_statements_count;
     size_t funcs_count;
@@ -144,6 +155,8 @@ TranslateRes   TranslateSeparator           (const TreeNode* sep_node,   AsmText
 TranslateRes   TranslateOperator            (const TreeNode* op_node,    AsmText* asm_text, const NameTable* nametable);
 TranslateRes   TranslateIdentifier          (const TreeNode* id_node,    AsmText* asm_text, const NameTable* nametable);
 TranslateRes   TranslateNumber              (const TreeNode* num_node,   AsmText* asm_text, const NameTable* nametable);
+
+TranslateRes    TranslateFunctionCall       (const TreeNode* func_id_node, AsmText* asm_text, const NameTable* nametable);
 
 DefaultFuncRes PutFuncParamsToRAM           (const TreeNode* func_id_node, AsmText* asm_text, const NameTable* nametable);
 DefaultFuncRes PushParamsToStack            (const TreeNode* func_id_node, AsmText* asm_text, const NameTable* nametable);

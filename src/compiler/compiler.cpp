@@ -37,10 +37,13 @@ DefaultFuncRes CompileTinkovProgram (char* filename)
     sprintf (command, "./backend ast.ast\n");
     assert (system (command) == 0);
 
-    sprintf (command, "./asm --finname out.tinkov\n");
+    sprintf (command, "nasm -f elf64 -g out.s -o out.o\n");
     assert (system (command) == 0);
 
-    sprintf (command, "./spu --finname translated.bin\n");
+    sprintf (command, "g++ -no-pie out.o -o exec\n");
+    assert (system (command) == 0);
+
+    sprintf (command, "./exec\n");
     assert (system (command) == 0);
 
     free (command);
