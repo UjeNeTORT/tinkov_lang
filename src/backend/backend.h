@@ -23,11 +23,11 @@
 // =========================== DSL ===========================
 
 // push reg/imm/mem to calc stack (r15)
-#define CPUSH(r_i_m, ...) WRITE ("sub r15, 8\t\t\t; push to calc stack\n"); \
+#define CPUSH(r_i_m, ...) WRITE ("sub r15, 8\t\t\t; cpush\n"); \
                           WRITE ("mov QWORD [r15], " r_i_m "\n" __VA_OPT__(,) __VA_ARGS__)
 
 // pop value from calc stack (r15) to reg/mem
-#define CPOP(r_m, ...) WRITE ("mov " r_m ", QWORD [r15]\t\t; pop from calc stack\n"); \
+#define CPOP(r_m, ...) WRITE ("mov " r_m ", QWORD [r15]\t\t; cpop\n"); \
                        WRITE ("add r15, 8\n" __VA_OPT__(,) __VA_ARGS__)
 
 #define PUSH(r_i_m, ...) WRITE ("push " r_i_m "\n" __VA_OPT__(,) __VA_ARGS__)
@@ -42,21 +42,21 @@
                CPOP ("rax");                            \
                XCHG ("rax", "QWORD [rsp]\t\t; repush end")
 
-#define CALL(func_name)   WRITE ("call %s\n", func_name)
-#define MOV(r_m, r_i_m, ...) WRITE ("mov " r_m ", " r_i_m "\n" __VA_OPT__(,) __VA_ARGS__)
-#define XCHG(r_m, r_i_m, ...) WRITE ("xchg " r_m ", " r_i_m "\n" __VA_OPT__(,) __VA_ARGS__)
-#define CMP(r_m, r_i_m, ...) WRITE ("cmp " r_m ", " r_i_m "\n" __VA_OPT__(,) __VA_ARGS__)
-#define XOR(r_m_1, r_m_2, ...) WRITE ("xor " r_m_1 ", " r_m_2 "\n" __VA_OPT__(,) __VA_ARGS__)
-
-#define RET WRITE ("ret\n\n")
+#define CALL(func_name, ...)    WRITE ("call " func_name "\n" __VA_OPT__(,) __VA_ARGS__ )
+#define MOV(r_m, r_i_m, ...)    WRITE ("mov " r_m ", " r_i_m "\n" __VA_OPT__(,) __VA_ARGS__)
+#define XCHG(r_m, r_i_m, ...)   WRITE ("xchg " r_m ", " r_i_m "\n" __VA_OPT__(,) __VA_ARGS__)
+#define CMP(r_m, r_i_m, ...)    WRITE ("cmp " r_m ", " r_i_m "\n" __VA_OPT__(,) __VA_ARGS__)
+#define XOR(r_m_1, r_m_2, ...)  WRITE ("xor " r_m_1 ", " r_m_2 "\n" __VA_OPT__(,) __VA_ARGS__)
+#define RET                     WRITE ("ret\n")
 
 #define COND_COUNT  asm_text->cond_count
 #define IF_COUNT    asm_text->if_statements_count
 #define WHILE_COUNT asm_text->while_statements_count
 
-#define CURR_N_PARAMS  OFFSET_TABLE->ram_tables[OFFSET_TABLE->curr_table_index].n_params
-#define CURR_RAM_TABLE offset_table->ram_tables[offset_table->curr_table_index]
-#define OFFSET_TABLE   asm_text->offset_table
+#define CURR_N_PARAMS       OFFSET_TABLE->ram_tables[OFFSET_TABLE->curr_table_index].n_params
+#define CURR_RAM_TABLE      offset_table->ram_tables[offset_table->curr_table_index]
+#define OFFSET_TABLE        asm_text->offset_table
+#define EFF_OFFSET(id_node) OffsetTableGetVarOffset (OFFSET_TABLE, VAL (id_node))
 
 #define TEXT (asm_text->text + asm_text->offset)
 #define TABS (asm_text->tabs)
@@ -71,6 +71,7 @@
 #define WRITE(format, ...) WRITE_ ("%s" format "%n", TABS __VA_OPT__(,) __VA_ARGS__)
 
 #define WRITE_NO_TAB(format, ...) WRITE_ (format "%n", __VA_ARGS__)
+#define WRITE_NEWLINE WRITE_NO_TAB ("\n")
 
 #define NODE_IS(type, val) \
     (TYPE (node) == (type) && VAL (node) == (val))
@@ -79,11 +80,13 @@
     (TYPE (node) != (type) || VAL (node) != (val))
 // ===========================================================
 
+const unsigned INT_PRECISION_POW       = 2;
 const unsigned QWORD_SIZE              = 8;
 const size_t   MAX_ASM_PROGRAM_SIZE    = 50000;
-const size_t   LOCAL_VARIABLES_MAPPING = 5;
 const size_t   OFFSET_TABLE_CAPACITY   = 256;
 const size_t   CALC_STACK_CAPACITY     = 2048;
+
+const char * const DFLT_STDLIB_PATH    = "/home/netort/language/src/stdlib_tnkff/stdlib_tnkff.s";
 
 struct OffsetTable
 {
