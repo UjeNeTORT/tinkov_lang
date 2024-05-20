@@ -46,7 +46,13 @@
 #define MOV(r_m, r_i_m, ...)    WRITE ("mov " r_m ", " r_i_m "\n" __VA_OPT__(,) __VA_ARGS__)
 #define XCHG(r_m, r_i_m, ...)   WRITE ("xchg " r_m ", " r_i_m "\n" __VA_OPT__(,) __VA_ARGS__)
 #define CMP(r_m, r_i_m, ...)    WRITE ("cmp " r_m ", " r_i_m "\n" __VA_OPT__(,) __VA_ARGS__)
+
+#define LEA(r_m_1, m, ...)      WRITE ("lea " r_m_1 ", " m "\n" __VA_OPT__(,) __VA_ARGS__)
 #define XOR(r_m_1, r_m_2, ...)  WRITE ("xor " r_m_1 ", " r_m_2 "\n" __VA_OPT__(,) __VA_ARGS__)
+#define ADD(r_m, r_i_m, ...)    WRITE ("add " r_m ", " r_i_m "\n" __VA_OPT__(,) __VA_ARGS__)
+#define SUB(r_m, r_i_m, ...)    WRITE ("sub " r_m ", " r_i_m "\n" __VA_OPT__(,) __VA_ARGS__)
+#define IMUL(r_m, r_i_m, ...)   WRITE ("imul " r_m ", " r_i_m "\n" __VA_OPT__(,) __VA_ARGS__)
+
 #define RET                     WRITE ("ret\n")
 
 #define COND_COUNT  asm_text->cond_count
@@ -111,6 +117,7 @@ struct AsmText
     size_t funcs_count;
     size_t cond_count;
     char*  tabs;
+    unsigned precision_correction;
 };
 
 typedef enum
@@ -159,7 +166,7 @@ TranslateRes   TranslateOperator            (const TreeNode* op_node,    AsmText
 TranslateRes   TranslateIdentifier          (const TreeNode* id_node,    AsmText* asm_text, const NameTable* nametable);
 TranslateRes   TranslateNumber              (const TreeNode* num_node,   AsmText* asm_text, const NameTable* nametable);
 
-TranslateRes    TranslateFunctionCall       (const TreeNode* func_id_node, AsmText* asm_text, const NameTable* nametable);
+TranslateRes   TranslateFunctionCall        (const TreeNode* func_id_node, AsmText* asm_text, const NameTable* nametable);
 
 DefaultFuncRes PutFuncParamsToRAM           (const TreeNode* func_id_node, AsmText* asm_text, const NameTable* nametable);
 DefaultFuncRes PushParamsToStack            (const TreeNode* func_id_node, AsmText* asm_text, const NameTable* nametable);

@@ -46,7 +46,7 @@ AsmText* TranslateAST (const TreeNode* root_node, AsmText* asm_text, const NameT
     assert (asm_text);
 
     WRITE ("; this program was written in tinkov language, mne poxyi ya v americu\n\n");
-    WRITE ("BITS 64;\n");
+    WRITE ("BITS 64\n");
 
     WRITE ("INT_PRECISION_POW equ %u\n", INT_PRECISION_POW);
     WRITE ("INT_PRECISION equ ");
@@ -75,20 +75,24 @@ AsmText* TranslateAST (const TreeNode* root_node, AsmText* asm_text, const NameT
     WRITE ("main:\n\n");
     WRITE ("; ===== mapping of calc stack (CPUSH, CPOP) =====\n");
     MOV ("r15", "calc_stack");
-    WRITE ("add r15, %ld\n", CALC_STACK_CAPACITY);
+    ADD ("r15", "%ld\n", CALC_STACK_CAPACITY);
     WRITE ("; ===============================================\n");
 
-    WRITE ("call %s\t\t; calling program entry point func\n\n",
+    WRITE ("call %s\t\t; calling program entry point func\n",
                 nametable->names[nametable->main_index]);
 
+    WRITE_NEWLINE;
+
     WRITE ("; EPILOGUE\n");
-    MOV ("rax", "1\t\t; syscall exit");
-    XOR ("ebx", "ebx");
-    WRITE ("int 0x80\t\t; syscall\n\n");
+    MOV ("rax", "SYS_EXIT\t\t; syscall exit");
+    XOR ("rdi", "rdi");
+    WRITE ("syscall\n");
+    WRITE_NEWLINE;
 
     WRITE ("ret\n");
 
-    WRITE ("hlt\n\n\n");
+    WRITE_NEWLINE;
+    WRITE_NEWLINE;
 
     TranslateASTSubtree (root_node, asm_text, nametable);
 
@@ -227,19 +231,23 @@ TranslateRes TranslateKeyword (const TreeNode* kw_node, AsmText* asm_text, const
     {
         case KW_INPUT:
         {
-            // todo call my_std i/o func
-            // todo test
-            PUSH ("rax\t\t\t; begin SCAN imitation");
-            MOV ("rax", "11");
-            MOV ("QWORD [rbp - %d]", "rax", EFF_OFFSET (kw_node->right) * QWORD_SIZE);
-            POP ("rax\t\t\t\t ; end  SCAN imitation");
+            if (TYPE (kw_node->right) != IDENTIFIER)
+                RET_ERROR (TRANSLATE_ERROR, "Error scan: identifier node expected!");
+            if (IsFunction (kw_node->right, nametable))
+                RET_ERROR (TRANSLATE_ERROR, "Error scan: identifier node must not be func name!");
+
+            PUSH ("rdi\t\t\t; SCAN begin");
+            LEA ("rdi", "QWORD [rbp - %d]\t\t; >> %s",
+                EFF_OFFSET (kw_node->right) * QWORD_SIZE,
+                NAME (kw_node->right));
+            CALL ("scan_int64_t");
+            POP ("rdi\t\t\t; SCAN end");
 
             break;
         }
 
         case KW_PRINT:
         {
-            // todo test
             WRITE_NEWLINE;
 
             switch (TYPE (kw_node->right))
@@ -443,11 +451,11 @@ TranslateRes TranslateOperator (const TreeNode* op_node, AsmText* asm_text, cons
             TranslateASTSubtree (op_node->right, asm_text, nametable);
 
             PUSH ("rax");
-            WRITE ("mov rax, QWORD [r15]\n");
-            WRITE ("add rax, QWORD [r15+8]\n");
+            MOV ("rax", "QWORD [r15+8]");
+            ADD ("rax", "QWORD [r15]");
 
-            WRITE ("add r15, 8\t\t\t; push addition result instead of 2 operands\n");
-            WRITE ("mov [r15], rax\n");
+            ADD ("r15", "8\t\t\t; push add-instr result instead of 2 operands\n");
+            MOV ("[r15]", "rax");
             POP ("rax");
 
             break;
@@ -459,11 +467,11 @@ TranslateRes TranslateOperator (const TreeNode* op_node, AsmText* asm_text, cons
             TranslateASTSubtree (op_node->right, asm_text, nametable);
 
             PUSH ("rax");
-            WRITE ("mov rax, QWORD [r15+8]\n");
-            WRITE ("sub rax, QWORD [r15]\n");
+            MOV ("rax", "QWORD [r15+8]");
+            SUB ("rax", "QWORD [r15]");
 
-            WRITE ("add r15, 8\t\t\t; push substitution result instead of 2 operands\n");
-            WRITE ("mov [r15], rax\n");
+            ADD ("r15", "8\t\t\t; push sub-instr result instead of 2 operands\n");
+            MOV ("[r15]", "rax");
             POP ("rax");
 
             break;
@@ -475,11 +483,26 @@ TranslateRes TranslateOperator (const TreeNode* op_node, AsmText* asm_text, cons
             TranslateASTSubtree (op_node->right, asm_text, nametable);
 
             PUSH ("rax");
-            WRITE ("mov rax, QWORD [r15]\n");
-            WRITE ("imul rax, QWORD [r15+8]\n");
+            MOV ("rax", "QWORD [r15+8]");
+            IMUL ("rax", "QWORD [r15]");
 
-            WRITE ("add r15, 8\t\t\t; push multiplication result instead of 2 operands\n");
-            WRITE ("mov [r15], rax\n");
+            WRITE_NEWLINE;
+            PUSH ("rdi\t\t\t; begin precision div");
+            PUSH ("rcx");
+            MOV ("rcx", "%u", INT_PRECISION_POW);
+            CMP ("rcx", "0");
+            WRITE_NO_TAB (".precision_div:\n");
+            MOV ("rdi", "rax");
+            CALL ("div_10");
+            SUB ("rcx", "1");
+            CMP ("rcx", "0");
+            WRITE ("jg .precision_div\n");
+            POP ("rcx");
+            POP ("rdi\t\t\t ; end precision div");
+            WRITE_NEWLINE;
+
+            ADD ("r15", "8\t\t\t; push imul-instr result instead of 2 operands\n");
+            MOV ("[r15]", "rax");
             POP ("rax");
 
             break;
@@ -494,6 +517,8 @@ TranslateRes TranslateOperator (const TreeNode* op_node, AsmText* asm_text, cons
             PUSH ("rax");
             WRITE ("mov rax, QWORD [r15+8]\n");
             WRITE ("idiv rax, QWORD [r15]\n");
+
+            IMUL ("rax", "%u\t\t; precision correction", asm_text->precision_correction);
 
             WRITE ("add r15, 8\t\t\t; push division result instead of 2 operands\n");
             WRITE ("mov [r15], rax\n");
@@ -639,7 +664,7 @@ TranslateRes TranslateNumber (const TreeNode* num_node, AsmText* asm_text, const
     if (TYPE (num_node) != INT_LITERAL)
         return TRANSLATE_TYPE_NOT_MATCH;
 
-    CPUSH ("%d", VAL (num_node));
+    CPUSH ("%d", VAL (num_node) * asm_text->precision_correction);
 
     return TRANSLATE_SUCCESS;
 }
@@ -730,7 +755,7 @@ AsmText* AsmTextCtor ()
 {
     AsmText* asm_text = (AsmText*) calloc (1, sizeof (AsmText));
 
-    asm_text->text = (char*) calloc (MAX_ASM_PROGRAM_SIZE, sizeof (char));
+    asm_text->text   = (char*) calloc (MAX_ASM_PROGRAM_SIZE, sizeof (char));
     asm_text->offset = 0;
 
     asm_text->offset_table = OffsetTableCtor ();
@@ -738,7 +763,12 @@ AsmText* AsmTextCtor ()
     asm_text->while_statements_count = 0;
     asm_text->funcs_count            = 0;
     asm_text->cond_count             = 0;
-    asm_text->tabs  = (char*) calloc (MAX_SCOPE_DEPTH, sizeof (char));
+    asm_text->tabs = (char*) calloc (MAX_SCOPE_DEPTH, sizeof (char));
+
+    asm_text->precision_correction = 1;
+
+    for (unsigned i = 0; i < INT_PRECISION_POW; i++)
+        asm_text->precision_correction *= 10;
 
     return asm_text;
 }
