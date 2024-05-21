@@ -567,9 +567,9 @@ Tree* ReadTree (FILE* stream)
 
     char* infix_tree = (char *) calloc (MAX_TREE, sizeof(char));
 
-    fread (infix_tree, MAX_TREE, sizeof (char), stream);
+    size_t n_readen = fread (infix_tree, MAX_TREE, sizeof (char), stream);
 
-    infix_tree[strcspn (infix_tree, "\r\n")] = 0;
+    infix_tree[n_readen - 1] = 0;
 
     Tree* readen = ReadTree ((const char *) infix_tree);
 

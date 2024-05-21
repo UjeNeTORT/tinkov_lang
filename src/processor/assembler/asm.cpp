@@ -541,7 +541,7 @@ int IsLabel(const char * token)
     if (col_pos)
     {
         int scan_res = sscanf(col_pos, "%s", temp);
-        if (scan_res)
+        if (temp)
         {
             fprintf(stderr, "SyntaxError! \"%s\" after \":\" in label name\n", temp);
 

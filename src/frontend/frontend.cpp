@@ -64,14 +64,23 @@ ProgText* GetProgText (const char* prog_name)
     assert (prog_name);
 
     FILE* prog_file = fopen (prog_name, "rb");
-    int prog_size   = GetProgSize (prog_file);
+    if (!prog_file) RET_ERROR (NULL, "Couldn't open file \"%s\"", prog_name);
+
+    size_t prog_size = GetProgSize (prog_file);
 
     char* raw_prog_text = (char*) calloc (prog_size, sizeof (char));
-    fread ((char*) raw_prog_text, sizeof (char), prog_size, prog_file); // todo check syscall
+
+    size_t n_readen = fread ((char*) raw_prog_text, sizeof (char), prog_size, prog_file);
+    fclose (prog_file);
+
+    if (n_readen != prog_size)
+    {
+        free (raw_prog_text);
+        RET_ERROR (NULL, "Unexpected error: n bytes readen does not match with prog size");
+    }
 
     ProgText* prog_text = ProgTextCtor (raw_prog_text, prog_size);
     free (raw_prog_text);
-    fclose (prog_file);
 
     return prog_text;
 }
@@ -1430,12 +1439,12 @@ int ProgTextDtor (ProgText* prog_text)
 
 // ================================================================================================
 
-int GetProgSize (FILE* prog_file)
+size_t GetProgSize (FILE* prog_file)
 {
     assert (prog_file);
 
     fseek (prog_file, 0, SEEK_END);
-    int size = ftell (prog_file);
+    size_t size = ftell (prog_file);
     rewind (prog_file);
 
     return size;

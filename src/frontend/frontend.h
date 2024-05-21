@@ -152,7 +152,7 @@ int IsMainFunction (const char* lexem);
 int GetDeclaratorIndex (const char* keyword);
 int GetKeywordIndex    (const char* keyword);
 int GetSeparatorIndex  (const char* separator);
-int GetOperatorIndex   (const char* operator_); // !!! operator__________ <- why??
+int GetOperatorIndex   (const char* operator_);
 
 // anscillary
 ScopeTableStack* ScopeTableStackCtor ();
@@ -169,7 +169,7 @@ int       ProgCodeDtor (ProgCode* prog_code);
 ProgText* ProgTextCtor (const char* text, int text_len);
 int       ProgTextDtor (ProgText* prog_text);
 
-int GetProgSize (FILE* prog_file);
+size_t GetProgSize (FILE* prog_file);
 
 int StripLexem (char* lexem);
 

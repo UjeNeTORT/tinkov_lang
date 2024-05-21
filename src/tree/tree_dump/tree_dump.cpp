@@ -107,7 +107,7 @@ int CompileDot (char* dot_path, int dump_id, DotDumpType dump_type)
     else if (dump_type == DETAILED_DUMP)
         sprintf (command, "dot -Tsvg %s -o %sdetailed_graph_dump_%d.svg", dot_path, GRAPH_SVGS_PATH, dump_id);
 
-    system (command);
+    assert (system (command) == 0);
 
     return 0;
 }
