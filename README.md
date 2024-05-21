@@ -41,13 +41,44 @@
 :-------------------------:|:-------------------------:|:-------------------------:|:-------------------------:
 ![](img/square_imp.png)    |  ![](img/square_inf.png)  | ![](img/square_single.png)| ![](img/square_two.png)
 
-## Написание первой программы на TinkovLang
+## Ваша первая программа на TinkovLang
 
 
 
 ## Синтаксис TinkovLang
 
-Синтаксис языка доступен в [EBNF нотации (расширенная форма Бэкуса-Наура)](https://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_form) в файле `EBNF/EBNF.txt`
+
+Синтаксис языка доступен в [EBNF нотации (расширенная форма Бэкуса-Наура)](https://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_form) в файле [`EBNF/EBNF.txt`](https://github.com/UjeNeTORT/tinkov_lang/blob/main/EBNF/EBNF.txt).
+
+Примеры использования некоторых конструкций доступны в файле [`EBNF/omega_plus.txt`](https://github.com/UjeNeTORT/tinkov_lang/blob/main/EBNF/omega_plus.txt).
+
+<blockquote>
+
+<code>EBNF/omega_plus.txt</code>
+
+```c
+...
+какая_разница x > 1 ?
+олег_не_торопись
+    <тело>
+я_олигарх_мне_заебись
+я_могу_ошибаться какая_разница  0 < x && x < 1  ?
+олег_не_торопись
+    <тело>
+я_олигарх_мне_заебись
+-----------------------------------------------
+if (x > 1)
+{
+    <тело>
+}
+else if (0 < x && x < 1)
+{
+    <тело>
+}
+...
+```
+</blockquote>
+
 ## Структура AST
 
 ## MiddleEnd - оптимизации над AST
