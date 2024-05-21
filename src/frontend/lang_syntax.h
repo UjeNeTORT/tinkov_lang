@@ -7,11 +7,13 @@
  * repo:     https://github.com/UjeNeTORT/language
  *************************************************************************/
 
-#ifndef OPERATIONS_H
-#define OPERATIONS_H
+#ifndef LANG_SYNTAX_H
+#define LANG_SYNTAX_H
 
 const int ILL_OPNUM = __INT_MAX__;
 const size_t MAX_SCOPE_DEPTH = 10; // naming?
+
+const char LINE_COMMENT_NAME[] = "великий_сарказм";
 
 typedef enum
 {
@@ -146,4 +148,4 @@ typedef enum
 } NodeType;
 typedef NodeType TokenType;
 
-#endif // OPERATIONS_H
+#endif // LANG_SYNTAX_H

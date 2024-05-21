@@ -141,6 +141,9 @@ ProgCode* LexerTokenize (ProgText* text);
 
 int HasForeignAgent (ProgText* text);
 
+int GetNewLineDistance (ProgText* text);
+
+int IsLineComment  (const char* lexem);
 int IsIdentifier   (const char* lexem);
 int IsDeclarator   (const char* lexem);
 int IsKeyword      (const char* lexem);

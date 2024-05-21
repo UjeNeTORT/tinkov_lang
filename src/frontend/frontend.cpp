@@ -969,13 +969,21 @@ ProgCode* LexerTokenize (ProgText* text)
 
     while (sscanf (text->text + text->offset, "%s%n", lexem, &n_readen) != EOF)
     {
+        text->offset += n_readen;
+
         StripLexem (lexem);
 
-        text->offset += n_readen;
+        if (IsLineComment (lexem))
+        {
+            text->offset += GetNewLineDistance (text); // ignore comment
+
+            continue;
+        }
 
         TreeNode* new_node = NULL;
 
         // the whole statement is quite unoptimal because many functions duplicate each other
+        // todo this should be converted into switch statement
         if (IsDeclarator (lexem))
         {
             int dclr_index = GetDeclaratorIndex (lexem);
@@ -1090,6 +1098,24 @@ int HasForeignAgent (ProgText* text)
     }
 
     return 1;
+}
+
+// ================================================================================================
+
+int GetNewLineDistance (ProgText* text)
+{
+    assert (text);
+
+    return strcspn (text->text + text->offset, "\n");
+}
+
+// ================================================================================================
+
+int IsLineComment  (const char* lexem)
+{
+    assert (lexem);
+
+    return streq (lexem, LINE_COMMENT_NAME);
 }
 
 // ================================================================================================

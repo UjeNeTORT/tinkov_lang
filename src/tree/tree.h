@@ -14,7 +14,7 @@
 
 #include "../common/common.h"
 #include "../common/colors.h"
-#include "operations.h"
+#include "../frontend/lang_syntax.h"
 
 const size_t MAX_N_NODES = 50000;  // max number of nodes in AST
 const size_t MAX_TREE    = 500000; // max len of a string-written tree in a file
