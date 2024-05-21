@@ -49,17 +49,7 @@ AsmText* TranslateAST (const TreeNode* root_node, AsmText* asm_text, const NameT
     WRITE ("BITS 64\n");
 
     WRITE ("INT_PRECISION_POW equ %u\n", INT_PRECISION_POW);
-    WRITE ("INT_PRECISION equ ");
-    if (INT_PRECISION_POW != 0)
-    {
-        WRITE_NO_TAB ("1");
-        for (size_t i = 0; i < INT_PRECISION_POW; i++) WRITE_NO_TAB ("0");
-    }
-    else
-    {
-        WRITE_NO_TAB ("0");
-    }
-    WRITE_NO_TAB ("\n\n");
+    WRITE ("INT_PRECISION equ %u\n", asm_text->precision_correction);
 
     WRITE ("SECTION .data\n\n");
     WRITE ("calc_stack times %ld db 0x00\t\t; calc stack (r15)\n\n", CALC_STACK_CAPACITY);
@@ -70,7 +60,6 @@ AsmText* TranslateAST (const TreeNode* root_node, AsmText* asm_text, const NameT
 
     WRITE ("; PROLOGUE\n");
 
-    // todo stdlib, global, section text
     WRITE ("global main\n\n");
     WRITE ("main:\n\n");
     WRITE ("; ===== mapping of calc stack (CPUSH, CPOP) =====\n");
@@ -114,27 +103,35 @@ TranslateRes TranslateASTSubtree (const TreeNode* node, AsmText* asm_text, const
         return TRANSLATE_SUCCESS;
     }
 
-    if (TranslateDeclarator (node, asm_text, nametable) == TRANSLATE_SUCCESS)
-        return TRANSLATE_SUCCESS;
+    switch (TYPE (node))
+    {
+        case DECLARATOR:
+            return TranslateDeclarator (node, asm_text, nametable);
 
-    if (TranslateKeyword (node, asm_text, nametable) == TRANSLATE_SUCCESS)
-        return TRANSLATE_SUCCESS;
+        case KEYWORD:
+            return TranslateKeyword (node, asm_text, nametable);
 
-    if (TranslateSeparator (node, asm_text, nametable) == TRANSLATE_SUCCESS)
-        return TRANSLATE_SUCCESS;
+        case SEPARATOR:
+            return TranslateSeparator (node, asm_text, nametable);
 
-    if (TranslateOperator (node, asm_text, nametable) == TRANSLATE_SUCCESS)
-        return TRANSLATE_SUCCESS;
+        case OPERATOR:
+            return TranslateOperator (node, asm_text, nametable);
 
-    if (TranslateIdentifier (node, asm_text, nametable) == TRANSLATE_SUCCESS)
-        return TRANSLATE_SUCCESS;
+        case IDENTIFIER:
+            return TranslateIdentifier (node, asm_text, nametable);
 
-    if (TranslateNumber (node, asm_text, nametable) == TRANSLATE_SUCCESS)
-        return TRANSLATE_SUCCESS;
+        case INT_LITERAL:
+            return TranslateIntLiteral (node, asm_text, nametable);
 
-    ERROR ("Couldnt translate node:\n"
-           "[type = %d]\n"
-           "[val  = %d]\n", TYPE (node), VAL (node));
+        default:
+        {
+            ERROR ("Couldnt translate node:\n"
+               "[type = %d]\n"
+               "[val  = %d]\n", TYPE (node), VAL (node));
+
+            return TRANSLATE_ERROR;
+        }
+    }
 
     return TRANSLATE_ERROR;
 }
@@ -483,13 +480,13 @@ TranslateRes TranslateOperator (const TreeNode* op_node, AsmText* asm_text, cons
             TranslateASTSubtree (op_node->left, asm_text, nametable);
             TranslateASTSubtree (op_node->right, asm_text, nametable);
 
-            PUSH ("rax");
+            PUSH ("rax\t\t\t; mul begin");
 
             MOV ("rax", "QWORD [r15+8]");
             IMUL ("rax", "QWORD [r15]");
 
             // precision correction
-            PUSH ("rdi\t\t\t; begin precision correction");
+            PUSH ("rdi\t\t\t; precision correction begin");
             PUSH ("rsi");
             MOV ("rdi", "rax");
 
@@ -497,12 +494,12 @@ TranslateRes TranslateOperator (const TreeNode* op_node, AsmText* asm_text, cons
             CALL ("divide");
 
             POP ("rsi");
-            POP ("rdi\t\t\t\t; end   precision correction");
+            POP ("rdi\t\t\t\t; precision correction end");
 
             ADD ("r15", "8\t\t\t; push imul-instr result instead of 2 operands\n");
             MOV ("[r15]", "rax");
 
-            POP ("rax");
+            POP ("rax\t\t\t\t; mul end");
 
             break;
         }
@@ -512,27 +509,26 @@ TranslateRes TranslateOperator (const TreeNode* op_node, AsmText* asm_text, cons
             TranslateASTSubtree (op_node->left, asm_text, nametable);
             TranslateASTSubtree (op_node->right, asm_text, nametable);
 
-            PUSH ("rax\t\t\t; begin div");
+            PUSH ("rax\t\t\t; div begin");
             PUSH ("rdi");
             PUSH ("rsi");
 
             CPOP ("rax");
 
-            // do right operator correction
-            PUSH ("rdi");
+            // do right operand correction
+            PUSH ("rdi\t\t\t; right operand precision correction begin");
             PUSH ("rsi");
             MOV ("rsi", "%u", asm_text->precision_correction);
             MOV ("rdi", "rax");
             CALL ("divide");
             POP ("rsi");
-            POP ("rdi");
+            POP ("rdi\t\t\t\t; right operand precision correction end");
 
             // right op
             MOV ("rsi", "rax");
 
             // left op
             CPOP ("rax");
-
             MOV ("rdi", "rax");
 
             CALL ("divide");
@@ -541,7 +537,7 @@ TranslateRes TranslateOperator (const TreeNode* op_node, AsmText* asm_text, cons
 
             POP ("rsi");
             POP ("rdi");
-            POP ("rax\t\t\t\t; end   div");
+            POP ("rax\t\t\t\t; div end");
 
             break;
         }
@@ -622,7 +618,7 @@ TranslateRes TranslateOperator (const TreeNode* op_node, AsmText* asm_text, cons
 }
 
 // ================================================================================================
-//* spu->nasm...
+
 TranslateRes TranslateIdentifier (const TreeNode* id_node, AsmText* asm_text, const NameTable* nametable)
 {
     assert (asm_text);
@@ -635,26 +631,13 @@ TranslateRes TranslateIdentifier (const TreeNode* id_node, AsmText* asm_text, co
     if (IsFunction (id_node, nametable))
     {
         // function call
-
-        #ifdef FCALL_MEMOIZATION
-
-            // todo
-
-        #else
-
         TranslateFunctionCall (id_node, asm_text, nametable);
-
-        #endif // FCALL_MEMOIZATION
-
-        // todo move function call result to new local variable
 
         return TRANSLATE_SUCCESS;
     }
     else
     {
         // variable
-
-        // PUSH ("rax");
 
         WRITE ("mov rax, "); // mov rax, ... <- here goes the second operand reg/mem
 
@@ -664,7 +647,8 @@ TranslateRes TranslateIdentifier (const TreeNode* id_node, AsmText* asm_text, co
         {
             // parameter or local variable
 
-            WRITE_NO_TAB ("QWORD [rbp - %d]\t; rax = %s\n", EFF_OFFSET (id_node) * QWORD_SIZE, NAME (id_node));
+            WRITE_NO_TAB ("QWORD [rbp - %d]\t; rax = %s\n",
+                    EFF_OFFSET (id_node) * QWORD_SIZE, NAME (id_node));
         }
         else
         {
@@ -673,20 +657,15 @@ TranslateRes TranslateIdentifier (const TreeNode* id_node, AsmText* asm_text, co
 
         CPUSH ("rax");
 
-        // POP ("rax");
-
         return TRANSLATE_SUCCESS;
     }
-
-    WRITE_NEWLINE;
 
     return TRANSLATE_ERROR;
 }
 
 // ================================================================================================
 
-//* spu->nasm
-TranslateRes TranslateNumber (const TreeNode* num_node, AsmText* asm_text, const NameTable* nametable)
+TranslateRes TranslateIntLiteral (const TreeNode* num_node, AsmText* asm_text, const NameTable* nametable)
 {
     assert (asm_text);
     assert (asm_text->text);
@@ -696,7 +675,6 @@ TranslateRes TranslateNumber (const TreeNode* num_node, AsmText* asm_text, const
         return TRANSLATE_TYPE_NOT_MATCH;
 
     CPUSH ("%d", VAL (num_node) * asm_text->precision_correction);
-    // CPUSH ("%d", VAL (num_node));
 
     return TRANSLATE_SUCCESS;
 }
@@ -753,32 +731,6 @@ TranslateRes TranslateFunctionCall (const TreeNode* func_id_node, AsmText* asm_t
     POP ("rax\n");
 
     return TRANSLATE_SUCCESS;
-}
-
-// ================================================================================================
-/**
- ** LEGACY
-*/
-DefaultFuncRes PopParamsToRAM (const TreeNode* func_id_node, AsmText* asm_text, const NameTable* nametable)
-{
-    /**
-     * popping function parameters to RAM happens after increase of rpx
-    */
-
-    assert (func_id_node);
-    assert (asm_text);
-    assert (nametable);
-
-    int n_params = nametable->n_params[VAL (func_id_node)];
-
-    for (int i = 0; i < n_params; i++)
-    {
-        WRITE ("pop     [rpx + %d] ; put \"%s\" to RAM\n",
-            OffsetTableGetVarOffset (OFFSET_TABLE, nametable->params[VAL (func_id_node)][i]),
-            nametable->names[nametable->params[VAL (func_id_node)][i]]);
-    }
-
-    return FUNC_SUCCESS;
 }
 
 // ================================================================================================
@@ -867,25 +819,6 @@ int IsFunction (const TreeNode* id_node, const NameTable* nametable)
 
     return 0;
 }
-
-// ================================================================================================
-/**
- ** LEGACY
-*/
-DefaultFuncRes WriteCondition (const TreeNode* op_node, AsmText* asm_text, const NameTable* nametable, OperatorCode comparator)
-{
-    assert (op_node);
-    assert (asm_text);
-    assert (nametable);
-    assert (comparator);
-
-    WRITE ("\t\t; cond_%ld\n", asm_text->cond_count);
-
-    asm_text->cond_count++;
-
-    return FUNC_SUCCESS;
-}
-
 DefaultFuncRes TranslateCondition (const TreeNode* op_node, AsmText* asm_text, const NameTable* nametable, const char *jmp_comparator)
 {
     assert (op_node);
@@ -1008,18 +941,7 @@ DefaultFuncRes OffsetTableAddVariable (OffsetTable* offset_table, size_t var_id)
 
 // ================================================================================================
 
-/**************************************************************************************************
- * @brief get effective variable offset within its scope
- *
- * @param [offset_table] offset table
- * @param [var_id] id of variable/parameter to look for
- *
- * @details parameters go first, followed by local variables.
- *          Parameter eff_offset = index - n_params
- *          Loc.var.  eff_offset = index - n_params + 1 // to avoid addressing [rbp + 0]
- *
- * @return 0 - not found
-**************************************************************************************************/
+
 int OffsetTableGetVarOffset (OffsetTable* offset_table, size_t var_id)
 {
     assert (offset_table);
@@ -1044,17 +966,6 @@ int OffsetTableGetVarOffset (OffsetTable* offset_table, size_t var_id)
 
 // ================================================================================================
 
-
-/**************************************************************************************************
- * @brief
- *
- * @param [offset_table] offset table
- *
- *
- * @details
- *
- * @return
-**************************************************************************************************/
 int DescribeCurrFunction (AsmText *asm_text, const NameTable *nametable)
 {
     assert (asm_text);

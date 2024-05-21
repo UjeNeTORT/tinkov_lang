@@ -157,21 +157,114 @@ const char *REG_NAMES[16] = {"rax", "rbx", "rcx", "rdx",
                              "r12", "r13", "r14", "r15",
                              "rbp", "rsp"};
 
+/**************************************************************************************************
+ * @brief starting on root_node, translate AST to nasm text and write it to asm_text structure
+ *
+ * @param [root_node]   AST root
+ * @param [asm_text]    structure which stores assembler text
+ * @param [nametable]   nametable
+ *
+ * @details this func sets up calculations stack (r15), includes standart library, calls main,
+ *          describes after main call routine (exit). It also starts the translation of main itself.
+ *
+ * @return filled asm_text structure
+**************************************************************************************************/
 AsmText*       TranslateAST                 (const TreeNode* root_node, AsmText* asm_text, const NameTable* nametable);
+
+/**************************************************************************************************
+ * @brief translate AST subtree with root in node into nasm
+ *
+ * @param [node]        AST node
+ * @param [asm_text]    structure which stores assembler text
+ * @param [nametable]   nametable
+ *
+ * @return TranslateRes (0 - on success)
+**************************************************************************************************/
 TranslateRes   TranslateASTSubtree          (const TreeNode* node, AsmText* asm_text, const NameTable* nametable);
 
+/**************************************************************************************************
+ * @brief translate declarator node subtree
+ *
+ * @param [declr_node]  AST declarator node
+ * @param [asm_text]    structure which stores assembler text
+ * @param [nametable]   nametable
+ *
+ * @return TranslateRes (0 - on success)
+**************************************************************************************************/
 TranslateRes   TranslateDeclarator          (const TreeNode* declr_node, AsmText* asm_text, const NameTable* nametable);
+
+/**************************************************************************************************
+ * @brief translate keyword node subtree
+ *
+ * @param [kw_node]     AST keyword node
+ * @param [asm_text]    structure which stores assembler text
+ * @param [nametable]   nametable
+ *
+ * @return TranslateRes (0 - on success)
+**************************************************************************************************/
 TranslateRes   TranslateKeyword             (const TreeNode* kw_node,    AsmText* asm_text, const NameTable* nametable);
+
+/**************************************************************************************************
+ * @brief translate separator node subtree
+ *
+ * @param [sep_node]    AST separator node
+ * @param [asm_text]    structure which stores assembler text
+ * @param [nametable]   nametable
+ *
+ * @return TranslateRes (0 - on success)
+**************************************************************************************************/
 TranslateRes   TranslateSeparator           (const TreeNode* sep_node,   AsmText* asm_text, const NameTable* nametable);
+
+/**************************************************************************************************
+ * @brief translate operator node subtree
+ *
+ * @param [op_node]     AST operator node
+ * @param [asm_text]    structure which stores assembler text
+ * @param [nametable]   nametable
+ *
+ * @return TranslateRes (0 - on success)
+**************************************************************************************************/
 TranslateRes   TranslateOperator            (const TreeNode* op_node,    AsmText* asm_text, const NameTable* nametable);
+
+
+/**************************************************************************************************
+ * @brief translate identifier node subtree
+ *
+ * @param [id_node]     AST identifier node
+ * @param [asm_text]    structure which stores assembler text
+ * @param [nametable]   nametable
+ *
+ * @details identifier is not only variable but also a function call
+ *          the difference is established by nametable n_params field.
+ *          The easiest way to tell apart is via IsFunction (...)
+ *
+ * @return TranslateRes (0 - on success)
+**************************************************************************************************/
 TranslateRes   TranslateIdentifier          (const TreeNode* id_node,    AsmText* asm_text, const NameTable* nametable);
-TranslateRes   TranslateNumber              (const TreeNode* num_node,   AsmText* asm_text, const NameTable* nametable);
 
+
+/**************************************************************************************************
+ * @brief translate int_literal node subtree
+ *
+ * @param [num_node]    AST int_literal node
+ * @param [asm_text]    structure which stores assembler text
+ * @param [nametable]   nametable
+ *
+ * @return TranslateRes (0 - on success)
+**************************************************************************************************/
+TranslateRes   TranslateIntLiteral          (const TreeNode* num_node,   AsmText* asm_text, const NameTable* nametable);
+
+
+/**************************************************************************************************
+ * @brief translate function call
+ *
+ * @param [func_id_node]    AST function call node
+ * @param [asm_text]        structure which stores assembler text
+ * @param [nametable]       nametable
+ *
+ * @return TranslateRes (0 - on success)
+**************************************************************************************************/
 TranslateRes   TranslateFunctionCall        (const TreeNode* func_id_node, AsmText* asm_text, const NameTable* nametable);
-
-DefaultFuncRes PutFuncParamsToRAM           (const TreeNode* func_id_node, AsmText* asm_text, const NameTable* nametable);
-DefaultFuncRes PushParamsToStack            (const TreeNode* func_id_node, AsmText* asm_text, const NameTable* nametable);
-DefaultFuncRes PopParamsToRAM               (const TreeNode* func_id_node, AsmText* asm_text, const NameTable* nametable);
 
 AsmText*       AsmTextCtor                  ();
 DefaultFuncRes AsmTextDtor                  (AsmText* asm_text);
@@ -179,21 +272,57 @@ DefaultFuncRes AsmTextDtor                  (AsmText* asm_text);
 DefaultFuncRes AsmTextAddTab                (AsmText* asm_text);
 DefaultFuncRes AsmTextRemoveTab             (AsmText* asm_text);
 
+/**************************************************************************************************
+ * @brief based on data in nametable tell if id_node is a function name or a var/par name
+ *
+ * @param [id_node]     "suspected" function node or var/par node
+ * @param [nametable]   nametable
+ *
+ * @return 1 - is function, 0 - not a function (is var/par)
+**************************************************************************************************/
 int            IsFunction                   (const TreeNode *id_node, const NameTable *nametable);
 
-DefaultFuncRes WriteCondition               (const TreeNode* op_node, AsmText* asm_text, const NameTable* nametable, const char* comparator);
+
+/**************************************************************************************************
+ * @brief translate subtree in such a way that result of its execution marks if condition is
+ *        is true or false
+ *
+ * @param [op_node]     operator node (usually comparison operators)
+ * @param [asm_text]    structure which stores assembler text
+ * @param [nametable]   nametable
+ * @param [comparator]  asm conditional jump instruction relevant to the situation // todo
+ *
+ * @return 0 - on success
+**************************************************************************************************/
 DefaultFuncRes TranslateCondition           (const TreeNode* op_node, AsmText* asm_text, const NameTable* nametable, const char *jmp_comparator);
 
 OffsetTable*   OffsetTableCtor              ();
 DefaultFuncRes OffsetTableDtor              (OffsetTable* offset_table);
 int            OffsetTableGetCurrFrameWidth (OffsetTable* offset_table);
 DefaultFuncRes OffsetTableAddFrame          (OffsetTable* offset_table);
+
+/**************************************************************************************************
+ * @brief get effective variable offset within its scope
+ *
+ * @param [offset_table] offset table
+ * @param [var_id] id of variable/parameter to look for
+ *
+ * todo: here details section is not accurate
+ * @details parameters go first, followed by local variables.
+ *          Parameter eff_offset = index - n_params
+ *          Loc.var.  eff_offset = index - n_params + 1 // to avoid addressing [rbp + 0]
+ *
+ * @return 0 - not found
+**************************************************************************************************/
 int            OffsetTableGetVarOffset      (OffsetTable* offset_table, size_t var_id);
 DefaultFuncRes OffsetTableDeleteFrame       (OffsetTable* offset_table);
 DefaultFuncRes OffsetTableAddVariable       (OffsetTable* offset_table, size_t var_id);
 DefaultFuncRes OffsetTableAddFuncParams     (OffsetTable* offset_table, const TreeNode* func_id_node, const NameTable* nametable);
 DefaultFuncRes OffsetTableAddFuncLocals     (OffsetTable* offset_table, const TreeNode* func_body_node, const NameTable* nametable);
 
+/**************************************************************************************************
+ *
+**************************************************************************************************/
 int            DescribeCurrFunction         (AsmText *asm_text, const NameTable *nametable);
 
 #endif // TINKOV_BACKEND_H
