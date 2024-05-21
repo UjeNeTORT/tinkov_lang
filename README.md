@@ -137,13 +137,17 @@
     ```
     </blockquote>
 
-### Компиляция
+### Компиляция исходника
 
-    ```
-    ./compiler path/to/source.tnkff
-    ```
+```
+./compiler path/to/source.tnkff
+```
 
-    ![Появятся зеленые надписи, что все ок](img/compile_example.png)
+![](img/compile_example.png)
+
+*Появятся зеленые надписи, что все ок*
+
+Вы можете выполнить то же самое вручную:
 
 1. Построить AST
 
@@ -164,16 +168,30 @@
    ```
     *Ассемблерный листинг сохранится в `out.s`*
 
-4. Выполнить компиляцию ассемблерного файла
-    ```
-    nasm -f elf64 -g out.s -o out.o
-    g++ -no-pie out.o -o exec
-    ```
+### Компиляция ассемблерного файла
+
+```
+nasm -f elf64 -g out.s -o out.o
+g++ -no-pie out.o -o exec
+```
 
 ### Запуск
-    ```
-    ./exec
-    ```
+```
+./exec
+```
+
+![Ура!](img/sum_run_res.png)
+
+**2 + 2 = 4 !**
+
+Кстати говоря, можете посмотреть на AST, которое сгенерировал **frontend**:
+
+<blockquote>
+
+<code>src/tree/tree_dump/dumps/dumps/dump.html</code>
+
+![alt text](img/firstast.png)
+</blockquote>
 
 ## Синтаксис TinkovLang
 
