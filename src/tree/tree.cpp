@@ -167,7 +167,9 @@ TreeSimplifyRes SubtreeSimplifyConstants (TreeNode* node, int* tree_changed_flag
     if (ret_val != TREE_SIMPLIFY_SUCCESS)
         RET_ERROR (TREE_SIMPLIFY_ERR, "Previous function returned error code %d", ret_val);
 
-    if (TYPE(node) == OPERATOR && TYPE(node->left) == INT_LITERAL && TYPE(node->right) == INT_LITERAL)
+    //! temporary crutch: cannot simplify sqrt
+    // todo create unary operator evaluation function
+    if (TYPE(node) == OPERATOR && VAL (node) != SQRT && TYPE(node->left) == INT_LITERAL && TYPE(node->right) == INT_LITERAL)
     {
         if (SubtreeEvalBiOp (node, VAL(node->left), VAL(node->right), &VAL(node)) != TREE_EVAL_SUCCESS)
             return TREE_SIMPLIFY_ERR;
