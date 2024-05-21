@@ -1,10 +1,10 @@
 /*************************************************************************
- * (c) 2023 Tikhonov Yaroslav (aka UjeNeTORT)
+ * (c) 2024 Tikhonov Yaroslav (aka UjeNeTORT)
  *
  * email:    tikhonovty@gmail.com
  * telegram: https://t.me/netortofficial
  * GitHub:   https://github.com/UjeNeTORT
- * repo:     https://github.com/UjeNeTORT/language
+ * repo:     https://github.com/UjeNeTORT/tinkov_lang
  *************************************************************************/
 
 #include "compiler.h"

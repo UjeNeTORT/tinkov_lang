@@ -1,33 +1,11 @@
 /*************************************************************************
- * (c) 2023 Tikhonov Yaroslav (aka UjeNeTORT)
+ * (c) 2024 Tikhonov Yaroslav (aka UjeNeTORT)
  *
  * email:    tikhonovty@gmail.com
  * telegram: https://t.me/netortofficial
  * GitHub:   https://github.com/UjeNeTORT
- * repo:     https://github.com/UjeNeTORT/language
+ * repo:     https://github.com/UjeNeTORT/tinkov_lang
  *************************************************************************/
-
-/**
- * BUGS: - [x] lexer thinks that "131aboba" is a number 131
- *       - [-] lexer thinks that "_aboba228_ is unknown lexem"
- *       - [x] lexer does not take \n as a space between tokens (I THINK THE PROBLEM IS NOT IN THIS, NOT A BUG)
- *       - [x] syntaxer does not give an error if there is no ; in the end
- *       - [x] difference between index of keyword and its opcode is not always trivial
- *       - [x] there are no checks in many places if there are tokens left, if there are no more
- *       - [ ] tokens left, this may result in attempt to access area behind the array
- *       - [x] in some places i have to write 2 syntax asserts checking if there are tokens left and then
- *       - [ ] getting access to token if ir exists, so it results in copypaste
- *       - [x] lexer does not understand russian
- *       - [x] syntaxer allows same variable names in function parameters
- *       - [x] chaos with declaration check in lexer
- *       - [x] if no function declared - falls with segfault
- *       - [x] it should handle not Fucnitons sequence but (function | operation)+ sequence
- *       - [x] does not require having an entry point
- *       - [x] var declarators in tree are not represented
- *       - [ ] what if we delete global scope?
- *
- * TODO: - fix bugs (lol)
-*/
 
 #include "frontend.h"
 
