@@ -13,7 +13,7 @@ start: stack.o onegin.o spu.o asm.o tree.o tree_dump.o frontend.o middleend.o ba
 	$(CPP) obj/common.o obj/compiler.o -o compiler
 
 run:
-	./compiler test_code/factorial.tnkff
+	./compiler test_code/square.tnkff
 
 compiler.o: src/compiler/compiler.*
 	$(CPP) $(C_FLAGS) src/compiler/compiler.cpp -c -o obj/compiler.o
