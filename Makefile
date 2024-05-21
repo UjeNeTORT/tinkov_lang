@@ -1,4 +1,4 @@
-C_FLAGS = -Wall -Wextra -g
+C_FLAGS = -O2
 
 CPP = g++
 
