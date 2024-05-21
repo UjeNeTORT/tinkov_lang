@@ -43,9 +43,6 @@ DefaultFuncRes CompileTinkovProgram (char* filename)
     sprintf (command, "g++ -no-pie out.o -o exec\n");
     assert (system (command) == 0);
 
-    sprintf (command, "./exec\n");
-    assert (system (command) == 0);
-
     free (command);
 
     return FUNC_SUCCESS;

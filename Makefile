@@ -12,8 +12,11 @@ start: stack.o onegin.o spu.o asm.o tree.o tree_dump.o frontend.o middleend.o ba
 
 	$(CPP) obj/common.o obj/compiler.o -o compiler
 
-run:
+compile:
 	./compiler test_code/square.tnkff
+
+run:
+	./exec
 
 compiler.o: src/compiler/compiler.*
 	$(CPP) $(C_FLAGS) src/compiler/compiler.cpp -c -o obj/compiler.o
@@ -80,6 +83,7 @@ clean_all:
 	rm -f *.tree
 	rm -f *.log
 	rm -f *.bin
+	rm -f out.s
 	rm -f *.tinkov
 	rm -f src/tree/tree_dump/dumps/png/*.*
 	rm -f src/tree/tree_dump/dumps/dot/*.*
