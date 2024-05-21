@@ -338,7 +338,6 @@ TranslateRes TranslateKeyword (const TreeNode* kw_node, AsmText* asm_text, const
 
         case KW_DO: // do if
         {
-            // todo test
             // ignore condition (it is not even presented in ast)
             TranslateASTSubtree (kw_node->right, asm_text, nametable);
 
@@ -347,24 +346,25 @@ TranslateRes TranslateKeyword (const TreeNode* kw_node, AsmText* asm_text, const
 
         case KW_WHILE:
         {
-            // todo test
+            size_t curr_while = WHILE_COUNT++;
+
             PUSH ("rax");
 
-            WRITE ("jmp while_cond_%ld\n", WHILE_COUNT);
+            WRITE ("jmp while_cond_%ld\n", curr_while);
 
-            WRITE_NO_TAB ("while_%ld:\n", WHILE_COUNT);
+            WRITE_NO_TAB ("while_%ld:\n", curr_while);
 
             TranslateASTSubtree (kw_node->left, asm_text, nametable);
 
-            WRITE_NO_TAB ("while_cond_%ld:\n", WHILE_COUNT);
+            WRITE_NO_TAB ("while_cond_%ld:\n", curr_while);
             TranslateASTSubtree (kw_node->right, asm_text, nametable); // cstack top = condition result
             CPOP ("rax");                                              // rax = condition result (1 or 0)
             WRITE ("cmp rax, 0\n");
-            WRITE ("jne while_%ld", WHILE_COUNT);
+            WRITE ("jne while_%ld\n", curr_while);
 
             POP ("rax");
 
-            WHILE_COUNT++;
+
 
             break;
         }
