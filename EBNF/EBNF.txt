@@ -45,8 +45,8 @@
 
 <MathExpr>  ::= <AddSubRes> ("<" | "<=" | "==" | ">=" | ">" | "!=") <AddSubRes>
 <AddSubRes> ::= <MulDivRes> (("+" | "-") <MulDivRes>)*
-<MulDivRes> ::= <PowRes> (("*" | "/") <PowRes>)*
-<PowRes>    ::= <Operand> ("^" <Operand>)?
+<MulDivRes> ::= <SqrtRes> (("*" | "/") <SqrtRes>)*
+<SqrtRes>   ::= "корень" "(" <AddSubRes> ")" | <Operand>
 <Operand>   ::= "(" <MathExpr> ")" | <SimpleOperand>
 
 <SimpleOperand> ::= <Number> | <FunctionCall> | <Identifier>
