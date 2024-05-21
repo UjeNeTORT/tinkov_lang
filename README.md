@@ -87,11 +87,8 @@
 
     ```
     ...
-        але_вам_удобно_разговаривать
-        a я_так_чувствую 0 сомнительно_но_окей
-
-        але_вам_удобно_разговаривать
-        b я_так_чувствую 0 сомнительно_но_окей
+        грешник a я_так_чувствую 0 сомнительно_но_окей
+        грешник b я_так_чувствую 0 сомнительно_но_окей
     ...
     ```
     </blockquote>
@@ -184,7 +181,8 @@ g++ -no-pie out.o -o exec
 <blockquote>
 <code>src/tree/tree_dump/dumps/dumps/dump.html</code>
 
-![alt text](img/firstast.png)
+![alt text](img/first_ast.png)
+
 </blockquote>
 
 Подробнее о структуре AST будет [позже](#структура-ast).
@@ -193,7 +191,7 @@ g++ -no-pie out.o -o exec
 
 Синтаксис языка доступен в [EBNF нотации (расширенная форма Бэкуса-Наура)](https://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_form) в файле [`EBNF/EBNF.txt`](https://github.com/UjeNeTORT/tinkov_lang/blob/main/EBNF/EBNF.txt).
 
-Примеры использования некоторых конструкций доступны в файле [`EBNF/omega_plus.txt`](https://github.com/UjeNeTORT/tinkov_lang/blob/main/EBNF/omega_plus.txt).
+Примеры использования некоторых конструкций можете посмотреть в [`EBNF/omega_plus.txt`](https://github.com/UjeNeTORT/tinkov_lang/blob/main/EBNF/omega_plus.txt).
 
 <blockquote>
 <code>EBNF/omega_plus.txt</code>
@@ -225,14 +223,13 @@ else if (0 < x && x < 1)
 
 | C               | TinkovLang                   |
 |:---------------:|:----------------------------:|
-|int (initializer)| але_вам_удобно_разговаривать |
+|int (initializer)| грешник                      |
 | =               | я_так_чувствую               |
 | if              | какая_разница                |
 | else            | я_могу_ошибаться             |
 | while           | ну_сколько_можно             |
 | {               | олег_не_торопись             |
 | }               | я_олигарх_мне_заебись        |
-
 
 **Особенности синтаксиса:**
 
@@ -247,3 +244,8 @@ else if (0 < x && x < 1)
 ## MiddleEnd - оптимизации над AST
 
 ## BackEnd - трансляция в NASM
+
+## BackEnd - трансляция в код моего SPU
+
+## Стандартная библиотека
+
