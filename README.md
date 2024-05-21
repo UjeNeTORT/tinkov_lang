@@ -22,12 +22,17 @@
     git clone https://github.com/UjeNeTORT/tinkov_lang.git
     ```
 
-2. Компиляция
+2. Компиляция исходников TinkovLang
 
     ```
     make
     ```
-3. Первый запуск
+3. Компиляция дефолтной программы на TinkovLang
+
+    ```
+    make compile
+    ```
+4. Запуск
 
     ```
     make run
@@ -133,24 +138,43 @@
     </blockquote>
 
 ### Компиляция
+
+    ```
+    ./compiler path/to/source.tnkff
+    ```
+
+    ![Появятся зеленые надписи, что все ок](img/compile_example.png)
+
 1. Построить AST
 
    ```
     ./frontend path/to/tnkff/file.tnkff
    ```
-    *Дерево сохранится в файл `ast.ast`*
+    *Дерево сохранится в `ast.ast`*
 
 2. Выполнить оптимизации над AST
     ```
     ./middleend ast.ast
    ```
-    *Оптимизированное дерево сохранится в файл `ast.ast`*
+    *Оптимизированное дерево сохранится в `ast.ast`*
 
 3. Транслировать AST в NASM
     ```
     ./backend ast.ast
    ```
-    *Дерево сохранится в файл `ast.ast`*
+    *Ассемблерный листинг сохранится в `out.s`*
+
+4. Выполнить компиляцию ассемблерного файла
+    ```
+    nasm -f elf64 -g out.s -o out.o
+    g++ -no-pie out.o -o exec
+    ```
+
+### Запуск
+    ```
+    ./exec
+    ```
+
 ## Синтаксис TinkovLang
 
 
