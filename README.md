@@ -69,7 +69,6 @@
 3. Определите ЦАРЬ-функцию (аналог main)
 
     <blockquote>
-
     <code>your_first_program.tnkff</code>
 
     ```
@@ -84,7 +83,6 @@
 4. Объявите и обязательно инициализируйте 2 переменные
 
     <blockquote>
-
     <code>your_first_program.tnkff</code>
 
     ```
@@ -100,8 +98,7 @@
 
 5. Запросите у пользователя значения переменных
 
-   <blockquote>
-
+    <blockquote>
     <code>your_first_program.tnkff</code>
 
     ```
@@ -115,7 +112,6 @@
 6. Выведите их сумму
 
     <blockquote>
-
     <code>your_first_program.tnkff</code>
 
     ```
@@ -128,7 +124,6 @@
 7. Верните 2007 из ЦАРЬ-функции
 
     <blockquote>
-
     <code>your_first_program.tnkff</code>
 
     ```
@@ -184,24 +179,23 @@ g++ -no-pie out.o -o exec
 
 **2 + 2 = 4 !**
 
-Кстати говоря, можете посмотреть на AST, которое сгенерировал **frontend**:
+Кстати говоря, можете посмотреть на AST дерево ~~гусеницу~~, которое сгенерировал **frontend**:
 
 <blockquote>
-
 <code>src/tree/tree_dump/dumps/dumps/dump.html</code>
 
 ![alt text](img/firstast.png)
 </blockquote>
 
-## Синтаксис TinkovLang
+Подробнее о структуре AST будет [позже](#структура-ast).
 
+## Синтаксис TinkovLang
 
 Синтаксис языка доступен в [EBNF нотации (расширенная форма Бэкуса-Наура)](https://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_form) в файле [`EBNF/EBNF.txt`](https://github.com/UjeNeTORT/tinkov_lang/blob/main/EBNF/EBNF.txt).
 
 Примеры использования некоторых конструкций доступны в файле [`EBNF/omega_plus.txt`](https://github.com/UjeNeTORT/tinkov_lang/blob/main/EBNF/omega_plus.txt).
 
 <blockquote>
-
 <code>EBNF/omega_plus.txt</code>
 
 ```c
@@ -227,7 +221,28 @@ else if (0 < x && x < 1)
 ```
 </blockquote>
 
+**Синтаксис TinkovLang родственен синтаксису C**
+
+| C               | TinkovLang                   |
+|:---------------:|:----------------------------:|
+|int (initializer)| але_вам_удобно_разговаривать |
+| =               | я_так_чувствую               |
+| if              | какая_разница                |
+| else            | я_могу_ошибаться             |
+| while           | ну_сколько_можно             |
+| {               | олег_не_торопись             |
+| }               | я_олигарх_мне_заебись        |
+
+
+**Особенности синтаксиса:**
+
+- исходник программы требует обязательного заголовка, отсутствие которого приведет к потере пафосного вида программы и ошибке компиляции
+- объявление переменной требует обязательной инициализации
+- представлена конструкция do-if, о смысле которой гадает даже автор программы
+
 ## Структура AST
+
+## FrontEnd - лексический анализ и построение AST
 
 ## MiddleEnd - оптимизации над AST
 
