@@ -980,6 +980,8 @@ ProgCode* LexerTokenize (ProgText* text)
             continue;
         }
 
+        if (IsLexemMeanless (lexem)) continue;
+
         TreeNode* new_node = NULL;
 
         // the whole statement is quite unoptimal because many functions duplicate each other
@@ -1111,6 +1113,21 @@ int GetNewLineDistance (ProgText* text)
 
 // ================================================================================================
 
+int IsLexemMeanless (const char* lexem)
+{
+    assert (lexem);
+
+    for (int i = 0; i < N_MEANLESS_LEXEMS; i++)
+    {
+        if (streq (lexem, MEANLESS_LEXEMS[i]))
+            return 1;
+    }
+
+    return 0;
+}
+
+// ================================================================================================
+
 int IsLineComment  (const char* lexem)
 {
     assert (lexem);
@@ -1128,6 +1145,9 @@ int IsIdentifier (const char* lexem)
 
     while (*++lexem)
         if (!isalnum (*lexem) && *lexem != '_' && !strchr (RU_SYMBOLS, *lexem)) return 0;
+
+    // assert that to this moment all the checks that lexem is not declarator,
+    //                                                          separator, etc. are already done
 
     return 1;
 }

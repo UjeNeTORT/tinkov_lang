@@ -143,14 +143,15 @@ int HasForeignAgent (ProgText* text);
 
 int GetNewLineDistance (ProgText* text);
 
-int IsLineComment  (const char* lexem);
-int IsIdentifier   (const char* lexem);
-int IsDeclarator   (const char* lexem);
-int IsKeyword      (const char* lexem);
-int IsSeparator    (const char* lexem);
-int IsOperator     (const char* lexem);
-int IsIntLiteral   (const char* lexem);
-int IsMainFunction (const char* lexem);
+int IsLexemMeanless (const char* lexem);
+int IsLineComment   (const char* lexem);
+int IsIdentifier    (const char* lexem);
+int IsDeclarator    (const char* lexem);
+int IsKeyword       (const char* lexem);
+int IsSeparator     (const char* lexem);
+int IsOperator      (const char* lexem);
+int IsIntLiteral    (const char* lexem);
+int IsMainFunction  (const char* lexem);
 
 int GetDeclaratorIndex (const char* keyword);
 int GetKeywordIndex    (const char* keyword);

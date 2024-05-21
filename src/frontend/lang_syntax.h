@@ -13,12 +13,32 @@
 const int ILL_OPNUM = __INT_MAX__;
 const size_t MAX_SCOPE_DEPTH = 10; // naming?
 
-const char LINE_COMMENT_NAME[] = "великий_сарказм";
+const char LINE_COMMENT_NAME[] = "сарказм";
+
+const char * const MEANLESS_LEXEMS[] =
+{
+    "это",
+    "хотя",
+    "но",
+    "бы",
+    "был",
+    "великий",
+    "величайший",
+    "самый",
+    "совсем",
+    "уже",
+    "полный",
+    "тотальный",
+    "капитальный",
+    "нет",
+    "да",
+};
+const int N_MEANLESS_LEXEMS = sizeof (MEANLESS_LEXEMS) / sizeof (MEANLESS_LEXEMS[0]);
 
 typedef enum
 {
     FUNC_DECLARATOR = 0, // "россии_нужен"
-    VAR_DECLARATOR  = 1, // "але_вам_удобно_разговаривать"
+    VAR_DECLARATOR  = 1, // "грешник"
 } DeclaratorCode;
 
 struct Declarator
@@ -30,8 +50,7 @@ struct Declarator
 const Declarator DECLARATORS[] =
 {
     {"россии_нужен", FUNC_DECLARATOR},
-    {"але_вам_удобно_разговаривать",
-                     VAR_DECLARATOR},
+    {"грешник",      VAR_DECLARATOR},
 };
 const int N_DECLARATORS = sizeof (DECLARATORS) / sizeof (DECLARATORS[0]);
 
