@@ -96,15 +96,11 @@ TreeEvalRes SubtreeEvalBiOp (const TreeNode* node, int left, int right, int* res
         break;
 
     case MUL:
-        *result = left* right;
+        *result = left * right;
         break;
 
     case DIV:
         *result = left / right;
-        break;
-
-    case POW:
-        *result = pow(left,right);
         break;
 
     default:
@@ -283,23 +279,6 @@ TreeSimplifyRes SubtreeSimplifyNeutrals  (TreeNode* node, int* tree_changed_flag
         if (CHECK_VAL(node->left, 0))
         {
             if (SubtreeToNum(node, 0) != SUBTR_TO_NUM_SUCCESS)
-                RET_ERROR (TREE_SIMPLIFY_ERR, "Subtree to num function failed");
-
-            *tree_changed_flag = 1;
-        }
-
-        break;
-
-    case POW:
-        if (CHECK_VAL(node->right, 1))
-        {
-            LiftChildToParent (node, LEFT);
-
-            *tree_changed_flag = 1;
-        }
-        else if (CHECK_VAL(node->right, 0))
-        {
-            if (SubtreeToNum(node, 1) != SUBTR_TO_NUM_SUCCESS)
                 RET_ERROR (TREE_SIMPLIFY_ERR, "Subtree to num function failed");
 
             *tree_changed_flag = 1;

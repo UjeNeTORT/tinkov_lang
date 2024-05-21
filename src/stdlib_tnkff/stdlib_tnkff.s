@@ -21,6 +21,8 @@ in_invite_len   equ $ - input_invite
 input_err_msg   db "input error! wrong char!"
 input_err_len   equ $ - input_err_msg
 
+square_root     dq 0x00
+
 SECTION .text
 ;===========================================================
 ; Scan int64_t value to specified address
@@ -98,6 +100,7 @@ scan_int64_t:
 
 .num_negative:
         mov     r8, 1
+        jmp     .read_next
 
 .end_read:
         cmp     r8, 1
@@ -140,16 +143,25 @@ print_int64_t:
         push    rbp
         mov     rbp, rsp
 
-        push rax
-        push rbx
-        push rcx
-        push rdx
-        push rdi
-        push rsi
-        push r11
+        push    rax
+        push    rbx
+        push    rcx
+        push    rdx
+        push    rdi
+        push    rsi
+        push    r8
+        push    r11
 
         mov     rbx, number_buf
 
+        xor     r8, r8
+
+        cmp     rdi, 0
+        jge      .not_negative
+        neg     rdi
+        mov     r8, 1           ; set is num negative flag
+
+.not_negative:
         mov     BYTE [rbx], 0xa ; "\n"
         inc     rbx
 
@@ -189,6 +201,14 @@ print_int64_t:
         cmp     rdi, 0
         jg      .integer_char
 
+        cmp     r8, 1
+        jne     .after_add_minus
+
+        mov     al, '-'
+        mov     BYTE [rbx], al
+        inc     rbx
+
+.after_add_minus:
         ; display buffer
         dec     rbx             ; = &last_char_added
 
@@ -205,13 +225,14 @@ print_int64_t:
         cmp     rbx, number_buf
         jge     .put_char
 
-        pop r11
-        pop rsi
-        pop rdi
-        pop rdx
-        pop rcx
-        pop rbx
-        pop rax
+        pop     r11
+        pop     r8
+        pop     rsi
+        pop     rdi
+        pop     rdx
+        pop     rcx
+        pop     rbx
+        pop     rax
 
         pop     rbp
         ret
@@ -278,3 +299,47 @@ mod_10:
         pop     rbp
         ret
 
+;===========================================================
+; res = sqrt (val)
+; Arguments:
+;       rdi - int64_t val
+; Return:
+;       rax - result
+;
+; Destr: -
+;===========================================================
+sqrt_int64_t:
+        push    rbp
+        mov     rbp, rsp
+
+        cvtsi2sd xmm0, rdi
+        mov     rdx, square_root
+        movsd   QWORD [rdx], xmm0
+
+        fld    QWORD [square_root]
+        fsqrt
+        fstp   QWORD [square_root]
+
+        movsd  xmm0, QWORD [square_root]
+        cvtsd2si rax, xmm0
+
+        pop     rbp
+        ret
+
+;===========================================================
+; res = a / b
+; Arguments:
+;       rdi - a
+;       rsi - b
+; Return:
+;       rax - result
+;
+; Destr: rdi, rsi, rdx,
+;===========================================================
+divide:
+        xor     rdx, rdx
+        mov     rax, rdi
+        cqo                    ; sign-extend the dividend into edx:eax
+
+        idiv    rsi            ; no need to copy to ecx/rcx first
+        ret

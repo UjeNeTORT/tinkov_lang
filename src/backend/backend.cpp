@@ -84,7 +84,7 @@ AsmText* TranslateAST (const TreeNode* root_node, AsmText* asm_text, const NameT
     WRITE_NEWLINE;
 
     WRITE ("; EPILOGUE\n");
-    MOV ("rax", "SYS_EXIT\t\t; syscall exit");
+    MOV ("rax", "SYS_EXIT\t; syscall exit");
     XOR ("rdi", "rdi");
     WRITE ("syscall\n");
     WRITE_NEWLINE;
@@ -241,7 +241,7 @@ TranslateRes TranslateKeyword (const TreeNode* kw_node, AsmText* asm_text, const
                 EFF_OFFSET (kw_node->right) * QWORD_SIZE,
                 NAME (kw_node->right));
             CALL ("scan_int64_t");
-            POP ("rdi\t\t\t; SCAN end");
+            POP ("rdi\t\t\t\t; SCAN end");
 
             break;
         }
@@ -261,8 +261,9 @@ TranslateRes TranslateKeyword (const TreeNode* kw_node, AsmText* asm_text, const
 
                 case INT_LITERAL:
                 {
-                    MOV ("rdi", "%d\t\t\t; PRINT immediate val (int64_t) begin\n",
-                            VAL (kw_node->right));
+
+                    MOV ("rdi", "%d * %u\t\t; PRINT immediate val (int64_t) begin\n",
+                            VAL (kw_node->right), asm_text->precision_correction);
 
                     break;
                 }
@@ -312,28 +313,28 @@ TranslateRes TranslateKeyword (const TreeNode* kw_node, AsmText* asm_text, const
 
         case KW_IF:
         {
+            size_t curr_if = IF_COUNT++;
+
             // condition
             TranslateASTSubtree (kw_node->right, asm_text, nametable);
 
             CPOP ("rax");
             CMP ("rax", "0");   // rax = condition result (1 or 0)
-            WRITE ("je else_%ld\n", IF_COUNT);
+            WRITE ("je else_%ld\n", curr_if);
 
             // if - true:
 
             TranslateASTSubtree (kw_node->left->left, asm_text, nametable);
 
-            WRITE ("jmp end_if_%ld\n", IF_COUNT);
+            WRITE ("jmp end_if_%ld\n", curr_if);
 
             // else
-            WRITE_NO_TAB ("else_%ld:\n", IF_COUNT);
+            WRITE_NO_TAB ("else_%ld:\n", curr_if);
 
             if (kw_node->left->right)
                 TranslateASTSubtree (kw_node->left->right, asm_text, nametable);
 
-            WRITE_NO_TAB ("end_if_%ld:\n\n", IF_COUNT);
-
-            IF_COUNT++;
+            WRITE_NO_TAB ("end_if_%ld:\n\n", curr_if);
 
             break;
         }
@@ -483,26 +484,24 @@ TranslateRes TranslateOperator (const TreeNode* op_node, AsmText* asm_text, cons
             TranslateASTSubtree (op_node->right, asm_text, nametable);
 
             PUSH ("rax");
+
             MOV ("rax", "QWORD [r15+8]");
             IMUL ("rax", "QWORD [r15]");
 
-            WRITE_NEWLINE;
-            PUSH ("rdi\t\t\t; begin precision div");
-            PUSH ("rcx");
-            MOV ("rcx", "%u", INT_PRECISION_POW);
-            CMP ("rcx", "0");
-            WRITE_NO_TAB (".precision_div:\n");
+            // precision correction
+            PUSH ("rdi\t\t\t; begin precision correction");
+            PUSH ("rsi");
             MOV ("rdi", "rax");
-            CALL ("div_10");
-            SUB ("rcx", "1");
-            CMP ("rcx", "0");
-            WRITE ("jg .precision_div\n");
-            POP ("rcx");
-            POP ("rdi\t\t\t ; end precision div");
-            WRITE_NEWLINE;
+
+            MOV ("rsi", "%u", asm_text->precision_correction);
+            CALL ("divide");
+
+            POP ("rsi");
+            POP ("rdi\t\t\t\t; end   precision correction");
 
             ADD ("r15", "8\t\t\t; push imul-instr result instead of 2 operands\n");
             MOV ("[r15]", "rax");
+
             POP ("rax");
 
             break;
@@ -510,34 +509,66 @@ TranslateRes TranslateOperator (const TreeNode* op_node, AsmText* asm_text, cons
 
         case DIV:
         {
-            //* not accurate
             TranslateASTSubtree (op_node->left, asm_text, nametable);
             TranslateASTSubtree (op_node->right, asm_text, nametable);
 
-            PUSH ("rax");
-            WRITE ("mov rax, QWORD [r15+8]\n");
-            WRITE ("idiv rax, QWORD [r15]\n");
+            PUSH ("rax\t\t\t; begin div");
+            PUSH ("rdi");
+            PUSH ("rsi");
 
-            IMUL ("rax", "%u\t\t; precision correction", asm_text->precision_correction);
+            CPOP ("rax");
 
-            WRITE ("add r15, 8\t\t\t; push division result instead of 2 operands\n");
-            WRITE ("mov [r15], rax\n");
-            POP ("rax");
+            // do right operator correction
+            PUSH ("rdi");
+            PUSH ("rsi");
+            MOV ("rsi", "%u", asm_text->precision_correction);
+            MOV ("rdi", "rax");
+            CALL ("divide");
+            POP ("rsi");
+            POP ("rdi");
+
+            // right op
+            MOV ("rsi", "rax");
+
+            // left op
+            CPOP ("rax");
+
+            MOV ("rdi", "rax");
+
+            CALL ("divide");
+
+            CPUSH ("rax");
+
+            POP ("rsi");
+            POP ("rdi");
+            POP ("rax\t\t\t\t; end   div");
 
             break;
         }
 
-        case POW:
+        case SQRT:
         {
-            TranslateASTSubtree (op_node->left, asm_text, nametable);
-            WRITE ("sqrt\n");
+            TranslateASTSubtree (op_node->right, asm_text, nametable);
+
+            PUSH ("rdi");
+            PUSH ("rax");
+
+            CPOP ("rdi");
+            // correct precision
+            IMUL ("rdi", "%u", asm_text->precision_correction);
+
+            CALL ("sqrt_int64_t");
+            CPUSH ("rax");
+
+            POP ("rax");
+            POP ("rdi");
 
             break;
         }
 
         case LESS:
         {
-            TranslateCondition (op_node, asm_text, nametable, "jb");
+            TranslateCondition (op_node, asm_text, nametable, "jl");
 
             break;
         }
@@ -558,14 +589,14 @@ TranslateRes TranslateOperator (const TreeNode* op_node, AsmText* asm_text, cons
 
         case MORE_EQ:
         {
-            TranslateCondition (op_node, asm_text, nametable, "jae");
+            TranslateCondition (op_node, asm_text, nametable, "jge");
 
             break;
         }
 
         case MORE:
         {
-            TranslateCondition (op_node, asm_text, nametable, "ja");
+            TranslateCondition (op_node, asm_text, nametable, "jg");
 
             break;
         }
@@ -665,6 +696,7 @@ TranslateRes TranslateNumber (const TreeNode* num_node, AsmText* asm_text, const
         return TRANSLATE_TYPE_NOT_MATCH;
 
     CPUSH ("%d", VAL (num_node) * asm_text->precision_correction);
+    // CPUSH ("%d", VAL (num_node));
 
     return TRANSLATE_SUCCESS;
 }
@@ -763,6 +795,7 @@ AsmText* AsmTextCtor ()
     asm_text->while_statements_count = 0;
     asm_text->funcs_count            = 0;
     asm_text->cond_count             = 0;
+    asm_text->prec_count             = 0;
     asm_text->tabs = (char*) calloc (MAX_SCOPE_DEPTH, sizeof (char));
 
     asm_text->precision_correction = 1;
@@ -1027,12 +1060,10 @@ int DescribeCurrFunction (AsmText *asm_text, const NameTable *nametable)
     assert (asm_text);
     assert (nametable);
 
-    int eff_offset = -OFFSET_TABLE->n_params - 1; // -1 to avoid [rbp + 8] - ret addr
-
-    for (size_t i = 0; i < OFFSET_TABLE->offset_table_ptr; i++, eff_offset++)
+    for (size_t i = 0; i < OFFSET_TABLE->offset_table_ptr; i++)
     {
-        if (eff_offset == 0) eff_offset += 2; // to avoid [rbp + 0],
-                                              // eff_offset = 0 - is bad and means "val not found"
+        int eff_offset = OffsetTableGetVarOffset (OFFSET_TABLE, OFFSET_TABLE->offset_table[i]);
+
         if (eff_offset < 0)
         {
             WRITE ("\t\t\t; par int64_t %6s @ rbp+0x%x\n",

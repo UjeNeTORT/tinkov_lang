@@ -128,7 +128,7 @@ TreeNode* GetRvalue              (ProgCode* prog_code, ScopeTableStack* sts);
 TreeNode* GetMathExprRes         (ProgCode* prog_code, ScopeTableStack* sts);
 TreeNode* GetAddSubRes           (ProgCode* prog_code, ScopeTableStack* sts);
 TreeNode* GetMulDivRes           (ProgCode* prog_code, ScopeTableStack* sts);
-TreeNode* GetPowRes              (ProgCode* prog_code, ScopeTableStack* sts);
+TreeNode* GetSqrtRes             (ProgCode* prog_code, ScopeTableStack* sts);
 TreeNode* GetOperand             (ProgCode* prog_code, ScopeTableStack* sts);
 TreeNode* GetSimpleOperand       (ProgCode* prog_code, ScopeTableStack* sts);
 TreeNode* GetFunctionCall        (ProgCode* prog_code, ScopeTableStack* sts);

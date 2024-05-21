@@ -31,9 +31,6 @@ DefaultFuncRes CompileTinkovProgram (char* filename)
     sprintf (command, "./frontend %s\n", filename);
     assert (system (command) == 0);
 
-    sprintf (command, "./middleend ast.ast\n");
-    assert (system (command) == 0);
-
     sprintf (command, "./backend ast.ast\n");
     assert (system (command) == 0);
 

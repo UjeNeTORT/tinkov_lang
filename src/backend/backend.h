@@ -116,6 +116,7 @@ struct AsmText
     size_t while_statements_count;
     size_t funcs_count;
     size_t cond_count;
+    size_t prec_count;
     char*  tabs;
     unsigned precision_correction;
 };

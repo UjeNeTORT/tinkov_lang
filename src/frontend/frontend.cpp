@@ -713,7 +713,7 @@ TreeNode* GetMulDivRes (ProgCode* prog_code, ScopeTableStack* sts)
 
     int init_offset = OFFSET;
 
-    TreeNode* mul_div_res = GetPowRes (prog_code, sts);
+    TreeNode* mul_div_res = GetSqrtRes (prog_code, sts);
     if (!mul_div_res)
     {
         WARN ("mul_div_res nil");
@@ -737,8 +737,8 @@ TreeNode* GetMulDivRes (ProgCode* prog_code, ScopeTableStack* sts)
 
         OFFSET++; // skip operator
 
-        TreeNode* curr_pow_res = GetPowRes (prog_code, sts);
-        if (!curr_pow_res)
+        TreeNode* curr_sqrt_res = GetSqrtRes (prog_code, sts);
+        if (!curr_sqrt_res)
         {
             SubtreeDtor (mul_div_res);
             SYNTAX_ASSERT (0, "x / <error> - nil after mul/div operator");
@@ -747,11 +747,11 @@ TreeNode* GetMulDivRes (ProgCode* prog_code, ScopeTableStack* sts)
         switch (op_mul_div)
         {
         case MUL:
-            mul_div_res = TreeNodeCtor (MUL, OPERATOR, NULL, mul_div_res, curr_pow_res);
+            mul_div_res = TreeNodeCtor (MUL, OPERATOR, NULL, mul_div_res, curr_sqrt_res);
             break;
 
         case DIV:
-            mul_div_res = TreeNodeCtor (DIV, OPERATOR, NULL, mul_div_res, curr_pow_res);
+            mul_div_res = TreeNodeCtor (DIV, OPERATOR, NULL, mul_div_res, curr_sqrt_res);
             break;
 
         default:
@@ -765,32 +765,37 @@ TreeNode* GetMulDivRes (ProgCode* prog_code, ScopeTableStack* sts)
 
 // ================================================================================================
 
-TreeNode* GetPowRes (ProgCode* prog_code, ScopeTableStack* sts)
+TreeNode* GetSqrtRes (ProgCode* prog_code, ScopeTableStack* sts)
 {
     assert (prog_code);
     assert (sts);
 
     int init_offset = OFFSET;
-    TreeNode* pow_res = GetOperand (prog_code, sts);
-    if (!pow_res)
+
+    if (!HAS_TOKENS_LEFT || TOKEN_IS_NOT (OPERATOR, SQRT))
     {
-        WARN ("pow_res nil");
         OFFSET = init_offset;
 
-        return NULL;
+        return GetOperand (prog_code, sts);
     }
 
-    if (!HAS_TOKENS_LEFT || TOKEN_IS_NOT (OPERATOR, POW))
-        return pow_res;
+    OFFSET++; // skip "sqrt"
 
-    OFFSET++; // skip ^
+    SYNTAX_ASSERT (TOKEN_IS (SEPARATOR, ENCLOSE_MATH_EXPR_L), "left bracket expected");
 
-    TreeNode* operand_2 = GetOperand (prog_code, sts);
-    SYNTAX_ASSERT (operand_2 != NULL, "in power right operand nil");
+    OFFSET++; // skip "("
 
-    pow_res = TreeNodeCtor (POW, OPERATOR, NULL, pow_res, operand_2);
+    TreeNode *sqrt_operand = GetAddSubRes (prog_code, sts);
 
-    return pow_res;
+    SYNTAX_ASSERT (TOKEN_IS (SEPARATOR, ENCLOSE_MATH_EXPR_R), "right bracket expected");
+
+    OFFSET++; // skip ")"
+
+    SYNTAX_ASSERT (sqrt_operand != NULL, "sqrt operand nil");
+
+    TreeNode *sqrt_res = TreeNodeCtor (SQRT, OPERATOR, NULL, NULL, sqrt_operand);
+
+    return sqrt_res;
 }
 
 // ================================================================================================
@@ -1177,6 +1182,8 @@ int IsOperator (const char* lexem)
 int IsIntLiteral (const char* lexem)
 {
     assert (lexem);
+
+    if ((char) *lexem == '-') lexem++;
 
     while (isdigit (*lexem))
     {

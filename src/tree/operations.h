@@ -95,12 +95,12 @@ const int N_SEPARATORS = sizeof (SEPARATORS) / sizeof (SEPARATORS[0]);
 
 typedef enum
 {
-    ASSIGN = 0,   // "я_так_чувствую"
-    ADD    = 1,   // "+"
-    SUB    = 2,   // "-"
-    MUL    = 3,   // "*"
-    DIV    = 4,   // "/"
-    POW    = 5,   // "^"
+    ASSIGN  = 0,  // "я_так_чувствую"
+    ADD     = 1,  // "+"
+    SUB     = 2,  // "-"
+    MUL     = 3,  // "*"
+    DIV     = 4,  // "/"
+    SQRT    = 5,  // "sqrt"
 
     LESS    = 6,  // "<"
     LESS_EQ = 7,  // "<="
@@ -123,7 +123,7 @@ const Operator OPERATORS[] =
     {SUB,    "-"},
     {MUL,    "*"},
     {DIV,    "/"},
-    {POW,    "^"},
+    {SQRT,    "корень"},
 
     {LESS,    "<"},
     {LESS_EQ, "<="},
