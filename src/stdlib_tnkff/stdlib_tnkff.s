@@ -253,7 +253,6 @@ div_10:
         sub     rsp, 8  ; space for locals
         push    rcx     ; rcx is used in "rep" in upper funcs
 
-
         mov     QWORD [rbp - 8], rdi
         mov     rcx, QWORD [rbp - 8]
         mov     rdx, 7378697629483820647
