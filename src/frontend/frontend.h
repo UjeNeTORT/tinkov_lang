@@ -79,9 +79,11 @@ const size_t MAX_LEXEM = 228;
 
 struct ProgText
 {
-    char* text;   // string with program code
-    int   offset; // current position in code array
-    int   len;    // code string length
+    char* text;         // string with program code
+    int   offset;       // current position in text
+    char* strings;      // string storing all the STR_LITERAL data
+    int   str_offset;   // current position in strings
+    int   str_index;    // index of free place for a string
 };
 
 struct ProgCode
@@ -142,6 +144,7 @@ ProgCode* LexerTokenize (ProgText* text);
 int HasForeignAgent (ProgText* text);
 
 int GetNewLineDistance (ProgText* text);
+int GetStrLiteralLen   (ProgText* text);
 
 int IsLexemMeanless (const char* lexem);
 int IsLineComment   (const char* lexem);
@@ -151,6 +154,7 @@ int IsKeyword       (const char* lexem);
 int IsSeparator     (const char* lexem);
 int IsOperator      (const char* lexem);
 int IsIntLiteral    (const char* lexem);
+int IsStrLiteral    (const char* lexem);
 int IsMainFunction  (const char* lexem);
 
 int GetDeclaratorIndex (const char* keyword);

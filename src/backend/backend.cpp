@@ -234,7 +234,7 @@ TranslateRes TranslateKeyword (const TreeNode* kw_node, AsmText* asm_text, const
                 RET_ERROR (TRANSLATE_ERROR, "Error scan: identifier node must not be func name!");
 
             PUSH ("rdi\t\t\t; SCAN begin");
-            LEA ("rdi", "QWORD [rbp - %d]\t\t; >> %s",
+            LEA ("rdi", "QWORD [rbp - %d]\t; >> %s",
                 EFF_OFFSET (kw_node->right) * QWORD_SIZE,
                 NAME (kw_node->right));
             CALL ("scan_int64_t");
@@ -258,7 +258,6 @@ TranslateRes TranslateKeyword (const TreeNode* kw_node, AsmText* asm_text, const
 
                 case INT_LITERAL:
                 {
-
                     MOV ("rdi", "%d * %u\t\t; PRINT immediate val (int64_t) begin\n",
                             VAL (kw_node->right), asm_text->precision_correction);
 
@@ -320,7 +319,6 @@ TranslateRes TranslateKeyword (const TreeNode* kw_node, AsmText* asm_text, const
             WRITE ("je else_%ld\n", curr_if);
 
             // if - true:
-
             TranslateASTSubtree (kw_node->left->left, asm_text, nametable);
 
             WRITE ("jmp end_if_%ld\n", curr_if);

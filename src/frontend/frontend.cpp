@@ -1113,6 +1113,22 @@ int GetNewLineDistance (ProgText* text)
 
 // ================================================================================================
 
+int GetStrLiteralLen   (const char *text)
+{
+    assert (text);
+    assert (*text == '"');
+
+    unsigned str_offset = 1; // skip '"' by default
+
+    while (*(text + str_offset) != '"')
+    {
+        if (*(text + str_offset) == '\\') text++;
+        text++;
+    }
+}
+
+// ================================================================================================
+
 int IsLexemMeanless (const char* lexem)
 {
     assert (lexem);
@@ -1224,6 +1240,18 @@ int IsIntLiteral (const char* lexem)
     }
 
     if (isspace (*lexem) || *lexem == 0)
+        return 1;
+
+    return 0;
+}
+
+// ================================================================================================
+
+int IsStrLiteral (const char* lexem)
+{
+    assert (lexem);
+
+    if (*lexem == STRING_LITERAL_TERMINAL_SYMBOL)
         return 1;
 
     return 0;
@@ -1440,7 +1468,6 @@ ProgText* ProgTextCtor (const char* text, int text_len)
 
     prog_text->text   = text_copy;
     prog_text->offset = 0;
-    prog_text->len    = text_len;
 
     return prog_text;
 }
@@ -1452,10 +1479,8 @@ int ProgTextDtor (ProgText* prog_text)
     assert (prog_text);
 
     prog_text->offset = -1;
-    prog_text->len    = -1;
 
     free (prog_text->text);
-
     free (prog_text);
 
     return 0;

@@ -14,6 +14,7 @@ const int ILL_OPNUM = __INT_MAX__;
 const size_t MAX_SCOPE_DEPTH = 10; // naming?
 
 const char LINE_COMMENT_NAME[] = "сарказм";
+const char STRING_LITERAL_TERMINAL_SYMBOL = '"';
 
 const char * const MEANLESS_LEXEMS[] =
 {
@@ -183,6 +184,7 @@ typedef enum
     SEPARATOR   = 4, // punctuation characters ({, (, ;, in C)
     OPERATOR    = 5, // symbols that operate on arguments and produce result (<, =, +, / in C)
     INT_LITERAL = 6, // integer decimal number
+    STR_LITERAL = 7, // null-terminated sequence of chars
 } NodeType;
 typedef NodeType TokenType;
 
