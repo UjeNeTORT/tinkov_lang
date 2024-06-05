@@ -260,7 +260,17 @@ else if (0 < x && x < 1)
 
 ![пример big cargo nodes](img/big_cargo_nodes.png)
 
-<!--todo-->
+Опишем стандарт представления синтаксических конструкций в AST:
+
+|     Конструкция      |                 Представление в AST                 |
+| :------------------: | :-------------------------------------------------: |
+| function declaration |   ![AST func declaration](img/ast_func_declr.png)   |
+| variable declaration |    ![AST var declaration](img/ast_var_declr.png)    |
+|     if-statement     |    ![AST if statement](img/ast_if_statement.png)    |
+|   while-statement    | ![AST while statement](img/ast_while_statement.png) |
+|        return        |          ![AST return](img/ast_return.png)          |
+|        input         |           ![AST input](img/ast_input.png)           |
+|        output        |          ![AST output](img/ast_output.png)          |
 
 ## FrontEnd - лексический и синтаксический анализ, построение AST
 
