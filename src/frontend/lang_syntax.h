@@ -141,8 +141,7 @@ typedef enum
     SUB     = 2,  // "-"
     MUL     = 3,  // "*"
     DIV     = 4,  // "/"
-    SQRT    = 5,  // "sqrt"
-
+    SQRT    = 5,  // "корень"
     LESS    = 6,  // "<"
     LESS_EQ = 7,  // "<="
     EQUAL   = 8,  // "=="
