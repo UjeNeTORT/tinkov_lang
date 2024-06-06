@@ -540,7 +540,23 @@ const unsigned INT_PRECISION_POW = 2;
 
 ### Трансляция условий
 
-in progress...
+Все метки связанные с if, while и т.п. пронумерованы для уникальности.
+
+<blockquote>
+<code>Пример трансляции if-else выражения</code>
+
+![alt text](img/label_if.png)
+
+</blockquote>
+
+<blockquote>
+<code>Пример трансляции while выражения</code>
+
+![alt text](img/label_while.png)
+
+Выражение отличается от do-while наличием `jmp` в начале
+
+</blockquote>
 
 ### Стандартная библиотека
 
