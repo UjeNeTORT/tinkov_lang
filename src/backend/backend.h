@@ -92,7 +92,7 @@ const size_t   MAX_ASM_PROGRAM_SIZE    = 50000;
 const size_t   OFFSET_TABLE_CAPACITY   = 256;
 const size_t   CALC_STACK_CAPACITY     = 2048;
 
-const char * const DFLT_STDLIB_PATH    = "/home/netort/language/src/stdlib_tnkff/stdlib_tnkff.s";
+const char * const DFLT_STDLIB_PATH    = "src/stdlib_tnkff/stdlib_tnkff.s";
 
 struct OffsetTable
 {

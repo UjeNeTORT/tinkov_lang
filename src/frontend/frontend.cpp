@@ -15,20 +15,13 @@ int main (int argc, char* argv[])
         RET_ERROR (1, "No program file specified");
 
     char* prog_name = argv[1];
-    PRINTF_DEBUG ("getprogtextbegin");
     ProgText* prog_text = GetProgText (prog_name);
-    PRINTF_DEBUG ("getprogtextend");
     ProgCode* prog_code = LexerTokenize (prog_text);
-    PRINTF_DEBUG ("lexertokenizeend");
 
     ProgTextDtor (prog_text);
     if (!prog_code) RET_ERROR (1, "Error during syntax analysis");
 
-    PRINTF_DEBUG ("buildastbegin");
-
     Tree* ast = BuildAST (prog_code);
-
-    PRINTF_DEBUG ("buildastend");
 
     ProgCodeDtor (prog_code);
 

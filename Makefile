@@ -13,7 +13,7 @@ start: stack.o onegin.o spu.o asm.o tree.o tree_dump.o frontend.o middleend.o ba
 	$(CPP) obj/common.o obj/compiler.o -o compiler
 
 compile:
-	./compiler test_code/square.tnkff
+	./compiler test_code/fibo.tnkff
 
 run:
 	./exec
@@ -79,6 +79,7 @@ clean_all:
 	rm -f middleend
 	rm -f backend
 	rm -f compiler
+	rm -f exec
 	rm -f *.ast
 	rm -f *.tree
 	rm -f *.log
