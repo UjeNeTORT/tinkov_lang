@@ -13,7 +13,7 @@ start: stack.o onegin.o spu.o asm.o tree.o tree_dump.o frontend.o middleend.o ba
 	$(CPP) obj/common.o obj/compiler.o -o compiler
 
 compile:
-	./compiler test_code/fibo.tnkff
+	./compiler test_code/square.tnkff
 
 run:
 	./exec
