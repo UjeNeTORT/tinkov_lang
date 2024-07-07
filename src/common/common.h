@@ -21,7 +21,7 @@ const double EPS = 1e-7;
 const int PROGRESS_BAR_LENGTH = 50;
 
 #define LOGS
-// #define WARNINGS
+#define WARNINGS
 // #define LOGS_DETAILED
 #define DEBUG_PRINTFS_DETAILED
 #define ERROR_PRINTFS_DETAILED

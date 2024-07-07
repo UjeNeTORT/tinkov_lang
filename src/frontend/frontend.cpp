@@ -469,8 +469,6 @@ TreeNode* GetAssign (ProgCode* prog_code, ScopeTableStack* sts)
     {
         OFFSET = init_offset;
 
-        WARN ("no assign operator");
-
         return NULL;
     }
 
@@ -574,7 +572,6 @@ TreeNode* GetMathExprRes (ProgCode* prog_code, ScopeTableStack* sts)
     TreeNode* math_expr_res = GetAddSubRes (prog_code, sts);
     if (!math_expr_res)
     {
-        WARN ("add_sub_res nil");
         OFFSET = init_offset;
 
         return NULL;
@@ -645,7 +642,6 @@ TreeNode* GetAddSubRes (ProgCode* prog_code, ScopeTableStack* sts)
     TreeNode* add_sub_res = GetMulDivRes (prog_code, sts);
     if (!add_sub_res)
     {
-        WARN ("mul_div_res_1 nil");
         OFFSET = init_offset;
 
         return NULL;
@@ -704,7 +700,6 @@ TreeNode* GetMulDivRes (ProgCode* prog_code, ScopeTableStack* sts)
     TreeNode* mul_div_res = GetSqrtRes (prog_code, sts);
     if (!mul_div_res)
     {
-        WARN ("mul_div_res nil");
         OFFSET = init_offset;
 
         return NULL;
