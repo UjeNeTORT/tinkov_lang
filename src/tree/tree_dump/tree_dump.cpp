@@ -27,21 +27,23 @@ int TreeDotDump (const char* HTML_fname, const Tree* tree)
 
     int dump_id = (int) time(NULL);
 
-    char dot_path[MAX_PATH] = "";
-    char detailed_dot_path[MAX_PATH] = "";
+    char *dot_path          = (char *) calloc (MAX_PATH, sizeof (char));
+    char *detailed_dot_path = (char *) calloc (MAX_PATH, sizeof (char));
 
     FILE* dot_file          = InitDotDump (tree, dot_path,          SIMPLE_DUMP);
     FILE* detailed_dot_file = InitDotDump (tree, detailed_dot_path, DETAILED_DUMP);
     if (!dot_file)
-    {
         WARN ("NULL received as dot_file.  Dropping dot dump generation...");
-    }
     if (!detailed_dot_file)
-    {
         WARN ("NULL received as detailed dot_file.  Dropping detailed dot dump generation...");
-    }
 
-    if (!dot_file || !detailed_dot_file) return 0;
+    if (!dot_file || !detailed_dot_file)
+    {
+        free (dot_path);
+        free (detailed_dot_path);
+
+        return 0;
+    }
 
     DotTreePrint         (dot_file,          tree);
     DotTreeDetailedPrint (detailed_dot_file, tree);
@@ -51,6 +53,9 @@ int TreeDotDump (const char* HTML_fname, const Tree* tree)
 
     CompileDot (dot_path,          dump_id, SIMPLE_DUMP);
     CompileDot (detailed_dot_path, dump_id, DETAILED_DUMP);
+
+    free (dot_path);
+    free (detailed_dot_path);
 
     WriteHTML(HTML_fname, dump_id);
 
@@ -198,8 +203,6 @@ DotTreePrintRes DotSubtreePrint (FILE* dot_file, const TreeNode* node, const Tre
 
     if (!node)
     {
-        WARN ("node null");
-
         *node_id = 0;
 
         return DOT_PRINT_SUCCESS;
