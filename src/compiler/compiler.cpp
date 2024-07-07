@@ -29,19 +29,19 @@ DefaultFuncRes CompileTinkovProgram (char* filename)
     char* command = (char*) calloc (MAX_COMMAND, sizeof (char));
 
     sprintf (command, "./frontend %s\n", filename);
-    assert (system (command) == 0);
+    assert (system (command) == 0 && "Failed to run frontend");
 
     sprintf (command, "./middleend ast.ast\n");
-    assert (system (command) == 0);
+    assert (system (command) == 0 && "Failed to run middleend");
 
     sprintf (command, "./backend ast.ast\n");
-    assert (system (command) == 0);
+    assert (system (command) == 0 && "Failed to backend");
 
     sprintf (command, "nasm -f elf64 -g out.s -o out.o\n");
-    assert (system (command) == 0);
+    assert (system (command) == 0 && "Failed to generate binary");
 
     sprintf (command, "g++ -no-pie out.o -o exec\n");
-    assert (system (command) == 0);
+    assert (system (command) == 0 && "Failed to generate executable");
 
     free (command);
 

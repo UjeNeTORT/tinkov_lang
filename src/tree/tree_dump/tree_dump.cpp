@@ -32,6 +32,16 @@ int TreeDotDump (const char* HTML_fname, const Tree* tree)
 
     FILE* dot_file          = InitDotDump (tree, dot_path,          SIMPLE_DUMP);
     FILE* detailed_dot_file = InitDotDump (tree, detailed_dot_path, DETAILED_DUMP);
+    if (!dot_file)
+    {
+        WARN ("NULL received as dot_file.  Dropping dot dump generation...");
+    }
+    if (!detailed_dot_file)
+    {
+        WARN ("NULL received as detailed dot_file.  Dropping detailed dot dump generation...");
+    }
+
+    if (!dot_file || !detailed_dot_file) return 0;
 
     DotTreePrint         (dot_file,          tree);
     DotTreeDetailedPrint (detailed_dot_file, tree);
@@ -70,6 +80,11 @@ FILE* InitDotDump (const Tree* tree, char* dot_path, DotDumpType dump_type)
     free (temp_dot_path);
 
     FILE* dot_file = fopen (dot_path, "wb");
+    if (!dot_file)
+    {
+        WARN ("can not open \"%s\" as dot file path.", dot_path);
+        return NULL;
+    }
 
     if (dump_type == SIMPLE_DUMP)
         fprintf (dot_file, "digraph TREE {\n"
