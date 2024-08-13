@@ -1,0 +1,23 @@
+# build files
+CMakeLists.txt
+build/**
+
+# executables
+exec
+frontend
+middleend
+backend
+compiler
+spu
+asm
+
+# object files
+obj/**
+out.o
+
+# debug info
+ast.ast
+src/tree/tree_dump/dumps/**
+
+# vs code specific settings
+.vscode
