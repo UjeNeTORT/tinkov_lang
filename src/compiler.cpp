@@ -52,10 +52,11 @@ DefaultFuncRes IsProgramTextFilenameCorrect (const char* program_text_filename)
 {
     assert (program_text_filename);
 
-    while (*program_text_filename++ != '.')
-        ;
+    while (*program_text_filename++) ; // skip till the end of the string
 
-    if (streq (program_text_filename, "tnkff"))
+    while (*--program_text_filename != '.') ; // go to position of the last dot
+
+    if (streq (program_text_filename, ".tnkff"))
         return FUNC_ERROR;
 
     return FUNC_SUCCESS;

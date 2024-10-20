@@ -115,7 +115,7 @@ TreeEvalRes SubtreeEvalBiOp (const TreeNode* node, int left, int right, int* res
 TreeSimplifyRes TreeSimplify (Tree* tree)
 {
     assert (tree);
-    if (!tree) RET_ERROR (TREE_SIMLIFY_ERR_PARAMS, "Tree null pointer");
+    if (!tree) RET_ERROR (TREE_SIMPLIFY_ERR_PARAMS, "Tree null pointer");
 
     return SubtreeSimplify(tree->root);
 }
@@ -151,7 +151,7 @@ TreeSimplifyRes SubtreeSimplifyConstants (TreeNode* node, int* tree_changed_flag
 {
     assert (tree_changed_flag);
     if (!tree_changed_flag)
-               RET_ERROR (TREE_SIMLIFY_ERR_PARAMS, "flag null pointer");
+               RET_ERROR (TREE_SIMPLIFY_ERR_PARAMS, "flag null pointer");
 
     if (!node) return TREE_SIMPLIFY_SUCCESS;
     if (TYPE(node) == INT_LITERAL) return TREE_SIMPLIFY_SUCCESS;

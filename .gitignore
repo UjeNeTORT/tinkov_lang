@@ -1,5 +1,4 @@
 # build files
-CMakeLists.txt
 build/**
 
 # executables

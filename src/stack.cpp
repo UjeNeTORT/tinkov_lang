@@ -27,8 +27,8 @@ enum DATA_RLLC_OUT {
 
 //-------------------------------------------------------------------------------------
 /**
- * @param [out] data     stack data structure
- * @param [in]  capacity stack capacity
+ * @param [data] stack data structure
+ * @param [capacity]  stack capacity
  *
  * @brief calloc memory of size capacity * sizeof(elem_t) for data ptr
 */

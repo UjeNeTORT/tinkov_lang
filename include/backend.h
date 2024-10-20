@@ -14,11 +14,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "../common/common.h"
-#include "../tree/tree.h"
-#include "../tree/tree_dump/tree_dump.h"
-#include "../processor/assembler/asm.h"
-#include "../processor/processor/spu.h"
+#include "common.h"
+#include "tree.h"
+#include "tree_dump.h"
 
 // =========================== DSL ===========================
 
@@ -92,13 +90,13 @@ const size_t   MAX_ASM_PROGRAM_SIZE    = 50000;
 const size_t   OFFSET_TABLE_CAPACITY   = 256;
 const size_t   CALC_STACK_CAPACITY     = 2048;
 
-const char * const DFLT_STDLIB_PATH    = "src/stdlib_tnkff/stdlib_tnkff.s";
+const char * const DFLT_STDLIB_PATH    = "../src/stdlib_tnkff.s";
 
 struct OffsetTable
 {
     int   *offset_table;        // array of function params and loc.vars
                                 // first n_params values - ids of params
-                                // all the rest          - local vars
+
 
     size_t offset_table_ptr;    // points to a free position
     size_t offset_table_base;   // points to a curr frame base

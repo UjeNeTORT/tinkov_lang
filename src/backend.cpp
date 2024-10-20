@@ -11,10 +11,9 @@
 
 int main (int argc, char* argv[])
 {
-    if (argc < 2)
-        RET_ERROR (1, "No ast specified");
+    if (argc < 2) RET_ERROR (1, "No ast specified");
 
-    char* ast_name = argv[1]; // todo check if .tree in the end
+    char* ast_name = argv[1];
 
     FILE* tree_file = fopen (ast_name, "rb");
     Tree* ast = ReadTree (tree_file);

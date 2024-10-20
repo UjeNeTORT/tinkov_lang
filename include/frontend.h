@@ -17,8 +17,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "../tree/tree.h"
-#include "../tree/tree_dump/tree_dump.h"
+#include "tree.h"
+#include "tree_dump.h"
 
 // =========================== DSL ===========================
 

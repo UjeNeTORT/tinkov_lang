@@ -12,9 +12,9 @@
 
 #include <stdio.h>
 
-#include "../common/common.h"
-#include "../common/colors.h"
-#include "../frontend/lang_syntax.h"
+#include "common.h"
+#include "colors.h"
+#include "lang_syntax.h"
 
 const size_t MAX_N_NODES = 50000;  // max number of nodes in AST
 const size_t MAX_TREE    = 500000; // max len of a string-written tree in a file
@@ -48,9 +48,9 @@ typedef enum
 
 typedef enum
 {
-    TREE_SIMPLIFY_SUCCESS   = 0,
-    TREE_SIMPLIFY_ERR       = 1,
-    TREE_SIMLIFY_ERR_PARAMS = 2,
+    TREE_SIMPLIFY_SUCCESS    = 0,
+    TREE_SIMPLIFY_ERR        = 1,
+    TREE_SIMPLIFY_ERR_PARAMS = 2,
 } TreeSimplifyRes;
 
 typedef enum

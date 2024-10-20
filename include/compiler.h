@@ -7,15 +7,20 @@
  * repo:     https://github.com/UjeNeTORT/tinkov_lang
  *************************************************************************/
 
-#ifndef MIDDLE_END_H
-#define MIDDLE_END_H
+#ifndef TINKOV_COMPILER_H
+#define TINKOV_COMPILER_H
 
 #include <assert.h>
 #include <stdio.h>
-#include <stdlib.h>
+#include <string.h>
+#include <common.h>
 
-#include "../common/common.h"
-#include "../tree/tree.h"
-#include "../tree/tree_dump/tree_dump.h"
+#include "common.h"
 
-#endif // MIDDLE_END_H
+const int MAX_COMMAND = 1000;
+
+DefaultFuncRes CompileTinkovProgram         (char* filename);
+
+DefaultFuncRes IsProgramTextFilenameCorrect (const char* program_text_filename);
+
+#endif // TINKOV_COMPILER_H

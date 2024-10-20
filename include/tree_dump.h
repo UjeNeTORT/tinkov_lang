@@ -12,7 +12,7 @@
 
 #include <stdio.h>
 
-#include "../tree.h"
+#include "tree.h"
 
 // #define WARNINGS
 
